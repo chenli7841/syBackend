@@ -1,0 +1,85 @@
+﻿@using Domain.Models.Extensions
+@model IEnumerable<Domain.Entities.RouteEntity>
+
+@{
+    ViewData["Title"] = "线路管理";
+}
+
+<div class="row">
+    <div class="col-md-12 grid-margin">
+        <div class="card">
+            <div class="card-body order-card-body">
+                <div class="table-responsive">
+                    <table id="route-listing" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>名称</th>
+                                <th>代码</th>
+                                <th>类型</th>
+                                <th>常规</th>
+                                <th>仓库</th>
+                                <th>说明</th>
+                                <th>排序</th>
+                                <th>显示</th>
+                                <th>永久删除</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var route in Model)
+                            {
+                                <tr>
+                                    <td>@Html.ActionLink(route.Name, "Edit", new { @id = route.Id }, new { @class = "" })</td>
+                                    <td>@route.Code</td>
+                                    <td>@route.Type.GetDescription()</td>
+                                    <td><a href='@Url.Action("ToggleIsRegular")?id=@route.Id'>
+                                        @if (route.IsRegular)
+                                        {
+                                            <i class="fa fa-check fa-lg" style="color: #fc0324de"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fa fa-times fa-lg" style="color: green"></i>
+                                        }
+                                    </a></td>
+                                    <td>@route.Warehouse?.Name</td>
+                                    <td>@route.Description</td>
+                                    <td>@route.DisplaySequence</td>
+                                    <td>
+                                        @if (route.IsDeleted)
+                                        {
+                                            <i class="fa fa-times fa-lg" style="color: #fc0324de"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fa fa-check fa-lg" style="color: green"></i>
+                                        }
+                                    </td>
+                                    <td><a href='@Url.Action("Delete")?id=@route.Id'><i class="fa fa-times fa-lg" style="color: #fc0324de"></i></a></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script>
+    const createUrl = '@Url.Action("Create")';
+
+    $('#route-listing').DataTable({
+      paging: false,
+      info: false,
+      order: [],
+      language: {
+        search: "搜索:",
+      },
+    });
+
+    $('#route-listing').closest('.dataTables_wrapper').find('div.row:first-child > div:first-child')
+      .append(`<a class="btn btn-primary ml-2" href="${createUrl}">添加</button>`);
+    </script>
+}

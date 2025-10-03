@@ -1,0 +1,116 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+    <title>@ViewData["Title"] - 壹嘉国际</title>
+
+    <!-- plugins:css -->
+    <link rel="stylesheet" href="~/vendors/mdi/css/materialdesignicons.min.css">
+    <link rel="stylesheet" href="~/vendors/flag-icon-css/css/flag-icon.min.css">
+    <link rel="stylesheet" href="~/vendors/ti-icons/css/themify-icons.css">
+    <link rel="stylesheet" href="~/vendors/typicons/typicons.css">
+    <link rel="stylesheet" href="~/vendors/css/vendor.bundle.base.css">
+    <link rel="stylesheet" href="~/vendors/font-awesome/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="~/vendors/datatables.net-bs4/dataTables.bootstrap4.css">
+    <!-- endinject -->
+    <!-- Plugin css for this page -->
+    <link rel="stylesheet" href="~/vendors/jvectormap/jquery-jvectormap.css">
+    @await RenderSectionAsync("Styles", required: false)
+    <!-- End Plugin css for this page -->
+    <!-- inject:css -->
+    <link rel="stylesheet" href="~/css/shared/style.css">
+    <!-- endinject -->
+    <!-- Layout styles -->
+    <link rel="stylesheet" href="~/css/demo_1/style.css">
+    <!-- End Layout styles -->
+    <link rel="shortcut icon" type="image/png" href="data:image/png;base64,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" />
+
+    <link rel="stylesheet" href="~/css/site.css" />
+    @Html.Raw(JavaScriptSnippet.FullScript)
+</head>
+<body>
+    <div id="site-overlay">
+        <div id="site-overlay-text">操作中</div>
+    </div>
+    <div class="container-scroller">
+        <partial name="_Navbar" />
+        <div class="container-fluid page-body-wrapper">
+            <partial name="_Sidebar" />
+            <div class="main-panel">
+                <div class="content-wrapper">
+                    @RenderBody()
+                </div>
+                <footer class="footer">
+                    <div class="container-fluid clearfix">
+                        <span class="text-muted d-block text-center text-sm-left d-sm-inline-block">Copyright © 2019 <a href="http://www.bootstrapdash.com/" target="_blank">Bootstrapdash</a>. All rights reserved.</span>
+                        <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">
+                            Hand-crafted & made with <i class="mdi mdi-heart text-danger"></i>
+                        </span>
+                    </div>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    @*<header>
+            <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+                <div class="container">
+                    <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">EplusCore</a>
+                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                            aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                        <ul class="navbar-nav flex-grow-1">
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            </li>
+                        </ul>
+                        <partial name="_LoginPartial" />
+                    </div>
+                </div>
+            </nav>
+        </header>
+        <div class="container">
+            <main role="main" class="pb-3">
+                @RenderBody()
+            </main>
+        </div>
+
+        <footer class="border-top footer text-muted">
+            <div class="container">
+                &copy; 2020 - EplusCore - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            </div>
+        </footer>*@
+
+    <!-- plugins:js -->
+    <script src="~/vendors/js/vendor.bundle.base.js"></script>
+    <!-- endinject -->
+    <!-- Plugin js for this page -->
+    <script src="~/vendors/chart.js/Chart.min.js"></script>
+    <script src="~/vendors/jvectormap/jquery-jvectormap.min.js"></script>
+    <script src="~/vendors/jvectormap/jquery-jvectormap-world-mill-en.js"></script>
+    <script src="~/vendors/justgage/raphael-2.1.4.min.js"></script>
+    <script src="~/vendors/justgage/justgage.js"></script>
+    <script src="~/vendors/datatables.net/jquery.dataTables.js"></script>
+    <script src="~/vendors/datatables.net-bs4/dataTables.bootstrap4.js"></script>
+    <!-- End plugin js for this page -->
+    <!-- inject:js -->
+    <script src="~/js/shared/off-canvas.js"></script>
+    <script src="~/js/shared/hoverable-collapse.js"></script>
+    <script src="~/js/shared/misc.js"></script>
+    <script src="~/js/shared/settings.js"></script>
+    <script src="~/js/shared/todolist.js"></script>
+    <!-- endinject -->
+    <!-- Custom js for this page -->
+    <script src="~/js/demo_1/dashboard.js"></script>
+    <!-- End custom js for this page -->
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/jquery.cropit.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

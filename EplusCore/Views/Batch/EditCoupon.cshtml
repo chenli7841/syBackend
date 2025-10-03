@@ -1,0 +1,581 @@
+@using System.Linq
+@using Domain.Entities
+@using Domain.Enums
+@using Domain.Models.Extensions
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model Domain.Entities.CouponBatchEntity
+
+@{
+    ViewData["Title"] = "批次详情";
+}
+
+@{
+    var users = (IEnumerable<UserEntity>)ViewBag.Users;
+}
+
+@section Styles
+{
+    <link rel="stylesheet" href="~/vendors/select2/select2.min.css">
+    <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
+    <style>
+        .editCouponSetUserBtn {
+            border: none;
+            background: transparent;
+            color: #6200EE;
+            cursor: pointer;
+        }
+    </style>
+}
+
+@functions
+{
+    public string GetTypeText()
+    {
+        if (Model.Anonymous == null)
+            return "待定";
+        if (Model.Anonymous == false)
+            return "记名";
+        return "不记名";
+    }
+
+    public string GetValidFrom()
+    {
+        return Model.Coupons.FirstOrDefault()?.ValidFrom?.ToString("yyyy-MM-dd") ?? "";
+    }
+
+    public string GetValidUntil()
+    {
+        return Model.Coupons.FirstOrDefault()?.ValidUntil?.ToString("yyyy-MM-dd") ?? "";
+    }
+
+    public string GetMinimumPrice()
+    {
+        return Model.Coupons.FirstOrDefault()?.MinimumPrice == 0 ? "" : Model.Coupons.FirstOrDefault()?.MinimumPrice.ToString();
+    }
+
+    public bool NeedPrint()
+    {
+        if(Model.Anonymous == null) return false;
+        if(Model.Anonymous == false) return false;
+        var coupon = Model.Coupons.FirstOrDefault();
+        if(coupon == null) return false;
+        var lastStatus = coupon.Status.OrderByDescending(s => s.Date).FirstOrDefault();
+        if(lastStatus == null) return true;
+        if(lastStatus.Status == CouponStatusType.CouponCreated) return true;
+        return false;
+    }
+
+    public bool NeedMail()
+    {
+        if(Model.Anonymous == null) return false;
+        if(Model.Anonymous == false) return false;
+        var coupon = Model.Coupons.FirstOrDefault();
+        if(coupon == null) return false;
+        var lastStatus = coupon.Status.OrderByDescending(s => s.Date).FirstOrDefault();
+        if(lastStatus == null) return true;
+        if(lastStatus.Status == CouponStatusType.CouponPrinted) return true;
+        return false;
+    }
+}
+
+<div class="row">
+    <div class="col-md-12 grid-margin">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">@(Model.Id > 0 ? "修改优惠券批次" : "创建优惠券批次")</h4>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group row">
+                            @Html.LabelFor(r => r.Name, "名称", new { @class = "col-sm-4 col-form-label" })
+                            <div class="col-sm-8">
+                                @Html.TextBoxFor(r => r.Name, new { @id= "edit_coupon_name_input", @class = "form-control" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label" for="Name">类型</label>
+                            <div class="col-sm-8">
+                                <input class="form-control" id="Name" name="Name" type="text" disabled value='@GetTypeText()'>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group row">
+                            <label class="col-sm-5 col-form-label" for="Name">有效期起始</label>
+                            <div class="col-sm-7">
+                                <input class="form-control" id="edit_coupon_valid_from_input" name="ValidFrom" type="date" value='@GetValidFrom()'>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group row">
+                            <label class="col-sm-5 col-form-label" for="Name">有效期结束</label>
+                            <div class="col-sm-7">
+                                <input class="form-control" id="edit_coupon_valid_until_input" name="ValidUntil" type="date" value='@GetValidUntil()'>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group row">
+                            <label class="col-sm-5 col-form-label" for="Name">最低消费额</label>
+                            <div class="col-sm-7">
+                                <input class="form-control" id="edit_coupon_minimum_price_input" name="MinimumPrice" type="number" value='@GetMinimumPrice()'>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="gap: 5px; height: 32px;">
+                    <button id="edit_coupon_save_btn" class="btn btn-success">保存</button>
+                    @if(Model.Anonymous == null)
+                    {
+                        <div style="width: 1px; height: 100%; background-color: #ccc; margin: 0 5px;">&nbsp;</div>
+                        <button class="btn btn-primary" id='edit_coupon_not_anonymous_btn' data-toggle="modal" data-target="#editCouponConfirmModal">记名</button>
+                        <button class="btn btn-primary" id='edit_coupon_anonymous_btn' data-toggle="modal" data-target="#editCouponConfirmModal">不记名</button>
+                    }
+                    <div style="width: 1px; height: 100%; background-color: #ccc; margin: 0 5px;">&nbsp;</div>
+                    @if(NeedPrint())
+                    {
+                        <button class="btn btn-primary" id="edit_coupon_print_btn" data-toggle="modal" data-target="#editCouponConfirmModal">下一步: 已打印</button>
+                    }
+                    @if(NeedMail())
+                    {
+                        <button class="btn btn-primary" id="edit_coupon_mail_btn" data-toggle="modal" data-target="#editCouponConfirmModal">下一步: 已寄送</button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 grid-margin">
+        <div class="card">
+            <div class="card-body">
+                <div style="display: flex; align-items: baseline;gap: 20px">
+                    <p>照片（请上传600x1000的图片）</p>
+                    <button id="coupon_batch_show_upload_btn" class="btn btn-primary" style='display: @(!string.IsNullOrWhiteSpace(Model.PhotoUrl) ? "block" : "none")'>更新</button>
+                    <button id="coupon_batch_hide_upload_btn" class="btn btn-primary" style='display: "none"'>隐藏</button>
+                </div>
+                <div class="row">
+                    @if (!string.IsNullOrWhiteSpace(Model.PhotoUrl))
+                    {
+                        <div style='margin-top: 20px; margin-bottom: 20px; width: 70%; margin-left: auto; margin-right: auto;'><img style="width: 100%;" class='order-edit-photo' src='@Model.PhotoUrl' /></div>
+                    }
+                </div>
+                <div id='coupon_batch_upload_section' style='display: @(string.IsNullOrWhiteSpace(Model.PhotoUrl) ? "block" : "none")'>
+                    <div class="photo-uploader" style="width: 80%; margin: 20px auto 0 auto;" data-couponbatchid="@Model.Id" data-photourl=''>
+                        <div class="cropit-preview" style="width: 600px; height: 1000px; border: 1px #999 dashed;"></div>
+
+                        <input type="range" class="cropit-image-zoom-input" style="margin-top: 30px" />
+
+                        <input type="file" class="cropit-image-input" style="display: none" />
+
+                        <button class="btn btn-info select">选择</button>
+                        <button class="btn btn-primary upload">上传</button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 grid-margin">
+        <div class="card">
+            <div class="card-body">
+                <div style="display: flex; align-items: baseline;gap: 20px">
+                    <p>邮件内容</p>
+                    <button id="coupon_batch_save_email_btn" class="btn btn-primary">保存</button>
+                </div>
+                <div class="row">
+                    <textarea class="form-control" style="height: 200px" id="coupon_batch_email_content" placeholder="邮件内容...">@Model.EmailContent</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 grid-margin">
+        <div class="card">
+            <div class="card-body">
+                <div style="display: flex; align-items: baseline;gap: 20px">
+                    <p>短信内容</p>
+                    <button id="coupon_batch_save_sms_btn" class="btn btn-primary">保存</button>
+                </div>
+                <div class="row">
+                    <textarea class="form-control" style="height: 200px" id="coupon_batch_sms_content" placeholder="短信内容...">@Model.SmsContent</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12 grid-margin">
+        <div class="card">
+            <div class="card-body order-card-body">
+                <div class="table-responsive">
+                    <table id='coupon-listing-search' class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th data-searchable="true">单号</th>
+                                <th>国内单号</th>
+                                @if(Model.Anonymous == false)
+                                {
+                                    <th>使用人</th>
+                                }
+                                <th>当前状态</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in Model.Coupons)
+                            {
+                                <tr>
+                                    <td>@c.CouponNumber</td>
+                                    <td>@c.DomesticNumber</td>
+                                    @if(Model.Anonymous == false)
+                                    {
+                                        @if(@c.AssignedUserId != null)
+                                        {
+                                            <td><button id='set-user-btn-@c.Id' class='editCouponSetUserBtn' onclick='initializeSetUserModal(@c.Id)' data-toggle="modal" data-target="#editCouponSetUserModal"></button></td>
+                                        }
+                                        else
+                                        {
+                                            <td><button id='set-user-btn-@c.Id' class='editCouponSetUserBtn' onclick='initializeSetUserModal(@c.Id)' data-toggle="modal" data-target="#editCouponSetUserModal">指定</button></td>
+                                        }
+                                    }
+                                    <td id='edit-coupon-status-@c.Id'>@c.Status?.OrderBy(s => s.Date).LastOrDefault()?.Status.GetDescription()</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="editCouponSetUserModal" tabindex="-1" role="dialog" aria-labelledby="editCouponSetUserLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-1"></div>
+                    <div class="col-md-10">
+                        <div class="form-group row">
+                            <label class="col-sm-3 col-form-label" for="AssignedUserID">所有者</label>
+                            <div class="col-sm-9">
+                                <select class="form-control" id="user-select" style="width: 100%">
+                                    
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-1"></div>
+                </div>
+                <br />
+                <p style="font-weight: 600; color: red; text-align: center; margin-bottom: 0">注意：本操作不可逆转，并会向所有者用户发邮件，请谨慎提交！</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="set-user-save-btn" class="btn btn-success" data-dismiss="modal">指定</button>
+                <button type="button" id="set-user-close-btn" class="btn btn-success" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editCouponConfirmModal" tabindex="-1" role="dialog" aria-labelledby="editCouponConfirmLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+                <p style="font-weight: 600; color: red; text-align: center; margin-bottom: 0">注意：本操作不可逆转，请确认！</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="edit-coupon-confirm-save-btn" class="btn btn-success" data-dismiss="modal">确认</button>
+                <button type="button" id="edit-coupon-confirm-close-btn" class="btn btn-success" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts
+{
+    <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
+    <script src="~/vendors/select2/select2.min.js"></script>
+    <script>
+        let selectedCouponId = undefined;
+        let selectedUserId = undefined;
+        const userEntities = @Html.Raw(Json.Serialize(users));
+        const userOptions = userEntities.map(u => {
+            return {
+                id: u.id,
+                text: u.name + " - " + u.orderStartNumber
+            }
+        });
+        const couponEntities = @Html.Raw(Json.Serialize(Model.Coupons));
+        let actionToConfirm = undefined;
+
+        function initializeSetUserModal(id) {
+            selectedCouponId = id;
+            selectedUserId = undefined;
+            $('#set-user-save-btn').attr('disabled', true);
+        }
+
+        $('#set-user-save-btn').click(() => {
+            if (selectedCouponId && selectedUserId)
+            {
+                fetch('@Url.Action("SetCouponUser", "Order")', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        couponId: selectedCouponId,
+                        userId: selectedUserId,
+                        content: $('#coupon_batch_email_content').val()
+                    })
+                })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.data && result.error === null) {
+                        if (selectedUserId) {
+                            const u = userEntities.filter(e => e.id === selectedUserId)[0];
+                            if (u) {
+                                $('#set-user-btn-' + selectedCouponId).text(`${u.name} - ${u.orderStartNumber}`);
+                                $('#edit-coupon-status-' + selectedCouponId).text('已指定用户')
+                            }
+                        }
+                    }
+                })
+            }
+        });
+
+        $('#edit-coupon-confirm-save-btn').click(() => {
+            if (actionToConfirm) {
+                actionToConfirm();
+            }
+            actionToConfirm = undefined;
+        });
+
+        $('#edit_coupon_anonymous_btn').click(() => {
+            actionToConfirm = () => $.post('@Url.Action("SetCouponBatchAnonymous")',
+                {
+                    id: @Model.Id,
+                    anonymous: true
+                },
+                function(result) {
+                    location.reload();
+                }
+            );
+        });
+        $('#edit_coupon_not_anonymous_btn').click(() => {
+            actionToConfirm = () => $.post('@Url.Action("SetCouponBatchAnonymous")',
+                {
+                    id: @Model.Id,
+                    anonymous: false
+                },
+                function(result) {
+                    location.reload();
+                }
+            );
+        });
+
+        $('#edit_coupon_print_btn').click(() => {
+            actionToConfirm = () => $.post('@Url.Action("SetCouponPrinted")',
+                {
+                    couponBatchId: @Model.Id
+                },
+                function(result) {
+                    if (result.error && result.error.text) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        $.toast({
+                            heading: '状态更新成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+                        setTimeout(() => { window.location.reload(); }, 2 * 1000);
+                    }
+                }
+            );
+        });
+
+        $('#edit_coupon_mail_btn').click(() => {
+            actionToConfirm = () => $.post('@Url.Action("SetCouponMailed")',
+                {
+                    couponBatchId: @Model.Id
+                },
+                function(result) {
+                    if (result.error && result.error.text) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        $.toast({
+                            heading: '状态更新成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+                        setTimeout(() => { window.location.reload(); }, 2 * 1000);
+                    }
+                }
+            );
+        });
+        
+        $('#coupon_batch_save_email_btn').click(() => {
+            $.post('@Url.Action("SaveCouponBatchEmailContent")',
+                {
+                    couponBatchId: @Model.Id,
+                    emailContent: $('#coupon_batch_email_content').val()
+                },
+                function(result) {
+                    if (result.error && result.error.text) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        $.toast({
+                            heading: '状态更新成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+                        setTimeout(() => { window.location.reload(); }, 2 * 1000);
+                    }
+                }
+            );
+        });
+
+        $('#coupon_batch_save_sms_btn').click(() => {
+            $.post('@Url.Action("SaveCouponBatchSmsContent")',
+                {
+                    couponBatchId: @Model.Id,
+                    smsContent: $('#coupon_batch_sms_content').val()
+                },
+                function(result) {
+                    if (result.error && result.error.text) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        $.toast({
+                            heading: '状态更新成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+                        setTimeout(() => { window.location.reload(); }, 2 * 1000);
+                    }
+                }
+            );
+        });
+
+        $('#edit_coupon_save_btn').click(() => {
+            const validFrom = $('#edit_coupon_valid_from_input').val();
+            const validUntil = $('#edit_coupon_valid_until_input').val();
+            const minimumPrice = $('#edit_coupon_minimum_price_input').val();
+            const name = $('#edit_coupon_name_input').val();
+            $.post('@Url.Action("Save", "CouponBatch")',
+                {
+                    id: @Model.Id,
+                    validFrom,
+                    validUntil,
+                    minimumPrice,
+                    name
+                },
+                function(result) {
+                    if (result.error && result.error.text) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        $.toast({
+                            heading: '更新成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+                    }
+                }
+            );
+        });
+        
+        $(document).ready(() => {
+            $('#user-select').select2({data: userOptions});
+            $('#user-select').on('select2:select', e => {
+                selectedUserId = parseInt(e.params.data.id);
+                $('#set-user-save-btn').attr('disabled', false);
+            });
+            couponEntities.forEach(c => {
+                if (c.assignedUserId) {
+                    const u = userEntities.filter(e => e.id === c.assignedUserId)[0];
+                    if (u) {
+                        $('#set-user-btn-' + c.id).text(`${u.name} - ${u.orderStartNumber}`);
+                    }
+                }
+            });
+
+            const uploader = $('.photo-uploader');
+            uploader.cropit({
+                imageState: { src: uploader.data('photourl') },
+                imageBackground: true,
+                imageBackgroundBorderWidth: 15,
+                smallImage: 'allow',
+                allowDragNDrop: false,
+            });
+
+            $('.photo-uploader .select').click(function() {
+                $(this).closest('.photo-uploader').find('.cropit-image-input').click();
+
+                return false;
+            });
+
+            $('.photo-uploader .upload').click(function () {
+                const uploader = $(this).closest('.photo-uploader');
+                const photoData = uploader.cropit('export');
+                const couponBatchId = uploader.data('couponbatchid');
+                const uploadPhotoUrl = '@Url.Action("UploadCouponBatchPhoto")';
+                $.post(uploadPhotoUrl,
+                    {
+                        couponBatchId,
+                        photoData
+                    },
+                    function(result) {
+                        if (result.error && result.error.text) {
+                            $.toast({
+                                heading: 'Danger',
+                                text: result.error.text,
+                                showHideTransition: 'slide',
+                                icon: 'error',
+                                loaderBg: '#f2a654',
+                                position: 'mid-center'
+                            });
+                        } else {
+                            window.location.reload();
+                        }
+                    }
+                );
+                return false;
+            });
+
+            $('#coupon_batch_show_upload_btn').click(() => {
+                $('#coupon_batch_upload_section').show();
+            });
+            
+            $('#coupon_batch_hide_upload_btn').click(() => {
+                $('#coupon_batch_upload_section').hide();
+            });
+        })
+    </script>
+}

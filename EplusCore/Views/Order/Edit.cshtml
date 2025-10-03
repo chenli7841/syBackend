@@ -1,0 +1,419 @@
+﻿@using WebUI.Models
+@using WebUI.Models.ViewModels
+@using Domain.Models.Extensions
+@model WebUI.Models.ViewModels.OrderDetailEditModel
+
+@{
+    ViewData["Title"] = "运单详情";
+}
+
+
+@section Styles
+{
+    <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
+    <style>
+        i {
+            cursor: pointer
+        }
+
+        .order-edit-photo-selected {
+            border: 2px black solid;
+        }
+    </style>
+}
+
+<div class="row">
+    <div class="col-md-12 grid-margin">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">@(Model.Id > 0 ? "修改运单" : "创建运单") - @Model.State.GetDescription()</h4>
+                @using (Html.BeginForm("Save", "Order", FormMethod.Post, new { @class = "" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(r => r.Id)
+                    @Html.HiddenFor(r => r.Creator.Id)
+
+                    <p>运单信息-@Model.State.GetDescription()</p>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.RouteId, "线路", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.RouteId, new { hidden = "hidden" })
+                                    <select class="form-control" id="route-select">
+                                        <option value="">---</option>
+                                        @foreach (var route in Model.Routes)
+                                        {
+                                            if (route.IsDeleted)
+                                            {
+                                                <option value="@route.Id" disabled="disabled">@route.Name</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@route.Id">@route.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.DomesticCarrier, "国内快递公司", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.HiddenFor(r => r.DomesticCarrier)
+                                    <select class="form-control" id="domesticCarrier-select">
+                                        <option value="ems">邮政快递</option>
+                                        <option value="shunfeng">顺丰</option>
+                                        <option value="shentong">申通</option>
+                                        <option value="zhongtong">中通</option>
+                                        <option value="zhongtongkuaiyun">中通快运</option>
+                                        <option value="yunda">韵达</option>
+                                        <option value="tiantian">天天</option>
+                                        <option value="yuantong">圆通</option>
+                                        <option value="huitongkuaidi">百世快递</option>
+                                        <option value="youshuwuliu">优速</option>
+                                        <option value="suning">苏宁</option>
+                                        <option value="jd">京东</option>
+                                        <option value="debangwuliu">德邦</option>
+                                        <option value="danniao">丹鸟</option>
+                                        <option value="annengwuliu">安能</option>
+                                        <option value="zhaijisong">宅急送</option>
+                                        <option value="yimidida">壹米滴答</option>
+                                        <option value="jtexpress">极兔速递</option>
+                                        <option value="sxjdfreight">顺心捷达</option>
+                                        <option value="ndwl">南方传媒物流</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.IntCarrier, "国际快递公司", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.IntCarrier, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.OrderNumber, "运单号", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.OrderNumber, new { @class = "form-control", @readonly = "readonly" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.DomesticNumber, "国内主单号", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.DomesticNumber, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.IntNumber, "国际单号", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.IntNumber, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => Model.RecipientAddress, "收件地址", new { @class = "col-sm-1 col-form-label" })
+                                <div class="col-sm-11">
+                                    @Html.TextBoxFor(r => Model.RecipientAddress, new { @class = "form-control", @disabled = true })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr />
+                    <p>内件信息<i class="fa fa-plus-circle add-item" style="color: green"></i></p>
+                    <div id="items-listing">
+                        @for (var i = 0; i < Model.ItemEditModels.Count; i++)
+                        {
+                            @await Html.PartialAsync("OrderItem", new OrderItemWithIndex()
+                            {
+                              Item = Model.ItemEditModels[i],
+                              Index = i,
+                              AllCategories = Model.ItemCategories
+                            })
+                        }
+                    </div>
+
+                    <hr />
+                    <p>运输尺寸及费用</p>
+                    <div class="row">
+                        <div class="col-4">
+                            @Html.LabelFor(r => r.CustomerNotes, "客户备注", new { @class = "col-form-label" })
+                            @Html.TextAreaFor(r => r.CustomerNotes, new { @class = "form-control" })
+                        </div>
+                        <div class="col-8" id="baggage-listing">
+                            @for (var i = 0; i < Model.BaggageEditModels.Count; i++)
+                            {
+                                @await Html.PartialAsync("OrderBaggage", new OrderBaggageWithIndex()
+                                {
+                                  Baggage = Model.BaggageEditModels[i],
+                                  Index = i
+                                })
+                            }
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-4">
+                            @Html.LabelFor(r => r.WarehouseNotes, "仓库备注", new { @class = "col-form-label" })
+                            @Html.TextAreaFor(r => r.WarehouseNotes, new { @class = "form-control" })
+                            @Html.LabelFor(r => r.ActionReason, "操作原因", new { @class = "col-form-label" })
+                            @Html.TextAreaFor(r => r.ActionReason, new { @class = "form-control" })
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <button class="btn btn-primary" id="move_pending_confirmation" data-state="PendingConfirmation">待确认</button>
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-warning" id="move_illegal" data-state="Illegal">违禁品</button>
+                                </div>
+                            </div>
+                            <hr />
+                            <label class="col-form-label">批次</label>
+                            @foreach (var batch in Model.BatchBoxes)
+                            {
+                                <div>
+                                    @Html.ActionLink($"{batch.BatchName}-{batch.BoxNumber}", "EditBox", "Batch", new { boxId = batch.BoxId })
+                                </div>
+                            }
+                        </div>
+                        <div class="col-8">
+                            @await Html.PartialAsync("OrderCost", Model)
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-success">保存</button>
+                                </div>
+                                @if (Model.Id > 0)
+                                {
+                                    <div class="col-md-2">
+                                        <button class="btn btn-primary" id="update_cost">更新费用</button>
+                                    </div>
+
+                                    <div class="col-md-2">
+                                        @Html.ActionLink("打印", "PrintBarcode", "Order", new { id = Model.Id }, new { @class = "btn btn-primary" })
+                                    </div>
+                                }
+
+                                <div class="col-md-2">
+                                    @Html.ActionLink("取消", "Inventory", "Order", new { orderState = Model.State }, new { @class = "btn btn-secondary" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.Id > 0)
+                {
+                    <hr />
+                    <p>照片</p>
+                    <div class="row">
+                        @if (Model.Photos.Count() == 1)
+                        {
+                            <div style='margin-top: 20px; margin-bottom: 20px; width: 70%; margin-left: auto; margin-right: auto;'><img style="width: 100%;" photoId="@Model.Photos.First().Id" class='order-edit-photo' src='@Model.Photos.First().Url' /></div>
+                            <!--
+                            <div class="photo-uploader" style="width: 80%; margin-left: auto; margin-right: auto; margin-top: 20px;" data-photoid="@(Model.Photos.First().Id)" data-photourl='@(Model.Photos.First().Url + "?t=" + DateTime.UtcNow.Second)'>
+                                <div class="cropit-preview" style="height: 450px;"></div>
+
+                                <input type="range" class="cropit-image-zoom-input" style="margin-top: 30px" />
+
+                                <input type="file" class="cropit-image-input" style="display: none" />
+
+                                <button class="btn btn-info select">选择</button>
+                                <button class="btn btn-primary upload">上传</button>
+
+                            </div>
+                            -->
+                        }
+                        @if (Model.Photos.Count() > 1)
+                        {
+                            <div style='margin-top: 20px; margin-bottom: 20px;'>
+                            @foreach (var photo in Model.Photos)
+                            {
+                                <img style='width: 48%; margin: 5px;' photoId="@photo.Id" class='order-edit-photo' src="@photo.Url"/>
+                            }
+                            </div>
+                        }
+                    </div>
+                    <div id='order_edit_upload_section'>
+                            <div class="photo-uploader" style="width: 80%; margin: 20px auto 0 auto;" data-orderid="@Model.Id" data-photourl=''>
+                                <div class="cropit-preview" style="height: 450px; border: 1px #999 dashed;"></div>
+
+                                <input type="range" class="cropit-image-zoom-input" style="margin-top: 30px" />
+
+                                <input type="file" class="cropit-image-input" style="display: none" />
+
+                                <button class="btn btn-info select">选择</button>
+                                <button class="btn btn-primary upload">上传</button>
+
+                            </div>
+                    </div>
+                    <div class="row">
+                        <button id='order_edit_add_photo_button' class="btn btn-primary" style='margin: 20px;'>添加</button>
+                        <button id='order_edit_delete_photo_button' class="btn btn-primary" style='margin: 20px;'>删除</button>
+                    </div>
+
+                    <hr />
+                    <p>系统运单轨迹记录</p>
+                    <table id="status" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>时间</th>
+                                <th>操作</th>
+                                <th>操作员</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var operation in Model.Operations.OrderByDescending(os => os.Timestamp))
+                            {
+                                <tr>
+                                    <td>@operation.Timestamp.ToString("yyyy/MM/dd HH:mm:ss")</td>
+                                    <td>@operation.Action</td>
+                                    <td>@operation.Operator</td>
+                                </tr>
+
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
+    <script src="~/js/orderDetail.js"></script>
+    <script>
+        $(document).ready(function () {
+            const uploaders = $('.photo-uploader');
+            for (let i = 0, il = uploaders.length; i < il; i++) {
+                const uploader = $(uploaders[i]);
+                uploader.cropit({
+                    imageState: { src: uploader.data('photourl') },
+                    imageBackground: true,
+                    imageBackgroundBorderWidth: 15,
+                    smallImage: 'allow',
+                    allowDragNDrop: false,
+                });
+            }
+             
+            $('.photo-uploader .select').click(function() {
+                $(this).closest('.photo-uploader').find('.cropit-image-input').click();
+
+                return false;
+            });
+            $('.photo-uploader .upload').click(function () {
+                const uploader = $(this).closest('.photo-uploader');
+                const photoData = uploader.cropit('export');
+                const orderId = uploader.data('orderid');
+                const uploadPhotoUrl = '@Url.Action("UploadPhoto")';
+                $.post(uploadPhotoUrl,
+                    {
+                        orderId,
+                        photoData
+                    },
+                    function(result) {
+                        if (result.error && result.error.text) {
+                            $.toast({
+                                heading: 'Danger',
+                                text: result.error.text,
+                                showHideTransition: 'slide',
+                                icon: 'error',
+                                loaderBg: '#f2a654',
+                                position: 'mid-center'
+                            });
+                        } else {
+                            window.location.reload();
+                        }
+                    });
+                return false;
+            });
+            $('#order_edit_upload_section').hide();
+            $('.order-edit-photo').click(function(e) {
+                $('.order-edit-photo').attr('class', 'order-edit-photo');
+                $(e.target).attr('class', 'order-edit-photo-selected order-edit-photo');
+            });
+        });
+    </script>
+    <script>
+        orderDetails.init({
+            addBaggageUrl: '@Url.Action("AddBaggage")',
+            addItemUrl: '@Url.Action("AddItem")',
+            calculateItemCostUrl: '@Url.Action("CalculateItemCost")'
+        });
+
+        $('#move_pending_confirmation, #move_illegal').click(function () {
+            const id = $('#Id').val();
+            const state = $(this).data('state');
+            const reason = $('#ActionReason').val();
+
+            $.ajax({
+                type: "POST",
+                url: '@Url.Action("SetOrderState")',
+                data: {id, state, reason},
+                success: function (result) {
+                    if (result.error) {
+                        alert('Error!' + result.error);
+                    } else {
+                        $.toast({
+                            heading: 'Success',
+                            text: '操作成功',
+                            showHideTransition: 'slide',
+                            icon: 'success',
+                            loaderBg: '#f2a654',
+                            position: 'mid-center'
+                        });
+                    }
+                },
+                error: function () {
+                    alert('Error!');
+                }
+            });
+
+            return false;
+        });
+
+        $('#order_edit_add_photo_button').click(() => {
+            $('#order_edit_upload_section').show();
+        });
+
+        $('#order_edit_delete_photo_button').click(() => {
+            const length = $('.order-edit-photo-selected').length;
+            if (length === 0) return;
+            const photoId = $('.order-edit-photo-selected').attr('photoId');
+            const deletePhotoUrl = '@Url.Action("DeletePhoto")';
+            $.post(deletePhotoUrl,
+                { photoId, orderId: @Model.Id },
+                function(result) {
+                    if (result.error && result.error.text) {
+                        $.toast({
+                            heading: 'Danger',
+                            text: result.error.text,
+                            showHideTransition: 'slide',
+                            icon: 'error',
+                            loaderBg: '#f2a654',
+                            position: 'mid-center'
+                        });
+                    } else {
+                        window.location.reload();
+                    }
+                }
+            );
+        });
+    </script>
+}

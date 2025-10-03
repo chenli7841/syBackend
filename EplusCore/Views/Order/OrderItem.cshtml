@@ -1,0 +1,87 @@
+﻿@model WebUI.Models.ViewModels.OrderItemWithIndex
+
+@{
+  var index = Model.Index;
+  var item = Model.Item;
+  var allCategories = Model.AllCategories;
+}
+
+<div class="row item">
+  <input data-val="true" data-val-required="The Id field is required." hidden="hidden" id=@($"ItemEditModels_{index}__Id") name=@($"ItemEditModels[{index}].Id") type="text" value="@item.Id">
+  <input class="action-input" data-val="true" data-val-required="The Action field is required." hidden="hidden" id=@($"ItemEditModels_{index}__Action") name=@($"ItemEditModels[{index}].Action") type="text" value="@item.Action">
+  <div class="col-md-2">
+    <div class="form-group row">
+      <label class="col-sm-3 col-form-label" for=@($"ItemEditModels_{index}__Name")>名称</label>
+      <div class="col-sm-9">
+        <input class="form-control" id=@($"ItemEditModels_{index}__Name") name=@($"ItemEditModels[{index}].Name") type="text" value="@item.Name">
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="form-group row">
+      <label class="col-sm-3 col-form-label" for=@($"ItemEditModels_{index}__Brand")>品牌</label>
+      <div class="col-sm-9">
+        <input class="form-control" id=@($"ItemEditModels_{index}__Brand") name=@($"ItemEditModels[{index}].Brand") type="text" value="@item.Brand">
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="form-group row">
+      <label class="col-sm-3 col-form-label" for=@($"ItemEditModels_{index}__Material")>材质</label>
+      <div class="col-sm-9">
+        <input class="form-control" id=@($"ItemEditModels_{index}__Material") name=@($"ItemEditModels[{index}].Material") type="text" value="@item.Material" hidden="hidden">
+        <select class="form-control item-material-select">
+          <option value="金属">金属</option>
+          <option value="木质">木质</option>
+          <option value="棉麻">棉麻</option>
+          <option value="塑料">塑料</option>
+          <option value="玻璃">玻璃</option>
+          <option value="针织">针织</option>
+          <option value="皮革">皮革</option>
+          <option value="纤维">纤维</option>
+          <option value="液体">液体</option>
+          <option value="纸质">纸质</option>
+          <option value="石质">石质</option>
+          <option value="硅胶">硅胶</option>
+          <option value="食品">食品</option>
+          <option value="药品">药品</option>
+          <option value="化学材料">化学材料</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="form-group row">
+      <label class="col-sm-3 col-form-label" for=@($"ItemEditModels_{index}__Category")>种类</label>
+      <div class="col-sm-9">
+        <input class="form-control" id=@($"ItemEditModels_{index}__Category") name=@($"ItemEditModels[{index}].Category") type="text" value="@item.Category" hidden="hidden">
+        <select class="form-control item-category-select">
+          @foreach (var category in allCategories)
+          {
+            <option value="@category">@category</option>
+          }
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="form-group row">
+      <label class="col-sm-3 col-form-label" for=@($"ItemEditModels_{index}__ClaimPrice")>申报价值</label>
+      <div class="col-sm-9">
+        <input class="form-control" id=@($"ItemEditModels_{index}__ClaimPrice") name=@($"ItemEditModels[{index}].ClaimPrice") type="text" value="@item.ClaimPrice.ToString("0.00")">
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="form-group row">
+      <label class="col-sm-3 col-form-label" for=@($"ItemEditModels_{index}__Quantity")>数量</label>
+      <div class="col-sm-7">
+        <input class="form-control" data-val="true" data-val-required="The Quantity field is required." id=@($"ItemEditModels_{index}__Quantity") name=@($"ItemEditModels[{index}].Quantity") type="number" value="@item.Quantity">
+      </div>
+      <div class="col-sm-2">
+        <i class="fa fa-trash-o fa-lg delete-item" style="color: red"></i>
+      </div>
+    </div>
+  </div>
+
+</div>

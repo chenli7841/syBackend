@@ -1,0 +1,225 @@
+@using Domain.Enums
+@model WebUI.Models.ViewModels.OrderDraftViewModel
+@using Domain.Entities
+
+@{
+    ViewData["Title"] = "折扣码运单";
+}
+
+@section Styles
+{
+    <link rel="stylesheet" href="~/vendors/select2-bootstrap-theme/select2-bootstrap.min.css">
+    <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
+}
+
+@{
+  var routes = (IEnumerable<RouteEntity>)ViewBag.Routes;
+}
+
+<div class="row">
+    <div class="col-md-12 grid-margin">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">批量创建折扣码运单</h4>
+                
+                    @Html.AntiForgeryToken()
+
+                    <p>运单信息</p>                                
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group row">
+                                <label class="col-sm-6 col-md-3 col-form-label" for="discont-order-domestic-number-prefix">国内单号前缀*</label>
+                                <div class="col-sm-6 col-md-9">
+                                    <input id="discont-order-domestic-number-prefix" class="form-control" onkeyup="onInputChange()" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                <label class="col-sm-3 col-form-label" for="discont-order-domestic-number-start">首单号*</label>
+                                <div class="col-sm-9">
+                                    <input id="discont-order-domestic-number-start" class="form-control" onkeyup="onInputChange()" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                <label class="col-sm-3 col-form-label" for="discont-order-domestic-number-end">尾单号*</label>
+                                <div class="col-sm-9">
+                                    <input id="discont-order-domestic-number-end" class="form-control" onkeyup="onInputChange()" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.RouteId, "线路*", new { @class = "col-sm-6 col-md-3 col-form-label" })
+                                <div class="col-sm-6 col-md-9">
+                                    @Html.TextBoxFor(r => r.RouteId, new { hidden = "hidden" })
+                                    <select class="form-control" id="discount-order-route-select" disabled>
+                                        @foreach (var route in routes)
+                                        {
+                                            @if (route.Name == "活动优惠卷")
+                                            {
+                                                <option value="@route.Id" selected>@route.Name</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@route.Id">@route.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                <label class="col-sm-3 col-form-label" for="discont-order-batch-name">批次名*</label>
+                                <div class="col-sm-9">
+                                    <input id="discont-order-batch-name" class="form-control" onkeyup="onInputChange()" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group row">
+                                <label class="col-sm-3 col-form-label" for="discont-order-valid-from">有效期开始</label>
+                                <div class="col-sm-9">
+                                    <input class="form-control" id="discont-order-valid-from" name="ValidFrom" type="date" value="">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group row">
+                                <label class="col-sm-3 col-form-label" for="discont-order-valid-until">有效期结束</label>
+                                <div class="col-sm-9">
+                                    <input class="form-control" id="discont-order-valid-until" name="ValidUntil" type="date" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group row">
+                                <label class="col-sm-3 col-form-label" for="discont-order-shipping-cost">优惠额度*</label>
+                                <div class="col-sm-9">
+                                    <input class="form-control" id="discont-order-shipping-cost" name="ShippingCost" type="number" value="">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group row">
+                                <label class="col-sm-3 col-form-label" for="discont-order-minimum-price">最低消费额</label>
+                                <div class="col-sm-9">
+                                    <input class="form-control" id="discont-order-minimum-price" name="MinimumPrice" type="number" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12" id="discount-order-message" style="text-align: center">请输入国内单号前缀</div>
+                    </div>
+                    <br />
+
+                    <div class="row">
+                        <div class="col-md-2">
+                            <button id="batchCreateDiscountOrderBtn" type="submit" class="btn btn-success" disabled>保存</button>
+                        </div>
+                        <div class="col-md-2">
+                            @Html.ActionLink("取消", "Inventory", "Order", new { orderState = OrderState.Draft }, new { @id="batchCreateDiscountOrderCancelBtn", @class = "btn btn-secondary" })
+                        </div>
+                    </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
+    <script>
+        function onInputChange() {
+            const prefix = $('#discont-order-domestic-number-prefix').val();
+            const start = $('#discont-order-domestic-number-start').val();
+            const end = $('#discont-order-domestic-number-end').val();
+            const batchName = $('#discont-order-batch-name').val();
+            if (prefix.trim() === '') {
+                $('#discount-order-message').text('请输入国内单号前缀');
+                $('#batchCreateDiscountOrderBtn').attr('disabled', true);
+                return;
+            }
+            if (start.trim() === '') {
+                $('#discount-order-message').text('请输入首单号');
+                $('#batchCreateDiscountOrderBtn').attr('disabled', true);
+                return;
+            }
+            if (end.trim() === '') {
+                $('#discount-order-message').text('请输入尾单号');
+                $('#batchCreateDiscountOrderBtn').attr('disabled', true);
+                return;
+            }
+            if (isNaN(start)) {
+                $('#discount-order-message').text('首单号需要是数字');
+                $('#batchCreateDiscountOrderBtn').attr('disabled', true);
+                return;
+            }
+            if (isNaN(end)) {
+                $('#discount-order-message').text('尾单号需要是数字');
+                $('#batchCreateDiscountOrderBtn').attr('disabled', true);
+                return;
+            }
+            if (start.length != end.length) {
+                $('#discount-order-message').text('首单号和尾单号必须一样长度');
+                $('#batchCreateDiscountOrderBtn').attr('disabled', true);
+                return;
+            }
+            if (batchName.trim() === '') {
+                $('#discount-order-message').text('请输入批次名');
+                $('#batchCreateDiscountOrderBtn').attr('disabled', true);
+            }
+            const startNumber = parseInt(start);
+            const endNumber = parseInt(end);
+            if (startNumber > endNumber) {
+                $('#discount-order-message').text('首单号和不能大于尾单号');
+                $('#batchCreateDiscountOrderBtn').attr('disabled', true);
+                return;
+            }
+            const numberOfOrders = endNumber - startNumber + 1;
+            $('#discount-order-message').text(`当前输入将创建 ${numberOfOrders} 条新运单, 从 ${prefix}${start} 到 ${prefix}${end}`);
+            $('#batchCreateDiscountOrderBtn').attr('disabled', false);
+        }
+        $(document).ready(() => {
+            $('#batchCreateDiscountOrderBtn').click(() => {
+                const prefix = $('#discont-order-domestic-number-prefix').val();
+                const start = $('#discont-order-domestic-number-start').val();
+                const end = $('#discont-order-domestic-number-end').val();
+                const routeId = $('#discount-order-route-select').val();
+                const batchName = $('#discont-order-batch-name').val();
+                const validFrom = $('#discont-order-valid-from').val();
+                const validUntil = $('#discont-order-valid-until').val();
+                const shippingCost = $('#discont-order-shipping-cost').val();
+                const minimumPrice = $('#discont-order-minimum-price').val();
+                $.post('@Url.Action("BatchCreateDiscountOrder")',
+                    { prefix, start, end, routeId, batchName, validFrom, validUntil, shippingCost, minimumPrice },
+                    function(result) {
+                        if (result.error) {
+                            $.toast({
+                                heading: result.error.text,
+                                position: 'mid-center',
+                                icon: 'error'
+                            });
+                        } else {
+                            document.getElementById('batchCreateDiscountOrderCancelBtn').click();
+                        }
+                    }
+                );
+            });
+
+            const now = new Date();
+            $('#discont-order-batch-name').val(`${now.getUTCMonth()+1}月${now.getUTCDate()}日优惠券`);
+        })
+    </script>
+}

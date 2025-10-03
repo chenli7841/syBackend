@@ -1,0 +1,441 @@
+@using Domain.Models.Extensions
+@model WebUI.Models.ViewModels.PickUpLocationInventoryViewModel
+
+@{
+    ViewData["Title"] = "取货点管理";
+}
+
+@section Styles
+{
+    <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
+    <style>
+        .pickupInventoryEditBtn, .pickupInventoryDeleteBtn, .pickupInventoryTransferUserBtn, .pickupInventoryTotalWeightTitleBtn {
+            border: none;
+            background: transparent;
+        }
+        .pickupInventoryTransferUserBtn, .pickupInventoryTotalWeightTitleBtn {
+            color: #6200EE;
+            cursor: pointer;
+        }
+        .updateTotalWeightMonthSelect {
+            border: none;
+            margin-left: 8px;
+            margin-right: 8px;
+        }
+    </style>
+}
+
+<div class="row">
+    <div class="col-md-12 grid-margin">
+        <div class="card">
+            <div class="card-body order-card-body">
+                <div class="table-responsive">
+                    <table id="route-listing" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>名称</th>
+                                <th>类型</th>
+                                <th>地址</th>
+                                <th>地区附加费率</th>
+                                <th>用户数</th>
+                                <th><button class='pickupInventoryTotalWeightTitleBtn' onclick="initializeUpdateTotalWeightFilterModal()" data-toggle="modal" data-target="#updateTotalWeightFilterModal">总重量</button></th>
+                                <th>显示</th>
+                                <th>序号</th>
+                                <th>编辑</th>
+                                <th>删除</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var location in Model.Locations)
+                            {
+                                <tr>
+                                    <td>@location.Name</td>
+                                    <td>@(location.IsSpecial ? "高级用户" : "平台")</td>
+                                    <td>@location.DetailArea</td>
+                                    <td>@location.DistrictAdditionalCost</td>
+                                    <td><button class='pickupInventoryTransferUserBtn' onclick="initializeBatchTransferUserModal(@location.Id, '@location.Name')" data-toggle="modal" data-target="#batchTransferUserModal">@location.NumberOfUsers</button></td>
+                                    <td>@location.RecentItemTotalWeightKg</td>
+                                    <td>
+                                        <a href='@Url.Action("TogglePickUpLocationVisibility")?id=@location.Id'>
+                                            @if (location.IsDel)
+                                            {
+                                                <i class="fa fa-times fa-lg" style="color: #fc0324de"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="fa fa-check fa-lg" style="color: green"></i>
+                                            }
+                                        </a> 
+                                    </td>
+                                    <td>@location.Number</td>
+                                    <td>
+                                        <button class='pickupInventoryEditBtn' onclick="initializeModal(@location.Id, '@location.Name', '@location.DetailArea', @location.DistrictAdditionalCost, @location.Number, '@location.Note')" data-toggle="modal" data-target="#editLocationModal"><i class="fa fa-edit fa-lg"></i></button>
+                                    </td>
+                                    <td>
+                                        <button class='pickupInventoryDeleteBtn' onclick="initializeDeleteModal(@location.Id, '@location.Name')" data-toggle="modal" data-target="#deleteLocationModal"><i class="fa fa-trash fa-lg"></i></button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="editLocationModal" tabindex="-1" role="dialog" aria-labelledby="editLocationModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="row">
+                        <label class="col-form-label col-4">名称：</label>
+                        <input class="form-control col-8" id="edit-location-name-input" />
+                    </div>
+                    <div class="row">
+                        <label class="col-form-label col-4">地址：</label>
+                        <input class="form-control col-8" id="edit-location-address-input" />
+                    </div>
+                    <div class="row">
+                        <label class="col-form-label col-4">地区附加费率：</label>
+                        <input class="form-control col-8" id="edit-location-district-additional-cost-rate-input" />
+                    </div>
+                    <div class="row">
+                        <label class="col-form-label col-4">序号：</label>
+                        <input class="form-control col-8" id="edit-location-sequence-input" />
+                    </div>
+                    <div class="row">
+                        <label class="col-form-label col-4">备注：</label>
+                        <textarea class="form-control col-8" id="edit-location-note-input"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="edit-location-submit-btn" class="btn btn-success">Submit</button>
+                    <button type="button" id="edit-location-cancel-btn" class="btn btn-light" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+        <div class="modal fade" id="deleteLocationModal" tabindex="-1" role="dialog" aria-labelledby="deleteLocationModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div id='delete-modal-text' class="modal-body"></div>
+                <div class="modal-footer">
+                    <button type="button" id="delete-location-submit-btn" class="btn btn-success">Submit</button>
+                    <button type="button" id="delete-location-cancel-btn" class="btn btn-light" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="batchTransferUserModal" tabindex="-1" role="dialog" aria-labelledby="batchTransferUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="row">
+                        <label class="col-form-label col-4">当前取货点：</label>
+                        <input class="form-control col-8" id="edit-users-current-location-input" disabled />
+                    </div>
+                    <br />
+                    <div class="row">
+                        <label class="col-form-label col-4">目标取货点：</label>
+                        <select class="form-control col-8" id="edit-users-target-location-select">
+                            <option value="">---</option>
+                            @foreach (var location in Model.Locations)
+                            {
+                                <option value="@location.Id">@location.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <br />
+                    <p style="font-weight: 600; color: red; text-align: center; margin-bottom: 0">注意：本操作不可逆转，请谨慎完成！</p>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" id="batch-transfer-submit-btn" class="btn btn-success">批量修改</button>
+                    <button type="button" id="batch-transfer-cancel-btn" class="btn btn-light" data-dismiss="modal">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="updateTotalWeightFilterModal" tabindex="-1" role="dialog" aria-labelledby="updateTotalWeightFilterModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="row">
+                        <div>显示最近<select id="update-total-weight-month" class="updateTotalWeightMonthSelect">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            </select>个月的运单货物总重量。</div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" id="update-weight-filter-submit-btn" class="btn btn-success">更新</button>
+                    <button type="button" id="update-weight-filter-cancel-btn" class="btn btn-light" data-dismiss="modal">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="createModal" tabindex="-1" role="dialog" aria-labelledby="createModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="row">
+                        <label class="col-form-label col-4">名称：</label>
+                        <input class="form-control col-8" id="create-location-name-input" />
+                    </div>
+                    <div class="row">
+                        <label class="col-form-label col-4">地址：</label>
+                        <input class="form-control col-8" id="create-location-address-input" />
+                    </div>
+                    <div class="row">
+                        <label class="col-form-label col-4">省份：</label>
+                        <select class="form-control col-8" id="create-location-area-select">
+                            <option value="">---</option>
+                            @foreach (var area in Model.Areas)
+                            {
+                                <option value="@area.Id">@area.FullName</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="row">
+                        <label class="col-form-label col-4">坐标：</label>
+                        <input class="form-control col-8" id="create-location-lat-lng-input" placeholder="43.03161216673412, -81.29636931662094" />
+                    </div>
+                    <div class="row">
+                        <label class="col-form-label col-4">地区附加费率：</label>
+                        <input class="form-control col-8" id="create-location-district-additional-cost-rate-input" />
+                    </div>
+                    <div class="row">
+                        <label class="col-form-label col-4">序号：</label>
+                        <input class="form-control col-8" id="create-location-sequence-input" />
+                    </div>
+                    <div class="row">
+                        <label class="col-form-label col-4">代理：</label>
+                        <select class="form-control col-8" id="create-location-belongs-to-select">
+                            <option value="">---</option>
+                            @foreach (var agent in Model.Agents)
+                            {
+                                <option value="@agent.Id">@agent.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="row">
+                        <label class="col-form-label col-4">备注：</label>
+                        <textarea class="form-control col-8" id="create-location-note-input"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" id="create-location-submit-btn" class="btn btn-success">创建</button>
+                    <button type="button" id="create-location-cancel-btn" class="btn btn-light" data-dismiss="modal">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
+
+    <script>
+        const version = location.search
+            .replace('?', '')
+            .split('&')
+            .map(p => p.split('='))
+            .find(p => p[0] === 'version')?.[1] || '1';
+        const numberOfMonths = location.search
+            .replace('?', '')
+            .split('&')
+            .map(p => p.split('='))
+            .find(p => p[0] === 'numberOfMonths')?.[1] || 3;
+
+
+        $('#route-listing').DataTable({
+        paging: false,
+        info: false,
+        searching: false,
+        ordering: false
+        });
+        $('#location_inventory_update_visibility_btn').click(() => {
+            $.ajax({
+                type: "POST",
+                url: '@Url.Action("UpdatePickUpLocationVisibility")',
+                data: {id, state, reason},
+                success: function (result) {
+                }
+            });
+        });
+        let editPickupLocationId = 0;
+        function initializeModal(id, name, address, rate, sequence, note) {
+            editPickupLocationId = id;
+            $('#edit-location-name-input').val(name);
+            $('#edit-location-address-input').val(address);
+            $('#edit-location-district-additional-cost-rate-input').val(rate);
+            $('#edit-location-sequence-input').val(sequence);
+            $('#edit-location-note-input').text(note);
+
+        }
+        let deletePickupLocationId = 0;
+        function initializeDeleteModal(id, name) {
+            deletePickupLocationId = id;
+            $('#delete-modal-text').text(`你确定要删除 ${name} 吗？`)
+        }
+        let currentSourcePickupLocationId = 0;
+        function initializeBatchTransferUserModal(id, name) {
+            currentSourcePickupLocationId = id;
+            $('#edit-users-current-location-input').val(name);
+        }
+        function initializeUpdateTotalWeightFilterModal() {
+            let params = window.location.search.split('numberOfMonths=');
+            if (params.length >= 2)
+            {
+                let currentNumberOfMonths = params[1].split('&')[0];
+                $('#update-total-weight-month').val(currentNumberOfMonths);
+            } else {
+                $('#update-total-weight-month').val(3);
+            }
+        }
+        function initializeCreateModal() {
+        }
+        $('#edit-location-submit-btn').click(() => {
+            let name = $('#edit-location-name-input').val();
+            let address = $('#edit-location-address-input').val();
+            let districtAdditionalRate = $('#edit-location-district-additional-cost-rate-input').val();
+            let sequence = $('#edit-location-sequence-input').val();
+            let note = $('#edit-location-note-input').val();
+            $.ajax({
+                type: "POST",
+                url: '@Url.Action("Update")',
+                data: {id: editPickupLocationId, name, address, districtAdditionalRate, sequence, note},
+                success: function (result) {
+                    if (result.error) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        window.location.reload();
+                    }
+                }
+            });
+        });
+        $('#create-location-submit-btn').click(() => {
+            let error = '';
+            let name = $('#create-location-name-input').val();
+            if (name.trim() === '') {
+                error = '请输入取货点名称';
+            }
+            let address = $('#create-location-address-input').val();
+            if (address.trim() === '') {
+                error = '请输入取货点地址';
+            }
+            let districtAdditionalRate = $('#create-location-district-additional-cost-rate-input').val();
+            if (name.trim() === '') {
+                error = '请输入取货点地区附加费，若没有费率，请输入0。';
+            }
+            let sequence = $('#create-location-sequence-input').val();
+            if (name.trim() === '') {
+                error = '请输入取货点序号';
+            }
+            let latAndLng = $('#create-location-lat-lng-input').val();
+            if (name.trim() === '') {
+                error = '请输入取货点坐标，可以自行在Google Map查';
+            }
+            let areaId = $('#create-location-area-select').val();
+            if (areaId === '') {
+                error = '请选择所属省份';
+            }
+            let belongsToId = $('#create-location-belongs-to-select').val();
+            if (error !== '') {
+                $.toast({
+                    heading: error,
+                    position: 'mid-center',
+                    icon: 'error'
+                });
+                return;
+            }
+            let note = $('#create-location-note-input').val();
+            $.ajax({
+                type: "POST",
+                url: '@Url.Action("Create")',
+                data: {name, address, districtAdditionalRate, sequence, version: 2, latAndLng, areaId, belongsToId, note},
+                success: function (result) {
+                    if (result.error) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        window.location.reload();
+                    }
+                }
+            });
+        });
+        $('#delete-location-submit-btn').click(() => {
+            $.ajax({
+                type: "POST",
+                url: '@Url.Action("Delete")',
+                data: {id: deletePickupLocationId},
+                success: function (result) {
+                    if (result.error) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        window.location.reload();
+                    }
+                }
+            });
+        })
+        $('#batch-transfer-submit-btn').click(() => {
+            let targetLocationId = $('#edit-users-target-location-select').val();
+            $.ajax({
+                type: "POST",
+                url: '@Url.Action("TransferUsers")',
+                data: {fromPickupLocationId: currentSourcePickupLocationId, toPickupLocationId: targetLocationId},
+                success: function (result) {
+                    if (result.error) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        window.location.reload();
+                    }
+                }
+            });
+        })
+        $('#update-weight-filter-submit-btn').click(() => {
+            let location = `/PickUpLocation/Inventory?numberOfMonths=${$('#update-total-weight-month').val()}&version=${version}`;
+            window.location.href=location;
+        })
+        if (version === '1') {
+            $('#route-listing').closest('.dataTables_wrapper').find('div.row:first-child > div:first-child')
+              .append(`
+              <a class="btn btn-primary" href="/PickUpLocation/Inventory?numberOfMonths=3&version=2">
+              换新版
+              </a>`);
+        }
+        else if (version === '2') {
+            $('#route-listing').closest('.dataTables_wrapper').find('div.row:first-child > div:first-child')
+              .append(`
+              <button class="btn btn-primary onclick="initializeCreateModal()" data-toggle="modal" data-target="#createModal">
+              添加
+              </button>
+              <a class="btn btn-primary" href="/PickUpLocation/Inventory?numberOfMonths=3&version=1">
+              换旧版
+              </a>`);
+        }
+    </script>
+}

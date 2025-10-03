@@ -1,0 +1,191 @@
+﻿@using Domain.Entities
+@model WebUI.Models.ViewModels.RouteViewModel
+
+@{
+    ViewData["Title"] = Model.Id > 0 ? "修改线路" : "创建线路";
+}
+
+@{
+    var warehouses = (IList<WarehouseEntity>)ViewBag.Warehouses;
+}
+
+<div class="row">
+    <div class="col-lg-12 grid-margin stretch-card">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">@(Model.Id > 0 ? "修改线路" : "创建线路")</h4>
+                @using (Html.BeginForm("Save", "Route", FormMethod.Post, new { @class = "", id = "route" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.TextBoxFor(r => r.Id, new { hidden = "hidden" })
+
+                    <div class="row">
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Name, "名称", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.Name, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Code, "代码", new { @class = "col-sm-2 col-form-label" })
+                                <div class="col-sm-10">
+                                    @Html.TextBoxFor(r => r.Code, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Type, "类别", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.Type, new { hidden = "hidden" })
+                                    <select class="form-control" id="type-select">
+                                        <option value="Mixed">集运</option>
+                                        <option value="Direct">直邮</option>
+                                        <option value="Group">团购</option>
+                                        <option value="China">回国</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.WarehouseId, "仓库", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.WarehouseId, new { hidden = "hidden" })
+                                    <select class="form-control" id="warehouse-select">
+                                        <option value="">---</option>
+                                        @foreach (var warehouse in warehouses)
+                                        {
+                                            <option value="@warehouse.Id">@warehouse.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.DisplaySequence, "排序", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.DisplaySequence, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.FixedPrice, "入库费", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.FixedPrice, new { @class = "form-control", type = "number", step = "0.01" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @for (var j = 0; j < Model.ItemPrices.Count; j += 6)
+                    {
+                        <div class="row">
+                            @for (var i = 0; i < 6; i++)
+                            {
+                                if (i + j >= Model.ItemPrices.Count)
+                                {
+                                    break;
+                                }
+
+                                <div class="col-md-2">
+                                    <div class="form-group row">
+                                        @Html.HiddenFor(r => r.ItemPrices[i + j].Item)
+                                        @Html.LabelFor(r => r.ItemPrices[i + j].Price, Model.ItemPrices[i + j].Item, new { @class = "col-sm-4 col-form-label" })
+                                        <div class="col-sm-8">
+                                            @Html.TextBoxFor(r => r.ItemPrices[i + j].Price, new { @class = "form-control", type = "number", step = "0.01" })
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    <div class="row">
+                        <div class="col-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Description, "说明", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextAreaFor(r => r.Description, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.SupportWechat, "客服电话", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.SupportWechat, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.SupportDescription, "客服说明", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextAreaFor(r => r.SupportDescription, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            @await Html.PartialAsync("Components/PhotoUpload/Default")
+                        </div>
+                    </div>
+                    <div class="row" style="gap: 10px;">
+                        <div>
+                            <button type="submit" class="btn btn-success">保存</button>
+                        </div>
+                        @if (Model.Id > 0)
+                        {
+                            if (Model.IsDeleted)
+                            {
+                                <div>
+                                    @Html.ActionLink("显示", "Show", "Route", new { @id = Model.Id }, new { @class = "btn btn-danger" })
+                                </div>
+                            }
+                            else
+                            {
+                                <div>
+                                    @Html.ActionLink("隐藏", "Hide", "Route", new { @id = Model.Id }, new { @class = "btn btn-danger" })
+                                </div>
+                            }
+                            <div>
+                                @Html.ActionLink("全权限取消", "RemovePermissions", new { @id = Model.Id }, new { @class = "btn btn-danger" })
+                            </div>
+                            <div>
+                                @Html.ActionLink("全权限选择", "AddAllPermissions", new { @id = Model.Id }, new { @class = "btn btn-danger" })
+                            </div>
+                            <div>
+                                @Html.ActionLink("权限管理", "Permissions", new { routeId = Model.Id }, new { @class = "btn btn-primary" })
+                            </div>
+                        }
+                        <div>
+                            @Html.ActionLink("取消", "Inventory", "Route", null, new { @class = "btn btn-secondary" })
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script>
+        $(document).ready(function () {
+            $('#type-select').val($('#Type').val());
+
+            $('#type-select').change(function () {
+                $('#Type').val(this.value);
+            });
+
+            $('#warehouse-select').val($('#WarehouseId').val());
+
+            $('#warehouse-select').change(function () {
+                $('#WarehouseId').val(this.value);
+            });
+        });
+    </script>
+}

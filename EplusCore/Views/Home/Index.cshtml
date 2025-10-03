@@ -1,0 +1,508 @@
+﻿@using Domain.Enums
+@model WebUI.Models.TodoItemInventoryResponse
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+@section Styles
+{
+    <link rel="stylesheet" href="~/vendors/select2/select2.min.css">
+    <style>
+        div.card .todo-card-body, #todo-details {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+
+        #todo-listing_wrapper div#todo-listing_filter {
+            display: none;
+        }
+
+        #todo-listing_wrapper div#todo-listing_filter input {
+            width: 600px;
+        }
+        .todo-selected_assignee {
+            margin: 16px 16px 0 0;
+        }
+        .transparent {
+            border: none;
+        }
+    </style>
+}
+
+<div class="row">
+    <div class="col-md-12 grid-margin">
+        <div class="card">
+            <div class="card-body todo-card-body">
+                <h4 class="card-title">待办事项</h4>
+                <div>
+                    <div style="display: flex; gap: 16px">
+                        <button class='btn btn-primary' data-toggle="modal" data-target="#createTodoItemModal">添加</button>
+                        <div style="width: 1px; height: 100%; background-color: #ccc; margin-left:5px; margin-right: 5px;"></div>
+                        <div>
+                            <input type="radio" name="flexRadioDefault" id="todo-inventory-filter-i-created">
+                            <label class="form-check-label" for="todo-inventory-filter-i-created">
+                                我发起的
+                            </label>
+                        </div>
+                        <div>
+                            <input type="radio" name="flexRadioDefault" id="todo-inventory-filter-me-assigned">
+                            <label class="form-check-label" for="todo-inventory-filter-me-assigned">
+                                我经办的
+                            </label>
+                        </div>
+                        <div>
+                            <input type="radio" name="flexRadioDefault" id="todo-inventory-filter-all">
+                            <label class="form-check-label" for="todo-inventory-filter-all">
+                                总待办事项
+                            </label>
+                        </div>
+
+                    </div>
+                    <div class="table-responsive">
+                        <table id='todo-listing' class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>状态</th>
+                                    <th>待办事项</th>
+                                    <th>创建日期</th>
+                                    <th>创建人</th>
+                                    <th>处理意见</th>
+                                    <th>处理结果</th>
+                                    <th>客户信息</th>
+                                    <th>经办人</th>
+                                    <th>运单信息</th>
+                                    @if (Model.CanDelete)
+                                    {
+                                        <th>删除</th>
+                                    }
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="createTodoItemModal" tabindex="-1" role="dialog" aria-labelledby="createTodoItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="row">
+                    <label class="col-form-label col-3">待办事项：</label>
+                    <textarea class="form-control col-9" id="new-todo-message-input" rows="8" style="width: 350px;"></textarea>
+                </div>
+                <br />
+                <div class="row">
+                    <label class="col-form-label col-3">客户编号：</label>
+                    <input class="form-control col-9" id="new-todo-customer-id-input" placeholder="1003" style="height: 42px;" />
+                </div>
+                <br />
+                <div class="row">
+                    <label class="col-form-label col-3">运单信息：</label>
+                    <input class="form-control col-9" id="new-todo-order-number-input" placeholder="K4559175118265" style="height: 42px;" />
+                </div>
+                <br />
+                <div class="row">
+                    <label class="col-form-label col-3">经办人：</label>
+                    <select class="form-control col-9" id="new-todo-assignee-select" style="width: 350px;">
+                        <option value="" selected>搜索经办人</option>
+                    </select>
+                </div>
+                <div class="row">
+                    <div class="col-3"></div>
+                    <div id="new-todo-assignee-selections-container" class="col-9" style="padding: 0;">
+                    </div>
+                </div>
+                <br />
+                <div class="row">
+                    <label class="col-form-label col-3">处理意见：</label>
+                    <textarea class="form-control col-9" id="new-todo-comment-input" rows="8" style="width: 350px;"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" id="new-todo-submit-btn" class="btn btn-success">创建</button>
+                <button type="button" id="new-todo-cancel-btn" class="btn btn-light" data-dismiss="modal">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editTodoItemModal" tabindex="-1" role="dialog" aria-labelledby="editTodoItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="row">
+                    <label class="col-form-label col-4">处理结果：</label>
+                    <textarea class="form-control col-8" id="edit-todo-resolution-input" rows="8" style="width: 350px;"></textarea>
+                </div>
+                <br />
+                <div class="row">
+                    <label class="col-form-label col-4">完成时间：</label>
+                    @Html.TextBoxFor(r => DateTime.Now, "{0:yyyy-MM-ddTHH:mm:ss}", new { type = "datetime-local", @id = "edit-todo-date-resolved-input", @class = "form-control col-8" })
+                </div>
+                <br />
+                <div class="row">
+                    <label class="col-form-label col-4">是否通知客户：</label>
+                    <input type="checkbox" name="flexCheckboxDefault" id="edit-todo-notify-customer-input">
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" id="edit-todo-submit-btn" class="btn btn-success">处理完成</button>
+                <button type="button" id="edit-todo-cancel-btn" class="btn btn-light" data-dismiss="modal">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="completeTodoItemModal" tabindex="-1" role="dialog" aria-labelledby="completeTodoItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="row">
+                    确认待办事项已完成
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" id="complete-todo-submit-btn" class="btn btn-success">完成</button>
+                <button type="button" id="complete-todo-cancel-btn" class="btn btn-light" data-dismiss="modal">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="todoItemDetailModal" tabindex="-1" role="dialog" aria-labelledby="todoItemDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="row">待办事项细节</div>
+                <br />
+                <div class="row">
+                    <div class="col-4">事项：</div>
+                    <div id="todo-detail-message" class="col-8"></div>
+                </div>
+                <br />
+                <div class="row">
+                    <div class="col-4">处理意见：</div>
+                    <div id="todo-detail-comment" class="col-8"></div>
+                </div>
+                <br />
+                <div class="row">
+                    <div class="col-4">处理结果：</div>
+                    <div id="todo-detail-resolution" class="col-8"></div>
+                </div>
+                <br />
+                <div class="row">
+                    <div class="col-4">经办人：</div>
+                    <div id="todo-detail-assignee" class="col-8"></div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" id="todo-detail-close-btn" class="btn btn-light" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+    {
+    <script src="~/vendors/select2/select2.min.js"></script>
+    <script>
+        const items = [];
+        $(document).ready(() => {
+            $('#todo-listing thead tr:eq(1) th').each(function (i) {
+                if (!$(this).data('searchable')) {
+                    $(this).html('');
+                    return;
+                }
+
+                const title = $(this).text();
+                $(this).css('padding-left', '0');
+                $(this).html('<input type="text" class="form-control form-control-sm" placeholder="搜索 ' + title + '" />');
+
+                $('input', this).on('keyup change',
+                    function (event) {
+                        if (event.key !== 'Enter') {
+                            return;
+                        }
+
+                        if (todoTable.column(i).search() !== this.value) {
+                            todoTable.column(i).search(this.value).draw();
+                        }
+                    });
+            });
+            const filterType = location.search
+                .replace('?', '')
+                .split('&')
+                .map(p => p.split('='))
+                .find(p => p[0] === 'filterType')?.[1] || '@TodoItemFilterType.Created';
+            if (filterType === '@TodoItemFilterType.Created') {
+                $("#todo-inventory-filter-i-created").prop("checked", true);
+            } else if (filterType === '@TodoItemFilterType.Assigned') {
+                $("#todo-inventory-filter-me-assigned").prop("checked", true);
+            } else if (filterType === '@TodoItemFilterType.None') {
+                $("#todo-inventory-filter-all").prop("checked", true);
+            }
+            let columns = [
+                {
+                    "data": "id",
+                    "name": "Id",
+                    "render": (data, type, full, meta) => {
+                        items.push(full);
+                        return full.id;
+                    },
+                    "autoWidth": true
+                },
+                {
+                    "data": "statusText", "name": "statusText",
+                    "render": (data, type, full, meta) => {
+                        if (full.canComplete) {
+                            return `<a href='#' onclick='initializeCompleteTodoItemModal(${full.id})' data-toggle='modal' data-target='#completeTodoItemModal'>${full.statusText}</a>`;
+                        } else {
+                            return full.statusText;
+                        }
+                    },
+                    "autoWidth": true
+                },
+                {
+                    "data": "message", "name": "message",
+                    "render": (data, type, full, meta) => {
+                        return `<a href='#' onclick='initializeTodoItemDetailModal(${full.id})' data-toggle='modal' data-target='#todoItemDetailModal'>${full.message}</a>`;
+                    },
+                    "autoWidth": true
+                },
+                { "data": "dateCreatedDisplay", "name": "dateCreatedDisplay", "autoWidth": true },
+                { "data": "createdByUserName", "name": "createdByUserName", "autoWidth": true },
+                { "data": "comment", "name": "comment", "autoWidth": true },
+                {
+                    "data": "resolution", "name": "resolution",
+                    "render": (data, type, full, meta) => {
+                        if (full.canUpdate) {
+                            return `<a href='#' onclick='initializeEditTodoItemModal(${full.id})' data-toggle='modal' data-target='#editTodoItemModal'>${full.resolution ?? '添加处理结果'}</a>`;
+                        } else {
+                            return full.resolution;
+                        }
+                    },
+                    "autoWidth": true
+                },
+                { "data": "customerInfo", "name": "customerInfo", "autoWidth": true },
+                { "data": "assignees", "name": "Assignees", "render": (data, type, full, meta) => `${full.assignees.map(a => a.name).join(', ')}` },
+                { "data": "orderInfo", "name": "orderInfo", "autoWidth": true },
+
+            ];
+
+            let canDelete = '@Model.CanDelete' === 'True' ? true : false;
+            if (canDelete) {
+                columns.push({
+                    "render": (data, type, full, meta) => `<button class='transparent' onclick='deleteTodo(${full.id})'><i class="fa fa-trash-o fa-lg" style="color: red"></i></button>`
+                });
+            }
+            var dataTableOptions = {
+                "processing": true, // for show progress bar
+                "serverSide": true, // for process server side
+                "filter": true, // this is for disable filter (search box)
+                "orderMulti": false, // for disable multiple column at once
+                "ordering": false,
+                "stateSave": false,
+                "lengthChange": false, // for show entries dropdown
+                "ajax": {
+                    "url": `@Url.Action("LoadData", "TodoItem")?filterType=${filterType}`,
+                    "type": "POST",
+                    "datatype": "json"
+                },
+                "columnDefs": [
+                    { "targets": [0], "visible": false, "searchable": false },
+                ],
+                "columns": columns,
+                "language": {
+                    // https://datatables.net/manual/i18n
+                    "processing": "处理中...",
+                    search: "_INPUT_",
+                    searchPlaceholder: "搜索...",
+                    "info": "显示 _TOTAL_ 里面的_START_ 到 _END_",
+                    "paginate": {
+                        "previous": "前一页",
+                        "next": "下一页"
+                    },
+                },
+            };
+
+            const todoTable = $(`#todo-listing`).DataTable(dataTableOptions);
+            $("input[type='search']").closest('div.row').hide();
+
+            $('#new-todo-submit-btn').click(() => {
+                $('#new-todo-submit-btn').attr('disabled', true);
+                const message = $('#new-todo-message-input').val();
+                if (message.trim() === '') {
+                    return;
+                }
+                const orderNumber = $('#new-todo-order-number-input').val();
+                const comment = $('#new-todo-comment-input').val();
+                const customerIds = $('#new-todo-customer-id-input').val();
+                $.ajax({
+                    type: "POST",
+                    url: '@Url.Action("Create", "TodoItem")',
+                    data: { message: message, orderInfo: orderNumber, customerInfo: customerIds, comment: comment, assigneeUserIds: assignees.map(a => a.id) },
+                    success: function (result) {
+                        if (result.error) {
+                            $.toast({
+                                heading: result.error.text,
+                                position: 'mid-center',
+                                icon: 'error'
+                            });
+                        } else {
+                            window.location.reload();
+                        }
+                    }
+                });
+            });
+
+            $('#edit-todo-submit-btn').click(() => {
+                $('#edit-todo-submit-btn').attr('disabled', true);
+                const resolution = $('#edit-todo-resolution-input').val();
+                if (resolution.trim() === '') {
+                    return;
+                }
+                const dateResolved = $('#edit-todo-date-resolved-input').val();
+                const notifyCustomer = $('#edit-todo-notify-customer-input').is(":checked");
+                $.ajax({
+                    type: "POST",
+                    url: '@Url.Action("Update", "TodoItem")',
+                    data: { id: selectedTodoItemId, resolution: resolution, notifyCustomer: notifyCustomer, dateResolved: dateResolved },
+                    success: function (result) {
+                        if (result.error) {
+                            $.toast({
+                                heading: result.error.text,
+                                position: 'mid-center',
+                                icon: 'error'
+                            });
+                        } else {
+                            window.location.reload();
+                        }
+                    }
+                });
+            });
+
+            $('#complete-todo-submit-btn').click(() => {
+                $('#complete-todo-submit-btn').attr('disabled', true);
+                $.ajax({
+                    type: "POST",
+                    url: '@Url.Action("UpdateStatus", "TodoItem")',
+                    data: { id: selectedTodoItemId, status: '@TodoItemStatusType.Completed' },
+                    success: function (result) {
+                        if (result.error) {
+                            $.toast({
+                                heading: result.error.text,
+                                position: 'mid-center',
+                                icon: 'error'
+                            });
+                        } else {
+                            window.location.reload();
+                        }
+                    }
+                });
+            });
+            
+            $('#todo-inventory-filter-i-created').click(() => {
+                if (filterType !== '@TodoItemFilterType.Created') {
+                    let location = '?filterType=@TodoItemFilterType.Created';
+                    window.location.href = location;
+                }
+            });
+            $('#todo-inventory-filter-me-assigned').click(() => {
+                if (filterType !== '@TodoItemFilterType.Assigned') {
+                    let location = '?filterType=@TodoItemFilterType.Assigned';
+                    window.location.href = location;
+                }
+            });
+            $('#todo-inventory-filter-all').click(() => {
+                if (filterType !== '@TodoItemFilterType.None') {
+                    let location = '?filterType=@TodoItemFilterType.None';
+                    window.location.href = location;
+                }
+            });
+            let users = @Html.Raw(Json.Serialize(Model.Users));
+            users = users.map(u => {
+                return {
+                    id: u.id,
+                    text: u.name + " - " + u.orderStartNumber,
+                    pickUpLocationId: u.selectedPickUpLocationId
+                }
+            });
+            let adminUsers = @Html.Raw(Json.Serialize(Model.AdminUsers));
+            adminUsers = adminUsers.map(u => {
+                return {
+                    id: u.id,
+                    text: u.name + " - " + u.orderStartNumber,
+                    pickUpLocationId: u.selectedPickUpLocationId
+                }
+            });
+            $('#new-todo-assignee-select').select2({ data: adminUsers });
+            
+            $('#new-todo-assignee-select').on('select2:select', e => {
+                const assigneeId = parseInt(e.params.data.id)
+                if (!assignees.find(a => a.id === assigneeId)) {
+                    assignees.push({
+                        id: assigneeId,
+                        text: e.params.data.text
+                    });
+                }
+                console.log(e.params.data);
+                $('#new-todo-assignee-selections-container').html(
+                    assignees
+                        .map(a => `<button class="btn btn-info todo-selected_assignee" onclick='unselectAssignee(${a.id})'>${a.text}</button>`)
+                        .join('')
+                );
+            });
+        });
+        let assignees = [];
+        function unselectAssignee(assigneeId) {
+            assignees = assignees.filter(a => a.id !== assigneeId);
+            $('#new-todo-assignee-selections-container').html(
+                assignees
+                    .map(a => `<button class="btn btn-info todo-selected_assignee" onclick='unselectAssignee(${a.id})'>${a.text}</button>`)
+                    .join('')
+            );
+        }
+        let selectedTodoItemId = -1;
+        function initializeEditTodoItemModal(id) {
+            selectedTodoItemId = id;
+        }
+        function initializeCompleteTodoItemModal(id) {
+            selectedTodoItemId = id;
+        }
+        function initializeTodoItemDetailModal(id) {
+            selectedTodoItemId = id;
+            const item = items.find(i => i.id === id);
+            if (item) {
+                $('#todo-detail-message').text(item.message);
+                $('#todo-detail-comment').text(item.comment);
+                $('#todo-detail-resolution').text(item.resolution);
+                $('#todo-detail-assignee').text(item.assignees.map(a => a.name).join(', '));
+            }
+        }
+        function deleteTodo(id) {
+            $.ajax({
+                type: "GET",
+                url: `@Url.Action("Delete", "TodoItem")?id=${id}`,
+                success: function (result) {
+                    if (result.error) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        window.location.reload();
+                    }
+                }
+            });
+        }
+    </script>
+}

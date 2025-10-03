@@ -1,0 +1,273 @@
+﻿@using Domain.Enums
+@model WebUI.Models.ViewModels.UserDetailViewModel
+
+@{
+    ViewData["Title"] = "修改用户";
+}
+
+<div class="row">
+    <div class="col-lg-12 grid-margin stretch-card">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">用户信息</h4>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group row">
+                            @Html.LabelFor(r => r.Code, "编号", new { @class = "col-sm-3 col-form-label" })
+                            <div class="col-sm-9 col-form-label">
+                                <p>@Model.Code</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group row">
+                            @Html.LabelFor(r => r.Code, "未付款", new { @class = "col-sm-3 col-form-label" })
+                            <div class="col-sm-9 col-form-label">
+                                <p>TODO</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group row">
+                            @Html.LabelFor(r => r.Balance, "余额", new { @class = "col-sm-3 col-form-label" })
+                            <div class="col-sm-9 col-form-label">
+                                <p>@Model.Balance.ToString("0.00")</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group row">
+                            @Html.LabelFor(r => r.Code, "最近发货单数", new { @class = "col-sm-3 col-form-label" })
+                            <div class="col-sm-9 col-form-label">
+                                <p>TODO</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h4 class="card-title">修改用户</h4>
+                @using (Html.BeginForm("Save", "User", FormMethod.Post, new { @class = "", id = "user" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.TextBoxFor(r => r.Id, new { hidden = "hidden" })
+                    @Html.TextBoxFor(r => r.RegisteredPickUpLocation.Id, new { hidden = "hidden" })
+
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Name, "姓名", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.Name, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.BelongsToId, "所属群主", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.HiddenFor(r => r.BelongsToId)
+                                    <select class="form-control" id="agent-select">
+                                        @foreach (var agent in Model.Agents)
+                                        {
+                                            <option value="@agent.Id">@agent.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.SelectedPickUpLocationId, "取货地点", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.HiddenFor(r => r.SelectedPickUpLocationId)
+                                    <select class="form-control" id="location-select">
+                                        @foreach (var location in Model.PickUpLocations)
+                                        {
+                                            <option value="@location.Id">@location.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.CanadaPhoneNumber, "电话", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.CanadaPhoneNumber, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.DisplaySequence, "显示顺序", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.DisplaySequence, new { @class = "form-control", type = "number" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Level, "级别", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.Level, new { @class = "form-control", type = "number" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Credit, "信用度", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.Credit, "{0:0.00}", new { @class = "form-control", type = "number", step = "1" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Role, "权限", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.Role, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.UserName, "用户名", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.UserName, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Description, "描述", new { @class = "col-sm-1 col-form-label" })
+                                <div class="col-sm-11">
+                                    @Html.TextAreaFor(r => r.Description, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (Model.Role != RoleType.Regular)
+                    {
+                        <h5 class="card-title">创建自提点</h5>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group row">
+                                    @Html.LabelFor(r => r.RegisteredPickUpLocation.Name, "名称", new { @class = "col-sm-3 col-form-label" })
+                                    <div class="col-sm-9">
+                                        @Html.TextBoxFor(r => r.RegisteredPickUpLocation.Name, new { @class = "form-control" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group row">
+                                    @Html.LabelFor(r => r.RegisteredPickUpLocation.Phone, "电话", new { @class = "col-sm-3 col-form-label" })
+                                    <div class="col-sm-9">
+                                        @Html.TextBoxFor(r => r.RegisteredPickUpLocation.Phone, new { @class = "form-control" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group row">
+                                    @Html.LabelFor(r => r.RegisteredPickUpLocation.DetailArea, "地址", new { @class = "col-sm-3 col-form-label" })
+                                    <div class="col-sm-9">
+                                        @Html.TextBoxFor(r => r.RegisteredPickUpLocation.DetailArea, new { @class = "form-control" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group row">
+                                    @Html.LabelFor(r => r.RegisteredPickUpLocation.LatAndLng, "坐标", new { @class = "col-sm-3 col-form-label" })
+                                    <div class="col-sm-9">
+                                        @Html.TextBoxFor(r => r.RegisteredPickUpLocation.LatAndLng, new { @class = "form-control" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group row">
+                                    @Html.LabelFor(r => r.RegisteredPickUpLocation.Number, "编号", new { @class = "col-sm-3 col-form-label" })
+                                    <div class="col-sm-9">
+                                        @Html.TextBoxFor(r => r.RegisteredPickUpLocation.Number, new { @class = "form-control", type = "number" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group row">
+                                    @Html.LabelFor(r => r.RegisteredPickUpLocation.IsSpecial, "类别", new { @class = "col-sm-3 col-form-label" })
+                                    @Html.HiddenFor(r => r.RegisteredPickUpLocation.IsSpecial)
+                                    <div class="col-sm-9">
+                                        <select class="form-control" id="type-select">
+                                            <option value="1">1类</option>
+                                            <option value="2">2类</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group row">
+                                    @Html.LabelFor(r => r.RegisteredPickUpLocation.DistrictAdditionalCost, "地区附加费", new { @class = "col-sm-3 col-form-label" })
+                                    <div class="col-sm-9">
+                                        @Html.TextBoxFor(r => r.RegisteredPickUpLocation.DistrictAdditionalCost, "{0:0.00}", new { @class = "form-control", type = "number", step = "0.01" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group row">
+                                    @Html.LabelFor(r => r.RegisteredPickUpLocation.StorageCost, "仓储费", new { @class = "col-sm-3 col-form-label" })
+                                    <div class="col-sm-9">
+                                        @Html.TextBoxFor(r => r.RegisteredPickUpLocation.StorageCost, "{0:0.00}", new { @class = "form-control", type = "number", step = "0.01" })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="row">
+                        <div class="col-md-1">
+                            <button type="submit" class="btn btn-success mr-2">保存</button>
+                        </div>
+                        <div class="col-md-1">
+                            @Html.ActionLink("取消", "Inventory", "User", null, new { @class = "btn btn-secondary" })
+                        </div>
+                    </div>
+                }
+
+                <h4 class="card-title mt-4">线路权限</h4>
+                @await Component.InvokeAsync("UserRoutePermission", Model.Id)
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script>
+        $(document).ready(function() {
+            $('#agent-select').val($('#BelongsToId').val());
+            $('#agent-select').change(function() {
+                $('#BelongsToId').val(this.value);
+            });
+
+            $('#location-select').val($('#SelectedPickUpLocationId').val());
+            $('#location-select').change(function () {
+                $('#SelectedPickUpLocationId').val(this.value);
+            });
+
+            $("#type-select").val($('#RegisteredPickUpLocation_IsSpecial').val() === "True" ? "2" : "1");
+            $('#type-select').change(function () {
+                $('#RegisteredPickUpLocation_IsSpecial').val(this.value === "2" ? "True" : "False");
+            });
+
+            $('#user-route input').change(function() {
+                const routeId = $(this).data('routeid');
+                const isVisible = this.checked;
+                const userId = @Model.Id;
+
+                $.post('@Url.Action("SetRouteVisibility")',
+                    {
+                        routeId, userId, isVisible
+                    });
+            });
+        });
+    </script>
+}

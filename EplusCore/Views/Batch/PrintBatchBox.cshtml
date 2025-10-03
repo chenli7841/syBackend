@@ -1,0 +1,227 @@
+﻿@model WebUI.Models.ViewModels.BatchBoxPrintModel
+
+@{
+    Layout = null;
+    ViewBag.Title = "Batch";
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>壹嘉快递</title>
+    <meta charset="utf-8">
+    <meta http-equiv="pragma" content="no-cache">
+    <meta http-equiv="cache-control" content="no-cache">
+    <meta http-equiv="expires" content="0">
+    <meta http-equiv="description" content="壹嘉快递">
+    <style type="text/css">
+        body {
+            margin-top: 8px;
+        }
+
+        tr {
+            font-size: 12px;
+            font-family: "微软雅黑"
+        }
+
+        .box {
+            width: 143mm;
+            overflow: hidden
+        }
+
+        .main {
+            border: 1px solid #000;
+        }
+
+        .linebottom {
+            border-bottom: 1px solid #000;
+        }
+
+        .maintxt {
+            font-weight: bold;
+        }
+
+        .pad8 {
+            padding: 8px
+        }
+
+        .pad2 {
+            padding: 2px
+        }
+
+        .maintxt2 {
+            font-size: 14px;
+            color: #000;
+            font-family: "微软雅黑";
+        }
+
+        .border {
+            width: 100%;
+            border: 1px solid #000;
+        }
+
+        .border5 {
+            border: 10px solid #000
+        }
+
+        .notopborder {
+            border-top: none
+        }
+
+        .noleftborder {
+            border-left: none
+        }
+
+        .norightborder {
+            border-right: none
+        }
+
+        .nobottomborder {
+            border-bottom: none
+        }
+
+        .font34 {
+            font-size: 20px
+        }
+
+        .font16 {
+            font-size: 20px
+        }
+
+        .font50 {
+            font-size: 20px
+        }
+
+        .font30 {
+            font-size: 20px
+        }
+
+        .font18 {
+            font-size: 18px
+        }
+
+        .font22 {
+            font-size: 20px
+        }
+
+        .font28 {
+            font-size: 20px
+        }
+
+        .font10 {
+            font-size: 10px
+        }
+
+        .font14 {
+            font-size: 14px
+        }
+
+        .aa {
+            width: 36mm;
+            height: 25mm;
+            overflow: hidden
+        }
+
+        .info tr td {
+            font-size: 20px;
+        }
+
+        #belongs {
+            font-size: 50px;
+            font-weight: bold;
+        }
+    </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+    <title>壹嘉国际</title>
+</head>
+<body>
+    @{
+        <table border="0" align="center" cellpadding="0" cellspacing="0" class="box">
+            <tbody>
+                <tr>
+                    <td valign="top">
+                        <table border="0" align="center" cellpadding="0" cellspacing="0" class="border">
+                            <tbody>
+                                <tr>
+                                    <td height="170" align="left" valign="top">
+                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                            <tbody>
+                                                <tr>
+                                                    <td height="87" align="center">
+                                                        <div class="barcode" data-barcode="@Model.Number"></div>
+                                                    </td>
+                                                </tr>
+
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <table border="0" align="center" cellpadding="0" cellspacing="0" class="box info">
+            <tbody>
+                <tr>
+                    <td valign="top">
+                        <table border="0" align="center" cellpadding="0" cellspacing="0" class="border">
+                            <tbody>
+                                <tr>
+                                    <td align="left" valign="top">
+                                        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="height: 150px">
+                                            <tbody>
+                                                <tr>
+                                                    <td align="center">
+                                                        所属批次: @Model.BatchName
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td align="center">
+                                                        内件单数: @Model.OrderCount
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td align="center">
+                                                        重量: @Model.Weight.ToString("0.00") Kg
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    }
+
+    <script src="~/vendors/js/vendor.bundle.base.js"></script>
+    <!-- endinject -->
+    <!-- Plugin js for this page -->
+    <script src="~/vendors/jquery-barcode/jquery-barcode.min.js"></script>
+    <!-- End plugin js for this page -->
+
+    <script>
+        $(document).ready(function () {
+            $('nav').remove();
+            $('hr').remove();
+            $('footer').remove();
+
+            var barcodes = $('.barcode');
+            for (i = 0, il = barcodes.length; i < il; i++) {
+                var barcode = $(barcodes[i]);
+                barcode.barcode(barcode.data('barcode') + '', 'code128', { barWidth: 3, barHeight: 123 });
+            }
+
+            $('.barcode div:last-child').css('font-size', 25);
+        });
+    </script>
+</body>

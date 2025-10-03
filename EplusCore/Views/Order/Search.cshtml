@@ -1,0 +1,134 @@
+﻿@model WebUI.Models.OrderInventoryResponse
+
+@{
+    ViewData["Title"] = "运单管理";
+}
+
+@section Styles
+{
+    <style>
+        div.card .order-card-body, #order-details {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+
+        #order-listing_wrapper div#order-listing_filter {
+            display: none;
+        }
+
+            #order-listing_wrapper div#order-listing_filter input {
+                width: 600px;
+            }
+    </style>
+}
+
+<div class="row">
+    <div class="col-md-12 grid-margin">
+        <div class="card">
+            <div class="card-body order-card-body">
+                <h4 class="card-title">搜索</h4>
+                <div class="table-responsive">
+                    <table id='order-listing-search' class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th data-searchable="true">单号</th>
+                                <th data-searchable="true">国内单号</th>
+                                <th>创建时间</th>
+                                <th>所属批次</th>
+                                <th>当前状态</th>
+                                <th data-searchable="true">用户</th>
+                                <th>备注</th>
+                                <th>详情</th>
+                                <th>删除</th>
+                                <th>打印</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script>
+        $(document).ready(() => {
+            const tableId = 'order-listing-search';
+            $(`#${tableId} thead tr`).clone(true).appendTo(`#${tableId} thead`);
+            $(`#${tableId} thead tr:eq(1) th`).each(function(i) {
+                if (!$(this).data('searchable')) {
+                    $(this).html('');
+                    return;
+                }
+
+                const title = $(this).text();
+                $(this).css('padding-left', '0');
+                $(this).html('<input type="text" class="form-control form-control-sm" placeholder="搜索 ' + title + '" />');
+
+                $('input', this).on('keyup change',
+                    function(event) {
+                        if (event.key !== 'Enter') {
+                            return;
+                        }
+
+                        if (orderTable.column(i).search() !== this.value) {
+                            orderTable.column(i).search(this.value).draw();
+                        }
+                    });
+            });
+
+            var dataTableOptions = {
+                "processing": true, // for show progress bar
+                "serverSide": true, // for process server side
+                "filter": true, // this is for disable filter (search box)
+                "orderMulti": false, // for disable multiple column at once
+                "ordering": false,
+                "stateSave": false,
+                "lengthChange": false, // for show entries dropdown
+                "ajax": {
+                    "url": '@Url.Action("LoadData")',
+                    "type": "POST",
+                    "datatype": "json"
+                },
+                "columnDefs": [
+                    { "targets": [0], "visible": false, "searchable": false },
+                ],
+                "columns": [
+                    { "data": "id", "name": "Id", "autoWidth": true },
+                    { "data": "orderNumber", "name": "OrderNumber", "autoWidth": true },
+                    { "data": "domesticNumber", "name": "DomesticNumber", "autoWidth": true },
+                    { "data": "dateCreatedDisplay", "name": "dateCreatedDisplay", "autoWidth": true },
+                    { "data": "deliveryBatch", "name": "DeliveryBatch", "autoWidth": true },
+                    { "data": "stateText", "name": "stateText", "autoWidth": true },
+                    { "data": "creator.name", "name": "Creator", "autoWidth": true },
+                    {
+                        "name": "Memo",
+                        "autoWidth": true,
+                        "render": (data, type, full, meta) => {
+                            return full.memo != null ? '<i class="fa fa-check fa-lg" style="color: green"></i>' : '<i class="fa fa-times fa-lg" style="color: #fc0324de"></i>';
+                        }
+                    },
+                    { "render": (data, type, full, meta) => `<a href='@Url.Action("Edit")?id=${full.id}'><i class="fa fa-edit fa-lg"></i></a>` },
+                    { "render": (data, type, full, meta) => `<a href='@Url.Action("Delete")?id=${full.id}'><i class="fa fa-trash-o fa-lg" style="color: red"></i></a>` },
+                    { "render": (data, type, full, meta) => `<a href='@Url.Action("PrintBarcode")?id=${full.id}' target="_blank"><i class="fa fa-print fa-lg"></i></a>` },
+                ],
+                "language": {
+                    // https://datatables.net/manual/i18n
+                    "processing": "处理中...",
+                    search: "_INPUT_",
+                    searchPlaceholder: "搜索...",
+                    "info": "显示 _TOTAL_ 里面的_START_ 到 _END_",
+                    "paginate": {
+                        "previous": "前一页",
+                        "next": "下一页"
+                    },
+                },
+            };
+
+            const orderTable = $(`#${tableId}`).DataTable(dataTableOptions);
+            $("input[type='search']").closest('div.row').hide();
+        });
+    </script>
+}

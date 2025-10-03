@@ -1,0 +1,140 @@
+﻿@using Domain.Enums
+@model WebUI.Models.ViewModels.OrderDraftViewModel
+@using Domain.Models.Extensions
+
+@{
+    ViewData["Title"] = "未匹配运单";
+}
+
+@section Styles
+{
+    <link rel="stylesheet" href="~/vendors/select2/select2.min.css">
+    <link rel="stylesheet" href="~/vendors/select2-bootstrap-theme/select2-bootstrap.min.css">
+}
+
+<div class="row">
+    <div class="col-md-12 grid-margin">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">创建@(Model.OrderState.GetDescription())运单</h4>
+                @using (Html.BeginForm("SaveDraft", "Order", FormMethod.Post, new { @class = "" }))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <p>运单信息</p>
+                    @Html.TextBoxFor(r => r.OrderState, new { hidden = "hidden" })
+                                
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.RecipientId, "客户", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.RecipientId, new { hidden = "hidden" })
+                                    <select class="form-control" id="recipient-select">
+                                        
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.RouteId, "线路", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.RouteId, new { hidden = "hidden" })
+                                    <select class="form-control" id="route-select">
+                                        @foreach (var route in Model.Routes)
+                                        {
+                                            if (route.IsDeleted)
+                                            {
+                                                <option value="@route.Id" disabled="disabled">@route.Name</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@route.Id">@route.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.DomesticNumber, "国内主单号", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.DomesticNumber, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.PickupLocationId, "取货点", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.HiddenFor(r => r.PickupLocationId)
+                                    <select class="form-control" id="pickuplocation-select">
+                                        @foreach (var location in Model.PickupLocations)
+                                        {
+                                            <option value="@location.Id">@location.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-success">保存</button>
+                        </div>
+                        <div class="col-md-2">
+                            @Html.ActionLink("取消", "Inventory", "Order", new { orderState = OrderState.Draft }, new { @class = "btn btn-secondary" })
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script src="~/vendors/select2/select2.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            let users = @Html.Raw(Json.Serialize(Model.Users));
+            users = users.map(u => {
+                return {
+                    id: u.id,
+                    text: u.name + " - " + u.orderStartNumber,
+                    pickUpLocationId: u.selectedPickUpLocationId
+                }
+            });
+            $('#recipient-select').select2({data: users});
+            $('#recipient-select').on('select2:select', e => {
+                $('#pickuplocation-select').val(e.params.data.pickUpLocationId);
+                $('#PickupLocationId').val(e.params.data.pickUpLocationId);
+            });
+
+            $('#recipient-select').val($('#RecipientId').val());
+            $('#recipient-select').change(function () {
+                $('#RecipientId').val(this.value);
+            });
+
+            $('#route-select').val($('#RouteId').val());
+            $('#route-select').change(function () {
+                $('#RouteId').val(this.value);
+            });
+
+            $('#domesticCarrier-select').val($('#DomesticCarrier').val());
+            $('#domesticCarrier-select').change(function () {
+                $('#DomesticCarrier').val(this.value);
+            });
+
+            $('#pickuplocation-select').val($('#PickupLocationId').val());
+            $('#pickuplocation-select').change(function () {
+                $('#PickupLocationId').val(this.value);
+            });
+        });
+    </script>
+}

@@ -1,0 +1,218 @@
+﻿@model WebUI.Models.ViewModels.BalanceTransferViewModel
+
+@{
+    ViewData["Title"] = "充值";
+}
+
+<div class="row">
+    <div class="col-lg-12 grid-margin stretch-card">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">从用户</h4>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group row">
+                            @Html.LabelFor(r => r.FromUser.Code, "编号", new { @class = "col-sm-3 col-form-label" })
+                            <div class="col-sm-9 col-form-label">
+                                <p>@Model.FromUser.Code</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group row">
+                            @Html.LabelFor(r => r.FromUser.Name, "用户名", new { @class = "col-sm-3 col-form-label" })
+                            <div class="col-sm-9 col-form-label">
+                                <p>@Model.FromUser.Name</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group row">
+                            @Html.LabelFor(r => r.FromUser.Balance, "余额", new { @class = "col-sm-3 col-form-label" })
+                            <div class="col-sm-9 col-form-label">
+                                <p>@Model.FromUser.Balance.ToString("0.00")</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <h4 class="card-title">到用户</h4>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group row">
+                            @Html.LabelFor(r => r.ToUser.Code, "编号", new { @class = "col-sm-3 col-form-label" })
+                            <div class="col-sm-9 col-form-label">
+                                <p>@Model.ToUser.Code</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group row">
+                            @Html.LabelFor(r => r.ToUser.Name, "用户名", new { @class = "col-sm-3 col-form-label" })
+                            <div class="col-sm-9 col-form-label">
+                                <p>@Model.ToUser.Name</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group row">
+                            @Html.LabelFor(r => r.ToUser.Balance, "余额", new { @class = "col-sm-3 col-form-label" })
+                            <div class="col-sm-9 col-form-label">
+                                <p>@Model.ToUser.Balance.ToString("0.00")</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h4 class="card-title">充值</h4>
+                @using (Html.BeginForm("BalanceTransfer", "User", FormMethod.Post, new { @class = "", id = "user" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.TextBoxFor(r => r.ToUser.Id, new { hidden = "hidden" })
+
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group row">
+                        @Html.LabelFor(r => r.Info.TransferType, "类别", new { @class = "col-sm-3 col-form-label" })
+                        <div class="col-sm-9">
+                            @Html.HiddenFor(r => r.Info.TransferType)
+                            <select class="form-control" id="transfer-type-select">
+                                <option value="deposit" selected="selected">充值</option>
+                                <option value="deduct">扣减</option>
+                                <option value="cashout">扣减（现金出账）</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group row">
+                        @Html.LabelFor(r => r.Info.Method, "方式", new { @class = "col-sm-3 col-form-label" })
+                        <div class="col-sm-9">
+                            @Html.HiddenFor(r => r.Info.Method)
+                            <select class="form-control" id="method-select">
+                                <option value="余额支付" selected="selected">余额支付</option>
+                                <option value="现金支付">现金支付</option>
+                                <option value="emt">emt</option>
+                                <option value="rmb">rmb</option>
+                                <option value="ott">ott</option>
+                                <option value="卡机">卡机</option>
+                                <option value="微信">微信</option>
+                                <option value="支付宝">支付宝</option>
+                                <option value="中国银行卡">中国银行卡</option>
+                                <option value="信用卡">信用卡</option>
+                                <option value="礼品卡">礼品卡</option>
+                                <option value="他人充值">他人充值</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group row">
+                        @Html.LabelFor(r => r.Info.TransactionType, "交易类型", new { @class = "col-sm-3 col-form-label" })
+                        <div class="col-sm-9">
+                            @Html.HiddenFor(r => r.Info.TransactionType)
+                            <select class="form-control" id="transaction-type-select">
+                                <option value=0 selected="selected">运单支付</option>
+                                <option value=1>余额调整</option>
+                                <option value=2>活动充值</option>
+                                <option value=3>理赔款项</option>
+                                <option value=4>余额扣减</option>
+                                <option value=5>给自己充值</option>
+                                <option value=6>给他人充值</option>
+                                <option value=7>收取运费</option>
+                                <option value=8>运费返利</option>
+                                <option value=9>仓库使用费</option>
+                                <option value=10>批次扣款</option>
+                                <option value=11>结算调整</option>
+                                <option value=12>现金出账</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="form-group row">
+                        @Html.LabelFor(r => r.Info.Amount, "金额", new { @class = "col-sm-3 col-form-label" })
+                        <div class="col-sm-9">
+                            @Html.TextBoxFor(r => r.Info.Amount, new { @class = "form-control", type = "number", step = "0.01" })
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group row">
+                        @Html.LabelFor(r => r.Info.Rmb, "人民币", new { @class = "col-sm-3 col-form-label" })
+                        <div class="col-sm-9">
+                            @Html.TextBoxFor(r => r.Info.Rmb, new { @class = "form-control", type = "number", step = "0.01" })
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group row">
+                        @Html.LabelFor(r => r.Info.ExchangeRate, "加币对人民币汇率", new { @class = "col-sm-3 col-form-label" })
+                        <div class="col-sm-9">
+                            @Html.TextBoxFor(r => r.Info.ExchangeRate, new { @class = "form-control", type = "number", step = "0.01" })
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group row">
+                        @Html.LabelFor(r => r.Info.Discount, "折扣", new { @class = "col-sm-3 col-form-label" })
+                        <div class="col-sm-9">
+                            @Html.TextBoxFor(r => r.Info.Discount, new { @class = "form-control", type = "number", step = "0.01" })
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group row">
+                        @Html.LabelFor(r => r.Info.Notes, "备注", new { @class = "col-sm-3 col-form-label" })
+                        <div class="col-sm-9">
+                            @Html.TextAreaFor(r => r.Info.Notes, new { @class = "form-control" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+                    <div class="row">
+                        <div class="col-md-1">
+                            <button type="submit" class="btn btn-success mr-2">保存</button>
+                        </div>
+                        <div class="col-md-1">
+                            @Html.ActionLink("取消", "Inventory", "User", null, new { @class = "btn btn-secondary" })
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script>
+        $(document).ready(function() {
+            $('#transfer-type-select').change(function () {
+                $('#Info_TransferType').val(this.value);
+                if (this.value === 'cashout') {
+                    $('#transaction-type-select').attr('disabled', 'true');
+                    $('#transaction-type-select').val(12);
+                    $('#Info_TransactionType').val(12);
+                    $('#method-select').attr('disabled', 'true');
+                    $('#method-select').val('现金支付');
+                    $('#Info_Method').val('现金支付');
+                } else {
+                    $('#transaction-type-select').attr('disabled', null);
+                    $('#method-select').attr('disabled', null);
+                }
+            });
+
+            $('#method-select').change(function () {
+                $('#Info_Method').val(this.value);
+            });
+
+            $('#transaction-type-select').change(function () {
+                $('#Info_TransactionType').val(this.value);
+            });
+
+            $('#Info_TransferType').val($("#transfer-type-select option:first").val());
+        });
+    </script>
+}

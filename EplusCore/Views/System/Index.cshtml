@@ -1,0 +1,199 @@
+﻿@model WebUI.Models.ViewModels.SystemViewModel
+
+@{
+    ViewData["Title"] = "系统设置";
+}
+
+@section Styles
+{
+    <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
+}
+
+<div class="row">
+    <div class="col-lg-12 grid-margin stretch-card">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">系统设置</h4>
+
+                @using (Html.BeginForm("Save", "System", FormMethod.Post, new { @class = "", id = "system" }))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group row">
+                                <label class="col-sm-3 col-form-label" for="SchedulePickUpText">预约上门说明</label>
+                                <div class="col-sm-9">
+                                    <input class="form-control" id="SchedulePickUpText" name="SchedulePickUpText" type="number" value="@Model.Settings.SchedulePickUpText">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label" for="DeliveryInitialCost">首重费用</label>
+                                <div class="col-sm-8">
+                                    <input class="form-control" id="DeliveryInitialCost" name="DeliveryInitialCost" type="number" value="@Model.Settings.DeliveryInitialCost">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label" for="DeliveryRenewalCost">续重费用</label>
+                                <div class="col-sm-8">
+                                    <input class="form-control" id="DeliveryRenewalCost" name="DeliveryRenewalCost" type="number" value="@Model.Settings.DeliveryRenewalCost">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label" for="DeliveryDistanceAdditionalCost">距离附加费</label>
+                                <div class="col-sm-8">
+                                    <input class="form-control" id="DeliveryDistanceAdditionalCost" name="DeliveryDistanceAdditionalCost" type="number" value="@Model.Settings.DeliveryDistanceAdditionalCost">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label" for="DeliveryLargeHandlingCost">大件物品搬运费</label>
+                                <div class="col-sm-8">
+                                    <input class="form-control" id="DeliveryLargeHandlingCost" name="DeliveryLargeHandlingCost" type="number" value="@Model.Settings.DeliveryLargeHandlingCost">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label" for="DeliveryOversizedHandlingCost">超大件物品搬运费</label>
+                                <div class="col-sm-8">
+                                    <input class="form-control" id="DeliveryOversizedHandlingCost" name="DeliveryOversizedHandlingCost" type="number" value="@Model.Settings.DeliveryOversizedHandlingCost">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label" for="CostStorageTimeout">仓储超时计算时间</label>
+                                <div class="col-sm-8">
+                                    <input class="form-control" id="CostStorageTimeout" name="CostStorageTimeout" type="number" value="@Model.Settings.CostStorageTimeout">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label" for="WeChatServiceChat">微信手续费</label>
+                                <div class="col-sm-8">
+                                    <input class="form-control" id="WeChatServiceChat" name="WeChatServiceChat" type="number" value="@Model.Settings.WeChatServiceChat">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-1">
+                            <button type="submit" class="btn btn-success mr-2">保存</button>
+                        </div>
+                    </div>
+                }
+
+                <div class="row mt-2">
+                    @for (int i = 0; i < 4; i++)
+                    {
+                        <div class="col-md-6">
+                            <div class="photo-uploader" data-photoid="@Model.Photos[i].Id" data-photourl='@(Model.Photos[i].Url + "?t=" + DateTime.UtcNow.Second)'>
+                                <!-- This is where the preview image is displayed -->
+                                <div class="cropit-preview" style="height: 450px; border: 1px #999 dashed; line-height: 100px; color: #666;"></div>
+
+                                <!-- This range input controls zoom -->
+                                <!-- You can add additional elements here, e.g. the image icons -->
+                                <input type="range" class="cropit-image-zoom-input" style="margin-top: 30px" />
+
+                                <!-- This is where user selects new image -->
+                                <input type="file" class="cropit-image-input" style="display: none" />
+
+                                <button class="btn btn-info select">选择</button>
+                                <button class="btn btn-primary upload">上传</button>
+
+                                <!-- The cropit- classes above are needed so cropit can identify these elements -->
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<a href="https://drive.google.com/drive/u/0/folders/178sveEFp3tEg72yejktlWwsoKsr8z954">Google文件夹</a>
+
+@section Scripts
+{
+    <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            const uploadPhotoUrl = '@Url.Action("UploadPhoto")';
+            const uploaders = $('.photo-uploader');
+            for (let i = 0, il = uploaders.length; i < il; i++) {
+                const uploader = $(uploaders[i]);
+                uploader.cropit({
+                    imageState: { src: uploader.data('photourl') },
+                    imageBackground: true,
+                    imageBackgroundBorderWidth: 15,
+                    smallImage: 'allow',
+                    allowDragNDrop: false,
+                });
+            }
+
+            $('.photo-uploader .select').click(function() {
+                $(this).closest('.photo-uploader').find('.cropit-image-input').click();
+
+                return false;
+            });
+
+            $('.photo-uploader .upload').click(function () {
+                const uploader = $(this).closest('.photo-uploader');
+                let photoData = ''; //uploader.cropit('export');
+                const photoId = uploader.data('photoid');
+                var myFile = $(this).closest('.photo-uploader').find('.cropit-image-input').prop('files')[0];
+                let reader = new FileReader();
+                reader.addEventListener("load", () => {
+                    // convert image file to base64 string
+                    photoData = reader.result;
+                    $.post(uploadPhotoUrl,
+                    {
+                        photoId,
+                        photoData
+                    },
+                    function(result) {
+                        if (result.error && result.error.text) {
+                            $.toast({
+                                heading: 'Danger',
+                                text: result.error.text,
+                                showHideTransition: 'slide',
+                                icon: 'error',
+                                loaderBg: '#f2a654',
+                                position: 'mid-center'
+                            });
+                        } else {
+                            $.toast({
+                                heading: '成功',
+                                showHideTransition: 'slide',
+                                icon: 'success',
+                                loaderBg: '#f2a654',
+                                position: 'mid-center'
+                            });
+
+                            uploader.data('photoid', data.id);
+                            uploader.data('photourl', data.url);
+                        }
+                    });
+                }, false);
+                reader.readAsDataURL(myFile);
+                return false;
+            });
+        });
+    </script>
+}

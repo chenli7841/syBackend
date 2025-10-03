@@ -1,0 +1,32 @@
+﻿@using Common
+@inject ISystemSession SystemSession
+
+@if (SystemSession.IsAuthenticated)
+{
+    <li class="nav-item dropdown d-none d-xl-inline-block user-dropdown">
+        <a class="nav-link dropdown-toggle" id="UserDropdown" href="#" data-toggle="dropdown" aria-expanded="false">
+            <img class="img-xs rounded-circle" src="~/images/faces/face8.jpg" alt="Profile image">
+        </a>
+        <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="UserDropdown">
+            <div class="dropdown-header text-center">
+                <img class="img-md rounded-circle" src="~/images/faces/face8.jpg" alt="Profile image">
+                <p class="mb-1 mt-3 font-weight-semibold">@SystemSession.CurrentUser.Name</p>
+                <p class="font-weight-light text-muted mb-0">@SystemSession.CurrentUser.CanadaPhoneNumber</p>
+            </div>
+            @*<a class="dropdown-item"><i class="dropdown-item-icon mdi mdi-account-outline text-primary"></i> My Profile <span class="badge badge-pill badge-danger">1</span></a>
+            <a class="dropdown-item"><i class="dropdown-item-icon mdi mdi-message-text-outline text-primary"></i> Messages</a>
+            <a class="dropdown-item"><i class="dropdown-item-icon mdi mdi-calendar-check-outline text-primary"></i> Activity</a>
+            <a class="dropdown-item"><i class="dropdown-item-icon mdi mdi-help-circle-outline text-primary"></i> FAQ</a>*@
+            <a class="dropdown-item" href="javascript:document.getElementById('logoutForm').submit()"><i class="dropdown-item-icon mdi mdi-power text-primary"></i>退出</a>
+        </div>
+        @using (Html.BeginForm("LogOff", "Account", null, FormMethod.Post, true, new { id = "logoutForm", style = "display: none;" }))
+        {
+        }
+    </li>
+}
+else
+{
+    <li class="nav-item">
+        <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Login">登录</a>
+    </li>
+}

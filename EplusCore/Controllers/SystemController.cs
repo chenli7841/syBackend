@@ -1,0 +1,62 @@
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Domain.Entities;
+using Domain.Services;
+using Microsoft.AspNetCore.Mvc;
+using WebUI.Models;
+using WebUI.Models.ViewModels;
+
+namespace WebUI.Controllers
+{
+    public class SystemController : Controller
+    {
+        private readonly ISystemService _systemService;
+
+        public SystemController(ISystemService systemService)
+        {
+            _systemService = systemService;
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            var settings = await _systemService.GetSettingsAsync();
+            var photos = (await _systemService.ListPhotosAsync()).ToList();
+            
+            while (photos.Count < 4)
+            {
+                photos.Add(new SystemPhotoEntity());
+            }
+
+            var result = new SystemViewModel()
+            {
+                Settings = settings,
+                Photos = photos
+            };
+
+            return View(result);
+        }
+
+        [HttpPost]
+        public async Task<JsonResult> UploadPhoto(int photoId, string photoData)
+        {
+            try
+            {
+                var savedPhoto = await _systemService.AddPhotoSync(photoId, photoData);
+                return Json(new MethodResult<SystemPhotoEntity>(savedPhoto));
+            }
+            catch (Exception e)
+            {
+                return Json(new MethodResult<SystemPhotoEntity>(new Error() { Text = e.Message }));
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Save(SystemSettingsEntity model)
+        {
+            await _systemService.UpdateSettingsAsync(model);
+            return RedirectToAction(nameof(Index));
+        }
+    }
+}

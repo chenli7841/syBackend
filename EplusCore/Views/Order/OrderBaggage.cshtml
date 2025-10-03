@@ -1,0 +1,49 @@
+﻿@model WebUI.Models.ViewModels.OrderBaggageWithIndex
+
+@{
+  var index = Model.Index;
+  var baggage = Model.Baggage;
+}
+
+<div class="baggage-container">
+<p>箱号@(index+1)<i class="fa fa-plus-circle add-baggage" style="color: green"></i></p>
+<div class="row baggage">
+  <input data-val="true" data-val-required="The Id field is required." hidden="hidden" id=@($"BaggageEditModels_{index}__Id") name=@($"BaggageEditModels[{index}].Id") type="text" value="@baggage.Id">
+  <input class="action-input" data-val="true" data-val-required="The Action field is required." hidden="hidden" id=@($"BaggageEditModels_{index}__Action") name=@($"BaggageEditModels[{index}].Action") type="text" value="@baggage.Action">
+  <div class="col-md-3">
+    <div class="form-group row">
+      <label class="col-sm-3 col-form-label" for=@($"BaggageEditModels_{index}__Length")>长(cm)</label>
+      <div class="col-sm-9">
+        <input class="form-control baggage-length" id=@($"BaggageEditModels_{index}__Length") name=@($"BaggageEditModels[{index}].Length") type="text" value="@baggage.Length">
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="form-group row">
+      <label class="col-sm-3 col-form-label" for=@($"BaggageEditModels_{index}__Width")>宽(cm)</label>
+      <div class="col-sm-9">
+        <input class="form-control baggage-width" id=@($"BaggageEditModels_{index}__Width") name=@($"BaggageEditModels[{index}].Width") type="text" value="@baggage.Width">
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="form-group row">
+      <label class="col-sm-3 col-form-label" for=@($"BaggageEditModels_{index}__Height")>高(cm)</label>
+      <div class="col-sm-9">
+        <input class="form-control baggage-height" id=@($"BaggageEditModels_{index}__Height") name=@($"BaggageEditModels[{index}].Height") type="text" value="@baggage.Height">
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="form-group row">
+      <label class="col-sm-3 col-form-label" for=@($"BaggageEditModels_{index}__WeightKg")>实重(kg)</label>
+      <div class="col-sm-7">
+        <input class="form-control baggage-weight" id=@($"BaggageEditModels_{index}__WeightKg") name=@($"BaggageEditModels[{index}].WeightKg") type="text" value="@baggage.WeightKg">
+      </div>
+      <div class="col-sm-2">
+        <i class="fa fa-trash-o fa-lg delete-baggage" style="color: red"></i>
+      </div>
+    </div>
+  </div>
+</div>
+</div>

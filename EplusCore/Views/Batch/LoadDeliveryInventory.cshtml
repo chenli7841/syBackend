@@ -1,0 +1,280 @@
+@using Domain.Enums
+@using Domain.Models.Extensions
+@model WebUI.Models.BatchInventoryResponse
+
+@{
+    ViewData["Title"] = "批次管理";
+}
+
+@section Styles
+{
+    <link rel="stylesheet" href="~/vendors/select2/select2.min.css">
+    <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
+}
+
+<div class="row">
+    <div class="col-lg-12 grid-margin stretch-card">
+        <div class="card">
+            <div class="card-body" id="order-details">
+                @await Component.InvokeAsync("BatchInfo", null)
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 grid-margin">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">@Model.GroupType.GetDescription()</h4>
+                <ul class="nav nav-tabs tab-solid tab-solid-danger" role="tablist">
+                    @if (Model.GroupType == BatchGroupType.DailyScan || Model.GroupType == BatchGroupType.DailyReturn)
+                    {
+                        foreach (var warehouse in Model.Warehouses)
+                        {
+                            <li class="nav-item">
+                                @Html.ActionLink(warehouse.Name, "Inventory", new { groupType = Model.GroupType, warehouseId = warehouse.Id }, new { @class = "nav-link " + (warehouse.Id == Model.SelectedWarehouseId ? "active" : "") })
+                            </li>
+                        }
+                    }
+                    else
+                    {
+                        foreach (var route in Model.Routes)
+                        {
+                            <li class="nav-item">
+                                <a href="@Url.Action("Inventory", new {groupType = Model.GroupType, routeId = route.Id})" class="nav-link @(route.Id == Model.SelectedRouteId ? "active" : "")" id='@($"route{route.Id}")'>@route.Name (<i class='fa fa-spinner fa-spin'></i>)</a>
+                                @*@Html.ActionLink(route.Name + "(<i class='fas fa - cog fa - spin'></i>)", "Inventory", new {groupType = Model.GroupType, routeId = route.Id}, new {@class = "nav-link " + (route.Id == Model.SelectedRouteId ? "active" : ""), @id = $"route{route.Id}"})*@
+                            </li>
+                        }
+                    }
+                </ul>
+                <div class="tab-content tab-content-solid">
+                    <div class="tab-pane fade show active" id="home-5-1" role="tabpanel" aria-labelledby="tab-5-1">
+                        <div style="display: flex; gap: 4px; height: 32px;">
+                            @Html.ActionLink("添加", "Create", null, new { groupType = Model.GroupType, routeId = Model.SelectedRouteId }, new { @class = "btn btn-primary" })
+                            @if (Model.GroupType == BatchGroupType.DailyScan || Model.GroupType == BatchGroupType.DailyReturn)
+                            {
+                                @Html.ActionLink($"添加{Model.GroupType.GetDescription()}", "CreateDailyBatchPerWarehouse", null, new { groupType = Model.GroupType }, new { @class = "btn btn-primary" })
+                            }
+                            <div style="width: 1px; height: 100%; background-color: #ccc; margin-left:5px; margin-right: 5px;"></div>
+                            <button id='batch_inventory_search_btn' class='btn btn-primary'>搜索</button>
+                            <select class="form-control" id="recipient-select" style="width: 225px;">
+                                <option value="" selected>搜索客户归属</option>
+                            </select>
+                            <select class="form-control" id="agent-select" style="width: 225px;">
+                                <option value="" selected>搜索群主</option>
+                            </select>
+                        </div>
+                        <div class="table-responsive">
+                            <table id="batch-listing" class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>名称</th>
+                                        <th>创建日期</th>
+                                        <th>当前状态</th>
+                                        <th>总单数</th>
+                                        <th>总重量</th>
+                                        <th>总费用</th>
+                                        <th>航班信息</th>
+                                        <th>货运号码</th>
+                                        <th>预计到货时间</th>
+                                        <th>详情</th>
+                                        <th>删除</th>
+                                        <th>打印</th>
+                                        <th>导出</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="profile-5-2" role="tabpanel" aria-labelledby="tab-5-2"> Lorem ipsum dolor sit amet, consectetur adipisicing elit. Deleniti eveniet, sapiente corrupti, vitae excepturi nulla soluta esse in ex, dignissimos velit rerum maiores asperiores! </div>
+                    <div class="tab-pane fade" id="contact-5-3" role="tabpanel" aria-labelledby="tab-5-3"> Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam officia mollitia repudiandae, tempore provident omnis magnam deleniti obcaecati, non atque asperiores maiores sint! Officiis rerum quaerat perferendis adipisci aut pariatur. </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
+    <script src="~/vendors/select2/select2.min.js"></script>
+    <script>
+        $(document).ready(() => {
+            const groupType = '@Model.GroupType';
+            const routeId = '@Model.SelectedRouteId';
+            const warehouseId = '@Model.SelectedWarehouseId';
+            $.fn.dataTable.ext.errMode = (e) => {
+                const body = e.jqXHR.responseJSON;
+                if (body.error) {
+                    $.toast({
+                        heading: body.error.name,
+                        text: body.error.text,
+                        showHideTransition: 'slide',
+                        icon: 'error',
+                        loaderBg: '#f2a654',
+                        position: 'mid-center',
+                        hideAfter: 20000,
+                    });
+                }
+                console.log(a.jqXHR.responseJSON);
+            }
+
+            const batchTable = $('#batch-listing').DataTable({
+                "processing": true, // for show progress bar
+                "serverSide": true, // for process server side
+                "filter": false, // this is for disable filter (search box)
+                "orderMulti": false, // for disable multiple column at once
+                "ordering": false,
+                "lengthChange": false, // for show entries dropdown
+                "searchPanes": true,
+                "ajax": {
+                    "url":
+                        '@Html.Raw(Url.Action("LoadData", new {groupType = Model.GroupType, routeId = Model.SelectedRouteId, recipientUserId=Model.SelectedRecipientUserId, belongsToUserId=Model.SelectedBelongsToUserId, warehouseId = Model.SelectedWarehouseId}))',
+                    "type": "POST",
+                    "datatype": "json"
+                },
+                "columnDefs": [
+                    { "targets": [0], "visible": false, "searchable": false },
+                ],
+                "columns": [
+                    { "data": "id", "autoWidth": true },
+                    {
+                        "name": "name",
+                        "autoWidth": true,
+                        "render": (data, type, row) => `<a href='#' onclick=loadBatchDetails(${row.id}); >${row.name
+                            }</a>`
+                    },
+                    { "data": "dateCreatedDisplay", "autoWidth": true },
+                    { "data": "stageDescription", "autoWidth": true },
+                    { "data": "totalOrders", "autoWidth": true },
+                    { "data": "totalWeightKg", "autoWidth": true },
+                    { "data": "totalShippingCost", "autoWidth": true },
+                    { "data": "flightInfo", "autoWidth": true },
+                    { "data": "cargoNumber", "autoWidth": true },
+                    { "data": "arrivalTimeDisplay", "autoWidth": true },
+                    {
+                        "render": (data, type, full, meta) => `<a href='@Url.Action("Edit")?id=${full.id
+                            }'><i class="fa fa-edit fa-lg"></i></a>`
+                    },
+                    {
+                        "render": (data, type, full, meta) => `<a href='@Url.Action("Delete")?id=${full.id
+                            }&groupType=${groupType}&routeId=${routeId}&warehouseId=${warehouseId}'><i class="fa fa-trash-o fa-lg" style="color: red"></i></a>`
+                    },
+                    { "render": (data, type, full, meta) => `<a href='@Url.Action("PrintBatch")?id=${full.id}' target="_blank"><i class="fa fa-print fa-lg"></i></a>` },
+                    { "render": (data, type, full, meta) => `<a href='@Url.Action("Export")?id=${full.id}' target="_blank"><i class="fa fa-table fa-lg"></i></a>` },
+                ],
+                "language": {
+                    // https://datatables.net/manual/i18n
+                    "processing": "处理中...",
+                    "info": "显示 _TOTAL_ 里面的_START_ 到 _END_",
+                    "paginate": {
+                        "previous": "前一页",
+                        "next": "下一页"
+                    },
+                },
+            });
+
+            let users = @Html.Raw(Json.Serialize(Model.Users));
+            users = users.map(u => {
+                return {
+                    id: u.id,
+                    text: u.name + " - " + u.orderStartNumber,
+                    pickUpLocationId: u.selectedPickUpLocationId
+                }
+            });
+            $('#recipient-select').select2({data: users});
+            $('.select2-selection').css('height', '32px');
+            $('#select2-recipient-select-container').css('height', '32px');
+            $('.select2-container--default .select2-selection--single .select2-selection__arrow').css('top', '4px');
+            let agents = @Html.Raw(Json.Serialize(Model.Users.Where(u => u.Role == RoleType.Advanced)));
+            agents = agents.map(u => {
+                return {
+                    id: u.id,
+                    text: u.name + " - " + u.orderStartNumber,
+                    pickUpLocationId: u.selectedPickUpLocationId
+                }
+            });
+            $('#agent-select').select2({data: agents});
+            $('.select2-selection').css('height', '32px');
+            $('#select2-agent-select-container').css('height', '32px');
+            $('.select2-container--default .select2-selection--single .select2-selection__arrow').css('top', '4px');
+
+            let params = window.location.search.split('recipientUserId=');
+            if (params.length === 2)
+            {
+                let currentRecipientUserId = params[1].split('&')[0];
+                $('#recipient-select').val(currentRecipientUserId).trigger('change');
+            }
+            params = window.location.search.split('belongsToUserId=');
+            if (params.length === 2)
+            {
+                let currentBelongsToUserId = params[1].split('&')[0];
+                $('#agent-select').val(currentBelongsToUserId).trigger('change');
+            }
+
+            $('#batch_inventory_search_btn').click(() => {
+                let location = `/Batch/Inventory?groupType=${groupType}`
+                if (routeId && routeId.trim() !== '')
+                {
+                    location = location + `&routeId=${routeId}`;
+                }
+                if (warehouseId && warehouseId.trim() !== '')
+                {
+                    location = location + `&warehouseId=${warehouseId}`;
+                }
+                const recipientUserId = $('#recipient-select').val();
+                if (recipientUserId && recipientUserId.trim() !== '')
+                {
+                    location = location + `&recipientUserId=${recipientUserId}`;
+                }
+                const belongsToUserId = $('#agent-select').val();
+                if (belongsToUserId && belongsToUserId.trim() !== '')
+                {
+                    location = location + `&belongsToUserId=${belongsToUserId}`;
+                }
+                window.location.href=location;
+            });
+
+            $('#batch_inventory_export_all_btn').click(() => {
+                $.ajax({
+                    url: '@Url.Action("ExportAll", "Batch")',
+                    data: {}
+                });
+            });
+        });
+
+        function loadBatchDetails(id) {
+            $.ajax({
+                url: '@Url.Action("QuickView", "Batch")',
+                data: { id },
+                success: data => $('#order-details').html(data)
+            });
+        }
+
+        (function displayBatchCount() {
+            const needToDisplayCount =
+                '@(Model.GroupType != BatchGroupType.DailyScan && Model.GroupType != BatchGroupType.DailyReturn)' ===
+                    'True';
+
+            if (!needToDisplayCount) {
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("GetBatchCountByRoute", "Batch")',
+                data: { groupType: '@Model.GroupType' },
+                success: function(result) {
+                    if (result.data) {
+                        result.data.forEach(element => {
+                            const routeHeader = $(`#route${element.routeId}`);
+                            routeHeader.find('i').remove();
+                            routeHeader.text(routeHeader.text().replace('()', `(${element.batchCount})`));
+                        });
+                    }
+                }
+            });
+        })();
+    </script>
+}

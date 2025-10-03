@@ -1,0 +1,63 @@
+﻿<div class="form-group row">
+    <label class="col-sm-2 col-form-label">
+        照片
+    </label>
+    <div class="col-sm-10">
+        <div id="photo">
+            <!-- This is where the preview image is displayed -->
+            <div class="cropit-preview" style="height: 315px; border: 1px #999 dashed; line-height: 100px; color: #666;"></div>
+
+            <!-- This range input controls zoom -->
+            <!-- You can add additional elements here, e.g. the image icons -->
+            <input type="range" class="cropit-image-zoom-input" style="margin-top: 30px" />
+
+            <!-- This is where user selects new image -->
+            <input type="file" class="cropit-image-input" style="display: none" />
+
+            <button class="btn btn-info select">选择</button>
+
+            <button class="btn btn-primary rotate-ccw">左转</button>
+            <button class="btn btn-primary rotate-cw">右转</button>
+
+            <!-- The cropit- classes above are needed so cropit can identify these elements -->
+        </div>
+    </div>
+    <input hidden="hidden" name="PhotoData" id="PhotoData" />
+</div>
+
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        let hasFileChanged = false;
+
+        $('#photo').cropit({
+            imageState: {src: '@Model.PhotoUrl'},
+            imageBackground: true,
+            imageBackgroundBorderWidth: 15,
+            smallImage: 'allow',
+            allowDragNDrop: false,
+            onFileChange: function() {
+                hasFileChanged = true;
+            }
+        });
+
+        $('#photo .select').click(function() {
+            $('#photo .cropit-image-input').click();
+
+            return false;
+        });
+
+        $('#photo .rotate-ccw').click(function() {
+            $('#photo').cropit('rotateCCW');
+            return false;
+        });
+
+        $('#photo .rotate-cw').click(function() {
+            $('#photo').cropit('rotateCW');
+            return false;
+        });
+
+        $('#photo').closest('form').submit(function () {
+            hasFileChanged && $('#PhotoData').val($('#photo').cropit('export'));
+        });
+    });
+</script>

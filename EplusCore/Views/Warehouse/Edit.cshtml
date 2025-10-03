@@ -1,0 +1,68 @@
+﻿@model WebUI.Models.ViewModels.WarehouseViewModel
+
+@{
+    ViewData["Title"] = Model.Id > 0 ? "修改仓库" : "创建仓库";
+}
+
+<div class="row">
+    <div class="col-lg-12 grid-margin stretch-card">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">修改仓库</h4>
+                @using (Html.BeginForm("Save", "Warehouse", FormMethod.Post, new { @class = "", id = "warehouse" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.TextBoxFor(r => r.Id, new { hidden = "hidden" })
+
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Name, "名称", new { @class = "col-sm-2 col-form-label" })
+                                <div class="col-sm-10">
+                                    @Html.TextBoxFor(r => r.Name, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Location, "地址", new { @class = "col-sm-2 col-form-label" })
+                                <div class="col-sm-10">
+                                    @Html.TextBoxFor(r => r.Location, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Contact, "联系人", new { @class = "col-sm-2 col-form-label" })
+                                <div class="col-sm-10">
+                                    @Html.TextBoxFor(r => r.Contact, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.DisplaySequence, "排序", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.DisplaySequence, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            @await Html.PartialAsync("Components/PhotoUpload/Default")
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-1">
+                            <button type="submit" class="btn btn-success mr-2">保存</button>
+                        </div>
+                        <div class="col-md-1">
+                            @Html.ActionLink("取消", "Inventory", "Warehouse", null, new { @class = "btn btn-secondary" })
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

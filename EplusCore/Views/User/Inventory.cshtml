@@ -1,0 +1,315 @@
+﻿@{
+    ViewData["Title"] = "用户管理";
+}
+
+@section Styles
+{
+    <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
+    <style>
+        .iconBtn {
+            border: none;
+            background-color: transparent;
+            color: #007bff;
+        }
+        .userInventoryBalanceTitleBtn {
+            border: none;
+            background: transparent;
+            color: #6200EE;
+            cursor: pointer;
+        }
+    </style>
+}
+
+<div class="row">
+    <div class="col-md-12 grid-margin">
+        <div class="card">
+            <div class="card-body order-card-body">
+                <div class="table-responsive">
+                    @Html.ActionLink("导出", "Export", null, null, new { @class = "btn btn-primary" })
+
+                    <table id="user-listing" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>姓名</th>
+                                <th data-searchable="true">代码</th>
+                                <th>权限</th>
+                                <th data-searchable="true">电话（发短信）</th>
+                                <th>邮箱（发邮件）</th>
+                                <th>微信</th>
+                                <th>群主</th>
+                                <th>取货点</th>
+                                <th><button class='userInventoryBalanceTitleBtn' onclick="initializeBalanceSummaryModal()" data-toggle="modal" data-target="#userBalanceSummaryModal">余额</button></th>
+                                <th>账单</th>
+                                <th>详情</th>
+                                <th>密码</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="user-sms-modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1">
+    <div class="card">
+        <div class="card-body">
+            <h4 class="card-title mb-3">请输入短信内容</h4>
+            <h4 id="user-sms-recipient" class="card-title mb-3"></h4>
+            <textarea id="user-sms-message" name="text" class="mb-3" style='border-color: #ccc; border-radius: 5px; min-height: 150px; min-width: 300px;' oninput='this.style.height = "";this.style.height = this.scrollHeight + "px"'></textarea>
+            <div style="text-align: end;">
+            <button id="user-sms-cancel-btn" class="btn btn-secondary">取消</button>
+            <button id="user-sms-send-btn" disabled style="margin-left: 10px;" class="btn btn-primary">发送</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="user-email-modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1;">
+    <div class="card">
+        <div class="card-body">
+            <h4 class="card-title mb-3">请输入邮件内容</h4>
+            <h4 id="user-email-recipient" class="card-title mb-3" style="text-transform: none;"></h4>
+            <div class="mb-3"><input type="text" id="user-email-subject" placeholder="邮件标题" style='border: 1px #ccc solid; border-radius: 5px; padding: 10px; width: 100%;' /></div>
+            <div class="mb-3"><textarea id="user-email-message" placeholder="邮件内容" name="text" class="mb-3" style='border-color: #ccc; border-radius: 5px; min-height: 150px; min-width: 300px; padding: 10px;' oninput='this.style.height = "";this.style.height = this.scrollHeight + "px"'></textarea></div>
+            <div style="text-align: end;">
+            <button id="user-email-cancel-btn" class="btn btn-secondary">取消</button>
+            <button id="user-email-send-btn" disabled style="margin-left: 10px;" class="btn btn-primary">发送</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="userBalanceSummaryModal" tabindex="-1" role="dialog" aria-labelledby="userBalanceSummaryLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="row">
+                    <div>普通用户的余额总量为 <span id="totalBalanceSpan"></span> 加元。</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="user-balance-summary-close-btn" class="btn btn-success" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
+    <script>
+        let smsRecipientUserId = -1;
+        let emailRecipientUserId = -1;
+        let totalBalance = undefined;
+        function GetSendEmailButtonHTML(userId, userName, mailbox) {
+            if (mailbox) return `<button class='iconBtn' onclick='openEmail(${userId}, "${userName}", "${mailbox}")'><i class="fa fa-envelope"></i></button>`;
+            else return "";
+        }
+
+        $(document).ready(() => {
+            $('#user-listing thead tr').clone(true).appendTo('#user-listing thead');
+            $(`#user-listing thead tr:eq(1) th`).each(function(i) {
+                if (!$(this).data('searchable')) {
+                    $(this).html('');
+                    return;
+                }
+                const title = $(this).text();
+                $(this).css('padding-left', '0');
+                $(this).html('<input type="text" class="form-control form-control-sm" placeholder="搜索 ' + title + '" />');
+
+                $('input', this).on('keyup change',
+                    function(event) {
+                        if (event.key !== 'Enter') {
+                            return;
+                        }
+
+                        if (usersTable.column(i).search() !== this.value) {
+                            usersTable.column(i).search(this.value).draw();
+                        }
+                    });
+            });
+
+            const usersTable = $('#user-listing').DataTable({
+                "processing": true, // for show progress bar
+                "serverSide": true, // for process server side
+                "filter": true, // this is for disable filter (search box)
+                "orderMulti": false, // for disable multiple column at once
+                "ordering": false,
+                "stateSave": false,
+                "lengthChange": false, // for show entries dropdown
+                "ajax": {
+                    "url": '@Url.Action("LoadUsers")',
+                    "type": "POST",
+                    "datatype": "json"
+                },
+                "columnDefs": [
+                    { "targets": [0], "visible": false, "searchable": false },
+                ],
+                "columns": [
+                    { "data": "id", "name": "Id", "autoWidth": true },
+                    { "data": "name", "name": "Name", "autoWidth": true },
+                    { "data": "code", "name": "Code", "autoWidth": true },
+                    { "data": "roleName", "name": "roleName", "autoWidth": true },
+                    { "data": "canadaPhoneNumber", "name": "CanadaPhoneNumber", "render": (data, type, full, meta) => `${full.canadaPhoneNumber} <button class='iconBtn' onclick='openSMS(${full.id}, "${full.name}", "${full.canadaPhoneNumber}")'><i class="fa fa-whatsapp fa-lg"></i></button>` },
+                    { "data": "mailbox", "name": "Mailbox", "render": (data, type, full, meta) => `${full.mailbox ?? "<span style='color: #888'>未设定</span>"} ${GetSendEmailButtonHTML(full.id, full.name, full.mailbox)}` },
+                    { "data": "weChat", "name": "weChat", "autoWidth": true },
+                    { "data": "belongsToName", "name": "BelongsToName", "autoWidth": true },
+                    { "data": "pickUpLocation", "name": "pickUpLocation", "autoWidth": true },
+                    { "render": (data, type, full, meta) => `<a href='@Url.Action("BalanceTransfer")?touserid=${full.id}'>${full.balance}</a>` },
+                    { "render": (data, type, full, meta) => `<a href='@Url.Action("Transactions")?userid=${full.id}'>账单</a>` },
+                    { "render": (data, type, full, meta) => `<a href='@Url.Action("Edit")?id=${full.id}'><i class="fa fa-edit fa-lg"></i></a>` },
+                    { "render": (data, type, full, meta) => `<a href='@Url.Action("ChangePassword")?id=${full.id}'><i class="fa fa-key fa-lg"></i></a>` },
+                ],
+                "language": {
+                    // https://datatables.net/manual/i18n
+                    "processing": "处理中...",
+                    search: "_INPUT_",
+                    searchPlaceholder: "搜索...",
+                    "info": "显示 _TOTAL_ 里面的_START_ 到 _END_",
+                    "paginate": {
+                        "previous": "前一页",
+                        "next": "下一页"
+                    },
+                },
+            });
+            $('#user-sms-send-btn').click(function() {
+                $('#user-sms-send-btn').attr('disabled', true);
+                const sendCustomSMSUrl = '@Url.Action("SendCustomSMS")';
+                const message = $('#user-sms-message').val();
+                $.post(sendCustomSMSUrl,
+                    {
+                        recipientUserId: smsRecipientUserId,
+                        message: message,
+                    },
+                    function(result) {
+                        if (result.error && result.error.text) {
+                            $.toast({
+                                heading: 'Danger',
+                                text: result.error.text,
+                                showHideTransition: 'slide',
+                                icon: 'error',
+                                loaderBg: '#f2a654',
+                                position: 'mid-center',
+                                hideAfter: 2000,
+                            });
+                        } else {
+                            if (result.data) {
+                                $.toast({
+                                    heading: 'Success',
+                                    text: `发送成功`,
+                                    showHideTransition: 'slide',
+                                    icon: 'success',
+                                    loaderBg: '#f2a654',
+                                    position: 'mid-center',
+                                    hideAfter: 2000,
+                                });
+                                $('#user-sms-message').val('');
+                            }
+                        }
+                    }
+                );
+                $('#user-sms-modal').css('display', 'none');
+            });
+
+            $('#user-email-send-btn').click(function() {
+                $('#user-email-send-btn').attr('disabled', true);
+                const sendCustomEmailUrl = '@Url.Action("SendCustomEmail")';
+                const message = $('#user-email-message').val();
+                const subject= $('#user-email-subject').val();
+                $.post(sendCustomEmailUrl,
+                    {
+                        recipientUserId: emailRecipientUserId,
+                        message: message,
+                        subject: subject
+                    },
+                    function(result) {
+                        if (result.error && result.error.text) {
+                            $.toast({
+                                heading: 'Danger',
+                                text: result.error.text,
+                                showHideTransition: 'slide',
+                                icon: 'error',
+                                loaderBg: '#f2a654',
+                                position: 'mid-center',
+                                hideAfter: 2000,
+                            });
+                        } else {
+                            if (result.data) {
+                                $.toast({
+                                    heading: 'Success',
+                                    text: `发送成功`,
+                                    showHideTransition: 'slide',
+                                    icon: 'success',
+                                    loaderBg: '#f2a654',
+                                    position: 'mid-center',
+                                    hideAfter: 2000,
+                                });
+                                $('#user-email-message').val('');
+                            }
+                        }
+                    }
+                );
+                $('#user-email-modal').css('display', 'none');
+            });
+
+            $('#user-sms-cancel-btn').click(function() {
+                $('#user-sms-modal').css('display', 'none');
+            });
+            $('#user-email-cancel-btn').click(function() {
+                $('#user-email-modal').css('display', 'none');
+            });
+            $('#user-sms-message').bind('input propertychange', function() {
+                if($('#user-sms-message').val().trim() === '') {
+                    $('#user-sms-send-btn').attr('disabled', true);
+                } else {
+                    $('#user-sms-send-btn').attr('disabled', false);
+                }
+            });
+            $('#user-email-message').bind('input propertychange', function() {
+                if($('#user-email-message').val().trim() === '' || $('#user-email-subject').val().trim() === '') {
+                    $('#user-email-send-btn').attr('disabled', true);
+                } else {
+                    $('#user-email-send-btn').attr('disabled', false);
+                }
+            });
+            $('#user-email-subject').bind('input propertychange', function() {
+                if($('#user-email-message').val().trim() === '' || $('#user-email-subject').val().trim() === '') {
+                    $('#user-email-send-btn').attr('disabled', true);
+                } else {
+                    $('#user-email-send-btn').attr('disabled', false);
+                }
+            });
+        });
+        function openSMS(userId, recipientName, recipientPhone) {
+            smsRecipientUserId = userId;
+            $('#user-email-modal').css('display', 'none');
+            $('#user-sms-modal').css('display', 'block');
+            const recipientHeading = `Recipient: ${recipientName} (${recipientPhone})`;
+            $('#user-sms-recipient').text(recipientHeading);
+        }
+        function openEmail(userId, recipientName, recipientMailbox) {
+            emailRecipientUserId = userId;
+            $('#user-sms-modal').css('display', 'none');
+            $('#user-email-modal').css('display', 'block');
+            const recipientHeading = `To: ${recipientName} <${recipientMailbox}>`;
+            $('#user-email-recipient').text(recipientHeading);
+        }
+
+        function initializeBalanceSummaryModal()
+        {
+            if (totalBalance > 0)
+            {
+                document.getElementById('totalBalanceSpan').innerHTML = totalBalance.toFixed(2);
+            }
+            else
+            {
+                $.ajax({
+                    url: '@Url.Action("GetBalanceSummary")',
+                    success: response => {
+                        totalBalance = response.data;
+                        document.getElementById('totalBalanceSpan').innerHTML = totalBalance.toFixed(2);
+                    }
+                });
+            }
+        }
+    </script>
+}

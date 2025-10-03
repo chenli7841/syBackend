@@ -1,0 +1,142 @@
+﻿@using Common
+@using Domain.Enums
+@using Domain.Models.Extensions
+@inject ISystemSession SystemSession
+
+<nav class="sidebar sidebar-offcanvas" id="sidebar">
+    <ul class="nav">
+        <li class="nav-item nav-profile">
+            <a href="#" class="nav-link">
+                <div class="profile-image">
+                    <img class="img-xs rounded-circle" src="~/images/faces/face8.jpg" alt="profile image">
+                    <div class="dot-indicator bg-success"></div>
+                </div>
+                <div class="text-wrapper">
+                    <p class="profile-name">@SystemSession.CurrentUser.Name</p>
+                    <p class="designation">管理员</p>
+                </div>
+            </a>
+        </li>
+        <li class="nav-item nav-category">菜单</li>
+
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#batch-pages" aria-expanded="false" aria-controls="batch-pages">
+                <i class="menu-icon typcn typcn-upload-outline"></i>
+                <span class="menu-title">批次管理</span>
+                <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="batch-pages">
+                <ul class="nav flex-column sub-menu">
+                    @foreach (var batchGroupType in Enum.GetValues<BatchGroupType>().Where(g => g != BatchGroupType.None))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Batch" asp-action="Inventory" asp-route-groupType="@batchGroupType">@batchGroupType.GetDescription()</a>
+                        </li>
+                    }
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="Batch" asp-action="OtherOrder">其他单</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="Batch" asp-action="CouponInventory">优惠券</a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#order-pages" aria-expanded="false" aria-controls="order-pages">
+                <i class="menu-icon typcn typcn-upload-outline"></i>
+                <span class="menu-title">运单管理</span>
+                <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="order-pages">
+                <ul class="nav flex-column sub-menu">
+                    @foreach (var orderState in Enum.GetValues<OrderState>().Where(g => g != OrderState.None))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Order" asp-action="Inventory" asp-route-orderState="@orderState">@orderState.GetDescription()</a>
+                        </li>
+                    }
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="Order" asp-action="Search">搜索</a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#user-pages" aria-expanded="false" aria-controls="user-pages">
+                <i class="menu-icon typcn typcn-upload-outline"></i>
+                <span class="menu-title">用户管理</span>
+                <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="user-pages">
+                <ul class="nav flex-column sub-menu">
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="User" asp-action="Inventory">用户信息</a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" asp-area="" asp-controller="Warehouse" asp-action="Inventory">
+                <i class="menu-icon typcn typcn-mail"></i>
+                <span class="menu-title">仓库管理</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" asp-area="" asp-controller="Route" asp-action="Inventory">
+                <i class="menu-icon typcn typcn-mail"></i>
+                <span class="menu-title">线路管理</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" asp-area="" asp-controller="DeliverProgress" asp-action="Inventory">
+                <i class="menu-icon typcn typcn-mail"></i>
+                <span class="menu-title">进度管理</span>
+            </a>
+        </li>
+        @if (@SystemSession.CurrentUser.Role == RoleType.Admin)
+        {
+            <li class="nav-item">
+                <a class="nav-link" asp-area="" asp-controller="PickUpLocation" asp-action="Inventory">
+                    <i class="menu-icon typcn typcn-mail"></i>
+                    <span class="menu-title">取货点管理</span>
+                </a>
+            </li>
+        }
+        <li class="nav-item">
+            <a class="nav-link" asp-area="" asp-controller="User" asp-action="Transactions">
+                <i class="menu-icon typcn typcn-mail"></i>
+                <span class="menu-title">余额账单</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" asp-area="" asp-controller="System" asp-action="Index">
+                <i class="menu-icon typcn typcn-mail"></i>
+                <span class="menu-title">系统设置</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#dataanalysis-pages" aria-expanded="false" aria-controls="dataanalysis-pages">
+                <i class="menu-icon typcn typcn-upload-outline"></i>
+                <span class="menu-title">数据分析</span>
+                <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="dataanalysis-pages">
+                <ul class="nav flex-column sub-menu">
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="DataAnalysis" asp-action="DepositInventory">充值交易</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="DataAnalysis" asp-action="OrderExport">运单导出</a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">
+                <i class="menu-icon typcn typcn-mail"></i>
+                <span class="menu-title">待办事项</span>
+            </a>
+        </li>
+    </ul>
+</nav>

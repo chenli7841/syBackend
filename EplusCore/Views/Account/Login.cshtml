@@ -1,0 +1,122 @@
+﻿@model EplusCore.Models.LoginViewModel
+@inject Microsoft.ApplicationInsights.AspNetCore.JavaScriptSnippet JavaScriptSnippet
+
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+    <title>登录 - EplusCore</title>
+
+    <!-- plugins:css -->
+    <link rel="stylesheet" href="~/vendors/mdi/css/materialdesignicons.min.css">
+    <link rel="stylesheet" href="~/vendors/flag-icon-css/css/flag-icon.min.css">
+    <link rel="stylesheet" href="~/vendors/ti-icons/css/themify-icons.css">
+    <link rel="stylesheet" href="~/vendors/typicons/typicons.css">
+    <link rel="stylesheet" href="~/vendors/css/vendor.bundle.base.css">
+    <!-- endinject -->
+    <!-- Plugin css for this page -->
+    <link rel="stylesheet" href="~/vendors/jvectormap/jquery-jvectormap.css">
+    <!-- End Plugin css for this page -->
+    <!-- inject:css -->
+    <link rel="stylesheet" href="~/css/shared/style.css">
+    <!-- endinject -->
+    <!-- Layout styles -->
+    <link rel="stylesheet" href="~/css/demo_1/style.css">
+    <!-- End Layout styles -->
+    <link rel="shortcut icon" href="~/images/favicon.png" />
+
+    @*<link rel="stylesheet" href="~/css/site.css" />*@
+    @Html.Raw(JavaScriptSnippet.FullScript)
+</head>
+<body>
+    <div class="container-scroller">
+        <div class="container-fluid page-body-wrapper full-page-wrapper">
+            <div class="content-wrapper auth p-0 theme-two">
+                <div class="row d-flex align-items-stretch">
+                    <div class="col-md-4 banner-section d-none d-md-flex align-items-stretch justify-content-center">
+                        <div class="slide-content bg-1"> </div>
+                    </div>
+                    <div class="col-12 col-md-8 h-100 bg-white">
+                        <div class="auto-form-wrapper d-flex align-items-center justify-content-center flex-column">
+                            <div class="nav-get-started">
+                                <p>Don't have an account?</p>
+                                <a class="btn get-started-btn" href="register-2.html">GET STARTED</a>
+                            </div>
+                            @using (Html.BeginForm("Login", "Account", new { ReturnUrl = ViewBag.ReturnUrl }, FormMethod.Post, true, new { role = "form", data_entersubmit="yes" }))
+                            {
+                            <h3 class="mr-auto">Hello! let's get started</h3>
+                            <p class="mb-5 mr-auto">Enter your details below.</p>
+                            <div class="form-group">
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">
+                                            <i class="mdi mdi-account-outline"></i>
+                                        </span>
+                                    </div>
+                                    @Html.TextBoxFor(m => m.UserName, new {@class="form-control", @placeholder="用户名", @required="", @autofocus=""})
+                                    @*                                     <input type="text" class="form-control" placeholder="Username">*@
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">
+                                            <i class="mdi mdi-lock-outline"></i>
+                                        </span>
+                                    </div>
+                                    @Html.PasswordFor(m => m.Password, new {@class="form-control", @placeholder="密码", @required=""})
+                                    @*<input type="password" class="form-control" placeholder="Password">*@
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <button class="btn btn-primary submit-btn">登录</button>
+                            </div>
+                            <div class="wrapper mt-5 text-gray">
+                                <p class="footer-text">Copyright © 2018 Bootstrapdash. All rights reserved.</p>
+                                <ul class="auth-footer text-gray">
+                                    <li>
+                                        <a href="#">Terms & Conditions</a>
+                                    </li>
+                                    <li>
+                                        <a href="#">Cookie Policy</a>
+                                    </li>
+                                </ul>
+                            </div>
+                            }
+                            @*<form action="#"></form>*@
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- content-wrapper ends -->
+        </div>
+        <!-- page-body-wrapper ends -->
+    </div>
+
+    <!-- plugins:js -->
+    <script src="~/vendors/js/vendor.bundle.base.js"></script>
+    <!-- endinject -->
+    <!-- Plugin js for this page -->
+    <script src="~/vendors/chart.js/Chart.min.js"></script>
+    <script src="~/vendors/jvectormap/jquery-jvectormap.min.js"></script>
+    <script src="~/vendors/jvectormap/jquery-jvectormap-world-mill-en.js"></script>
+    <script src="~/vendors/justgage/raphael-2.1.4.min.js"></script>
+    <script src="~/vendors/justgage/justgage.js"></script>
+    <!-- End plugin js for this page -->
+    <!-- inject:js -->
+    <script src="~/js/shared/off-canvas.js"></script>
+    <script src="~/js/shared/hoverable-collapse.js"></script>
+    <script src="~/js/shared/misc.js"></script>
+    <script src="~/js/shared/settings.js"></script>
+    <script src="~/js/shared/todolist.js"></script>
+    <!-- endinject -->
+    <!-- Custom js for this page -->
+    <script src="~/js/demo_1/dashboard.js"></script>
+    <!-- End custom js for this page -->
+    <script src="~/js/site.js" asp-append-version="true"></script>
+</body>
+</html>

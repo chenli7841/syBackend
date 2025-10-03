@@ -1,0 +1,296 @@
+﻿@model WebUI.Models.ViewModels.DataAnalysisOrderExportViewModel
+
+@section Styles
+{
+    <style>
+        p.error-row {
+            color: red;
+            margin: 0;
+        }
+        .orderExportClickableHeader {
+            border: none;
+            background: transparent;
+            color: #6200EE;
+            cursor: pointer;
+            margin: 0;
+            padding: 0;
+        }
+        .inline-input {
+            width: 40px;
+            height: 24px;
+            margin-right: 5px;
+        }
+    </style>
+}
+
+<div class="row">
+    <div class="col-md-12 grid-margin">
+        <div class="card">
+            <div class="card-body order-card-body">
+                <h4 class="card-title">运单导出</h4>
+                <div class="row" style="gap:20px;margin: 0 0 20px 2px;">
+                    <textarea id="filter" class="form-control" style="width:400px;height:91px;flex:none;">创建时间: 2022-08-22,2022-08-25
+用户编号: 0219,0876,0879,1807
+线路: 义乌杂货
+运单取货点: 密市仓库
+运费: 20,80</textarea>
+                     <div style="flex:1">
+                         <p>请用换行来分割条件；用冒号（半角）来分隔字段和值；用逗号来分割字段的值</p>
+                         <div id='filterError' style='margin-bottom:1rem'></div>
+                         <button id="previewBtn" class="btn btn-primary" style="margin-right:10px;">预览</button>
+                         <button id="exportBtn" class="btn btn-primary">导出</button>
+                     </div>
+                     
+                </div>
+
+                <div class="row">
+                    <div class="table-responsive col-3" style="">
+                        <table id="order-export-recipient" style="width: 100%;" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>客户编号</th>
+                                    <th><button class='orderExportClickableHeader' data-toggle="modal" data-target="#orderExportRecipientOrderCountModal">单数</button></th>
+                                    <th>运费</th>
+                                </tr>
+                            </thead>
+                            <tbody id='recipientsBody'>
+                                @foreach (var o in Model.RecipientSummary)
+                                {
+                                    <tr>
+                                        <td>@o.GroupId</td>
+                                        <td>@o.OrderCount</td>
+                                        <td>@o.ShippingCost</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="table-responsive col-4" style="">
+                        <table id="order-export-agent" style="width: 100%;" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>代理编号</th>
+                                    <th><button class='orderExportClickableHeader' data-toggle="modal" data-target="#orderExportAgentOrderCountModal">单数</button></th>
+                                    <th>运费</th>
+                                    <th>返利</th>
+                                </tr>
+                            </thead>
+                            <tbody id='agentsBody'>
+                                @foreach (var o in Model.AgentSummary)
+                                {
+                                    <tr>
+                                        <td>@o.GroupId</td>
+                                        <td>@o.OrderCount</td>
+                                        <td>@o.ShippingCost</td>
+                                        <td>@o.PayCommission</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="table-responsive col-5" style="">
+                        <table id="order-export-location" style="width: 100%;" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>取货点</th>
+                                    <th><button class='orderExportClickableHeader' data-toggle="modal" data-target="#orderExportLocationOrderCountModal">单数</button></th>
+                                    <th>运费</th>
+                                    <th>返利</th>
+                                </tr>
+                            </thead>
+                            <tbody id='locationsBody'>
+                                @foreach (var o in Model.LocationSummary)
+                                {
+                                    <tr>
+                                        <td>@o.GroupId</td>
+                                        <td>@o.OrderCount</td>
+                                        <td>@o.ShippingCost</td>
+                                        <td>@o.PayCommission</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="orderExportRecipientOrderCountModal" tabindex="-1" role="dialog" aria-labelledby="orderExportRecipientOrderCountLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="row">
+                    <div>请输入单数的范围: 大于等于 <input id='recipient-min' type="number" class='inline-input' />, 小于等于 <input id='recipient-max' type="number" class='inline-input' />.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="order-export-recipient-order-count-submit-btn" class="btn btn-success" data-dismiss="modal">提交</button>
+                <button type="button" id="order-export-recipient-order-count-close-btn" class="btn btn-success" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="orderExportAgentOrderCountModal" tabindex="-1" role="dialog" aria-labelledby="orderExportAgentOrderCountLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="row">
+                    <div>请输入单数的范围: 大于等于 <input id='agent-min' type="number" class='inline-input' />, 小于等于 <input id='agent-max' type="number" class='inline-input' />.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="order-export-agent-order-count-submit-btn" class="btn btn-success" data-dismiss="modal">提交</button>
+                <button type="button" id="order-export-agent-order-count-close-btn" class="btn btn-success" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="orderExportLocationOrderCountModal" tabindex="-1" role="dialog" aria-labelledby="orderExportLocationOrderCountLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="row">
+                    <div>请输入单数的范围: 大于等于 <input id='location-min' type="number" class='inline-input' />, 小于等于 <input id='location-max' type="number" class='inline-input' />.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="order-export-location-order-count-submit-btn" class="btn btn-success" data-dismiss="modal">提交</button>
+                <button type="button" id="order-export-location-order-count-close-btn" class="btn btn-success" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts
+{
+    <script>
+        const columns = ['创建时间', '用户编号', '线路', '运费', '运单取货点', '客户代理归属', '物品种类', '装车发货批次', '返利', '客户.单数', '代理.单数', '取货点.单数'];
+        $('#filter').on('input', function(e) {
+            let lines = e.target.value.split("\n");
+            this.style.height = lines.length * 14 + 35 + "px";
+            let errorHTML = '';
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i];
+                if (!line.includes(':')) {
+                    errorHTML = errorHTML + `<p class='error-row'>第${i+1}行需要包含冒号</p>`
+                    continue;
+                }
+                let parts = line.split(':');
+                let property = parts[0].trim();
+                if (!columns.includes(property)) {
+                    errorHTML = errorHTML + `<p class='error-row'>第${i+1}行的字段不属于: ${columns.join(',')}</p>`
+                    continue;
+                }
+                if (parts[1].trim() === '') {
+                    errorHTML = errorHTML + `<p class='error-row'>第${i+1}行缺少值</p>`
+                    continue;
+                }
+                if (parts[0].trim() === '用户编号') {
+                    let value = parts[1].replace(/ /g, '');
+                    if (/^[0-9|,]*$/.test(value) === false) {
+                        errorHTML = errorHTML + `<p class='error-row'>第${i+1}行用户编号只能包含数字和逗号</p>`
+                        continue;
+                    }
+                    if (typeof value.split(',').find(v => v.trim().length !== 4) !== 'undefined') {
+                        errorHTML = errorHTML + `<p class='error-row'>第${i+1}行用户编号必须是4位数字，请用逗号分割多个值</p>`
+                        continue;
+                    }
+                }
+            }
+            $('#filterError').html(errorHTML);
+            $('#previewBtn').attr('disabled', errorHTML !== '');
+            $('#exportBtn').attr('disabled', errorHTML !== '');
+        });
+        $('#previewBtn').click(function() {
+            preview();
+        });
+        $('#exportBtn').click(function() {
+            fetch('@Url.Action("DownloadOrders")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({filters: $('#filter').val().split("\n")})
+            }).then(res => res.blob())
+            .then(blob => {
+                console.log(blob);
+                let url = window.URL.createObjectURL(blob);
+                let a = document.createElement('a');
+                a.href = url;
+                a.download = "orders.xlsx";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            });
+        });
+
+        $('#order-export-recipient-order-count-submit-btn').click(function() {
+            const min = $('#recipient-min').val();
+            const max = $('#recipient-max').val();
+            let filter = $('#filter').val();
+            $('#filter').val([...filter.split("\n").filter(l => !l.includes("客户.单数")), `客户.单数:${min},${max}`].join("\n"));
+            preview();
+        });
+
+        $('#order-export-agent-order-count-submit-btn').click(function() {
+            const min = $('#agent-min').val();
+            const max = $('#agent-max').val();
+            let filter = $('#filter').val();
+            $('#filter').val([...filter.split("\n").filter(l => !l.includes("代理.单数")), `代理.单数:${min},${max}`].join("\n"));
+            preview();
+        });
+        
+        $('#order-export-location-order-count-submit-btn').click(function() {
+            const min = $('#location-min').val();
+            const max = $('#location-max').val();
+            let filter = $('#filter').val();
+            $('#filter').val([...filter.split("\n").filter(l => !l.includes("取货点.单数")), `取货点.单数:${min},${max}`].join("\n"));
+            preview();
+        });
+
+        function preview() {
+            fetch('/DataAnalysis/PreviewOrderExport', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    pageSize: 40, 
+                    filters: $('#filter').val().split("\n")
+                })
+            }).then(res => res.json())
+            .then(model => {
+                let rows = model.recipientSummary.map(o => `
+                <tr>
+                    <td>${o.groupId}</td>
+                    <td>${o.orderCount}</td>
+                    <td>${o.shippingCost}</td>
+                </tr>`).join('');
+                $('#recipientsBody').html(rows);
+                
+                rows = model.agentSummary.map(o => `
+                <tr>
+                    <td>${o.groupId}</td>
+                    <td>${o.orderCount}</td>
+                    <td>${o.shippingCost}</td>
+                    <td>${o.payCommission}</td>
+                </tr>`).join('');
+                $('#agentsBody').html(rows);
+
+                rows = model.locationSummary.map(o => `
+                <tr>
+                    <td>${o.groupId}</td>
+                    <td>${o.orderCount}</td>
+                    <td>${o.shippingCost}</td>
+                    <td>${o.payCommission}</td>
+                </tr>`).join('');
+                $('#locationsBody').html(rows);
+            });
+        }
+
+        $(document).ready(() => {
+            $('#previewBtn').click();
+        })
+    </script>
+}

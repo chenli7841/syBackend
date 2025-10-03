@@ -1,0 +1,111 @@
+﻿@using Domain.Entities
+@model Domain.Entities.DeliverProgressEntity
+
+@{
+  ViewData["Title"] = Model.Id > 0 ? "修改进度" : "创建进度进度";
+}
+
+@section Styles {
+  <link rel="stylesheet" href="~/vendors/ion-rangeslider/css/ion.rangeSlider.css">
+}
+
+@{
+  var routes = (IEnumerable<RouteEntity>)ViewBag.Routes;
+}
+
+<div class="row">
+  <div class="col-lg-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title">@(Model.Id > 0 ? "修改进度" : "创建进度进度")</h4>
+        @using (Html.BeginForm("Save", "DeliverProgress", FormMethod.Post, new { @class = "" }))
+        {
+          @Html.AntiForgeryToken()
+          @Html.TextBoxFor(r => r.Id, new { hidden = "hidden" })
+
+          <div class="row">
+            <div class="col-md-3">
+              <div class="form-group row">
+                @Html.LabelFor(r => r.Name, "名称", new { @class = "col-sm-2 col-form-label" })
+                <div class="col-sm-10">
+                  @Html.TextBoxFor(r => r.Name, new { @class = "form-control" })
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group row">
+                @Html.LabelFor(r => r.Description, "描述", new { @class = "col-sm-2 col-form-label" })
+                <div class="col-sm-10">
+                  @Html.TextBoxFor(r => r.Description, new { @class = "form-control" })
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group row">
+                @Html.LabelFor(r => r.Percent, "进度", new { @class = "col-sm-2 col-form-label" })
+                <div class="col-sm-10">
+                  @Html.TextBoxFor(r => r.Percent, new { @class = "form-control", type = "number" })
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group row">
+                @Html.LabelFor(r => r.RouteId, "线路", new { @class = "col-sm-2 col-form-label" })
+                <div class="col-sm-10">
+                  @Html.TextBoxFor(r => r.RouteId, new { hidden = "hidden" })
+                  <select class="form-control" id="route-select">
+                    @foreach (var route in routes)
+                    {
+                      @if (route.IsDeleted)
+                      {
+                        <option value="@route.Id" disabled="disabled">@route.Name</option>
+                      }
+                      else
+                      {
+                        <option value="@route.Id">@route.Name</option>
+                      }
+                    }
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-1">
+              <button type="submit" class="btn btn-success mr-2">保存</button>
+            </div>
+            <div class="col-md-1">
+              @Html.ActionLink("取消", "Inventory", "DeliverProgress", null, new { @class = "btn btn-secondary" })
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts
+{
+  <script src="~/vendors/ion-rangeslider/js/ion.rangeSlider.min.js"></script>
+
+  <script>
+    $('#Percent').ionRangeSlider({
+      min: 0,
+      onChange: elm => {
+        $('#Percent').val(elm.from);
+      }
+    });
+
+    $('#route-select').val($('#RouteId').val());
+
+    $('#route-select').change(function() {
+      $('#RouteId').val(this.value);
+    });
+
+    const id = @Model.Id;
+    if (id === 0) {
+      $('#route-select option:first').prop('selected', true);
+      $('#route-select').change();
+    }
+  </script>
+}

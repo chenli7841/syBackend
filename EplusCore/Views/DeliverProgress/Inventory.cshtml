@@ -1,0 +1,73 @@
+﻿@model IEnumerable<Domain.Entities.DeliverProgressEntity>
+
+@{
+    ViewData["Title"] = "进度管理";
+}
+
+@section Styles {
+  <link rel="stylesheet" href="~/vendors/ion-rangeslider/css/ion.rangeSlider.css">
+}
+
+<div class="row">
+    <div class="col-md-12 grid-margin">
+        <div class="card">
+          <div class="card-body order-card-body">
+            @Html.ActionLink("添加", "Create", null, null, new {@class="btn btn-primary"})
+            <div class="table-responsive">
+              <table id="progress-listing" class="table table-striped">
+                <thead>
+                <tr>
+                  <th>名称</th>
+                  <th>描述</th>
+                  <th>进度</th>
+                  <th>线路</th>
+                  <th>显示</th>
+                  <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var progress in Model)
+                {
+                  <tr>
+                    <td>@Html.ActionLink(progress.Name, "Edit", new { @id = progress.Id }, new { @class = "" })</td>
+                    <td>@progress.Description</td>
+                    <td><input type="text" value="@progress.Percent" class="percent-slider"/></td>
+                    <td>@progress.Route.Name</td>
+                    <td>
+                      @if (progress.IsDeleted)
+                      {
+                        <i class="fa fa-times fa-lg" style="color: #fc0324de"></i>
+                      }
+                      else
+                      {
+                        <i class="fa fa-check fa-lg" style="color: green"></i>
+                      }
+                    </td>
+                    <td>@Html.ActionLink("隐藏", "Delete", new { id = progress.Id }, new { @class = "btn btn-danger" })</td>
+                  </tr>
+                }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+  <script src="~/vendors/ion-rangeslider/js/ion.rangeSlider.min.js"></script>
+
+  <script>
+    $('#progress-listing').DataTable({
+      paging: false,
+      info: false,
+      order: [],
+      language: {
+        search: "搜索:",
+      },
+    });
+
+    $('.percent-slider').ionRangeSlider({ min: 0, from_fixed: true});
+  </script>
+}

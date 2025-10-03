@@ -1,0 +1,29 @@
+﻿@using Domain.Enums
+@using Domain.Models.Extensions
+@model Domain.Entities.BatchEntity
+@using System.Collections.Generic;
+
+@if (Model.Id > 0)
+{
+    var actionTypes = (List<BatchActionType>)ViewBag.ActionTypes;
+    
+    foreach (var action in actionTypes)
+    {
+        if (action == BatchActionType.Next)
+        {
+            @Html.ActionLink(action.GetDescription(), "MoveNext", "Batch", new { @id = Model.Id }, new { @class = "btn btn-primary" })
+        }
+        else if (action == BatchActionType.BalancePay)
+        {
+            @Html.ActionLink(action.GetDescription(), "Pay", "Batch", new { @id = Model.Id }, new { @class = "btn btn-primary" })
+        }
+        else if (action == BatchActionType.Commission)
+        {
+            @Html.ActionLink(action.GetDescription(), "Commission", "Batch", new { @id = Model.Id }, new { @class = "btn btn-primary" })
+        }
+        else if (action == BatchActionType.Split)
+        {
+            @Html.ActionLink(action.GetDescription(), "Split", "Batch", new { @id = Model.Id }, new { @class = "btn btn-primary" })
+        }
+    }
+}

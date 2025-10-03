@@ -1,0 +1,171 @@
+﻿@model IEnumerable<Domain.Entities.DepositSummaryEntity>
+
+@{
+    ViewData["Title"] = "充值交易";
+}
+
+@section Styles
+{
+    <style>
+        .drillDownBtn {
+            border: none;
+            background: transparent;
+            color: #6200EE;
+            padding-left: 0;
+            cursor: pointer;
+        }
+    </style>
+}
+
+<div class="row">
+    <div class="col-md-5 grid-margin">
+        <div class="card">
+            <div class="card-body order-card-body">
+                <h4 class="card-title">为自己充值</h4>
+                <div class="table-responsive">
+                    <table id="self-deposit-listing" style="width: 100%;" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th style="width: 50%">日期</th>
+                                <th style="width: 50%">金额</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-5 grid-margin">
+        <div class="card">
+            <div class="card-body order-card-body">
+                <h4 class="card-title">为他人充值</h4>
+                <div class="table-responsive">
+                    <table id="other-deposit-listing" style="width: 100%;" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th style="width: 50%">日期</th>
+                                <th style="width: 50%">金额</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="depositDrillDownModal" tabindex="-1" role="dialog" aria-labelledby="depositDrillDownModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content" style="width: 700px;">
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table id="box-listing" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>时间</th>
+                                <th>充值方</th>
+                                <th id='recipientColumnHeader'>收款人</th>
+                                <th>金额</th>
+                                <th>交易方式</th>
+                            </tr>
+                        </thead>
+                        <tbody id="depositDrillDownTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script>
+        $('#self-deposit-listing').DataTable({
+            "processing": true, // for show progress bar
+            "serverSide": true, // for process server side
+            "filter": true, // this is for disable filter (search box)
+            "orderMulti": false, // for disable multiple column at once
+            "ordering": false,
+            "stateSave": false,
+            "searching": false,
+            "lengthChange": false, // for show entries dropdown
+            "ajax": {
+                "url": '@Url.Action("LoadSelfDeposits")',
+                "type": "POST",
+                "datatype": "json"
+            },
+            "columns": [
+                { "render": (data, type, full, meta) => `<button class="drillDownBtn" onclick="DrillDownSelfDeposits('${full.date}')" data-toggle="modal" data-target="#depositDrillDownModal">${full.date}</button>` },
+                { "render": (data, type, full, meta) => `<button class="drillDownBtn" onclick="DrillDownSelfDeposits('${full.date}')" data-toggle="modal" data-target="#depositDrillDownModal">${full.amount}</button>` }
+            ],
+            "language": {
+                // https://datatables.net/manual/i18n
+                "processing": "处理中...",
+                "paginate": {
+                    "previous": "前一页",
+                    "next": "下一页"
+                },
+            },
+        });
+        $('#other-deposit-listing').DataTable({
+            "processing": true, // for show progress bar
+            "serverSide": true, // for process server side
+            "filter": true, // this is for disable filter (search box)
+            "orderMulti": false, // for disable multiple column at once
+            "ordering": false,
+            "stateSave": false,
+            "searching": false,
+            "lengthChange": false, // for show entries dropdown
+            "ajax": {
+                "url": '@Url.Action("LoadOtherDeposits")',
+                "type": "POST",
+                "datatype": "json"
+            },
+            "columns": [
+                { "render": (data, type, full, meta) => `<button class="drillDownBtn" onclick="DrillDownOtherDeposits('${full.date}')" data-toggle="modal" data-target="#depositDrillDownModal">${full.date}</button>` },
+                { "render": (data, type, full, meta) => `<button class="drillDownBtn" onclick="DrillDownOtherDeposits('${full.date}')" data-toggle="modal" data-target="#depositDrillDownModal">${full.amount}</button>` }
+            ],
+            "language": {
+                // https://datatables.net/manual/i18n
+                "processing": "处理中...",
+                "paginate": {
+                    "previous": "前一页",
+                    "next": "下一页"
+                },
+            },
+        });
+        function DrillDownOtherDeposits(date) {
+            $.ajax({
+                url: '@Url.Action("LoadOtherDepositsByDate")',
+                data: { date },
+                success: response => {
+                    let tbodyHTML = '';
+                    document.getElementById('recipientColumnHeader').style.display = 'block';
+                    for (let i = 0; i < response.data.length; i++) {
+                        let r = response.data[i];
+                        tbodyHTML = tbodyHTML + 
+                        `<tr><td>${r.date.split('T')[1]}</td><td>${r.sender}</td><td>${r.recipient}</td><td>${r.amount}</td><td>${r.method}</td></tr>`;
+                    }
+                    document.getElementById('depositDrillDownTableBody').innerHTML = tbodyHTML
+                }
+            });
+        }
+
+        function DrillDownSelfDeposits(date) {
+            $.ajax({
+                url: '@Url.Action("LoadSelfDepositsByDate")',
+                data: { date },
+                success: response => {
+                    let tbodyHTML = '';
+                    document.getElementById('recipientColumnHeader').style.display = 'none';
+                    for (let i = 0; i < response.data.length; i++) {
+                        let r = response.data[i];
+                        tbodyHTML = tbodyHTML + 
+                        `<tr><td>${r.date.split('T')[1]}</td><td>${r.user}</td><td>${r.amount}</td><td>${r.method}</td></tr>`;
+                    }
+                    document.getElementById('depositDrillDownTableBody').innerHTML = tbodyHTML
+                }
+            });
+        }
+    </script>
+}

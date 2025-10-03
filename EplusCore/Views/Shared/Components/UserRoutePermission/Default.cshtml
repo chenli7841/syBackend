@@ -1,0 +1,24 @@
+﻿@model IEnumerable<Domain.Entities.UserRoute>
+
+<div class="row" id="user-route">
+    @foreach (var route in Model)
+    {
+        <div class="col-md-3">
+            <div class="form-group">
+                <div class="form-check form-check-flat">
+                    <label class="form-check-label">
+                        @if (@route.Allowed)
+                        {
+                            <input type="checkbox" class="form-check-input" data-routeid="@route.Route.Id" checked> @route.Route.Name <i class="input-helper"></i>
+                        }
+                        else
+                        {
+                            <input type="checkbox" class="form-check-input" data-routeid="@route.Route.Id"> @route.Route.Name <i class="input-helper"></i>
+                        }
+                    </label>
+                </div>
+            </div>
+            
+        </div>
+    }
+</div>

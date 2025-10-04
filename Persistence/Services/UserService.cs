@@ -150,6 +150,11 @@ namespace Persistence.Services
             return result;
         }
 
+        public async Task<IEnumerable<RoleEntity>> ListRolesAsync()
+        {
+            return await _context.SysRoles.Where(r => r.Code != null).Select(r => new RoleEntity { RoleId = r.RoleId, Name = r.Name, Code = r.Code }).ToListAsync();
+        }
+
         public async Task TogglePickUpLocationVisibilityAsync(int id)
         {
             var location = await _context.PickUpLocations.FirstOrDefaultAsync(u => u.Id == id);
@@ -406,7 +411,19 @@ namespace Persistence.Services
                 return fromUser.Balance;
             }
         }
-
+        public async Task<UserEntity> CreateAsync(UserEntity model)
+        {
+            await _context.Users.AddAsync(new User
+            {
+                UserName = model.UserName,
+                CanadaPhoneNumber = model.CanadaPhoneNumber,
+                Customer = new Customer
+                {
+                    Name = model.Name
+                },
+            });
+            
+        }
         public async Task<UserEntity> SaveAsync(UserEntity model)
         {
             var user = await _context.Users.Include(u => u.Customer).FirstAsync(u => u.Id == model.Id);
@@ -449,6 +466,17 @@ namespace Persistence.Services
 
                     user.PickUpLocationId = location.Id;
 
+                    await _context.SaveChangesAsync();
+
+                    if (model.RoleCodes != null && model.RoleCodes.Count > 0)
+                    {
+                        var roles = await _context.SysUsersRoles.Where(r => r.UserId == user.Id).ToListAsync();
+                        _context.SysUsersRoles.RemoveRange(roles);
+                        foreach(var roleCode in model.RoleCodes)
+                        {
+                            await _context.SysUsersRoles.AddAsync(new SysUsersRole { UserId = user.Id, RoleCode = roleCode });
+                        }
+                    }
                     await _context.SaveChangesAsync();
                 }
             }
@@ -505,6 +533,27 @@ namespace Persistence.Services
                 if (isVisible)
                 {
                     _context.BannedUserRoutes.Remove(bannedRoute);
+                    await _context.SaveChangesAsync();
+                }
+            }
+        }
+
+        public async Task SetUserRoleAsync(int userId, string roleCode, bool enabled)
+        {
+            var userRole = await _context.SysUsersRoles.FirstOrDefaultAsync(ur => ur.UserId == userId && ur.RoleCode == roleCode);
+            if (userRole == null)
+            {
+                if (enabled)
+                {
+                    await _context.SysUsersRoles.AddAsync(new SysUsersRole { UserId = userId, RoleCode = roleCode });
+                    await _context.SaveChangesAsync();
+                }
+            }
+            else
+            {
+                if (enabled)
+                {
+                    _context.SysUsersRoles.Remove(userRole);
                     await _context.SaveChangesAsync();
                 }
             }

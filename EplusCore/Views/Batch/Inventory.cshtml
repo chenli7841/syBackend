@@ -51,19 +51,10 @@
                 <div class="tab-content tab-content-solid">
                     <div class="tab-pane fade show active" id="home-5-1" role="tabpanel" aria-labelledby="tab-5-1">
                         <div style="display: flex; gap: 4px; height: 32px;">
-                            @Html.ActionLink("添加", "Create", null, new { groupType = Model.GroupType, routeId = Model.SelectedRouteId }, new { @class = "btn btn-primary" })
                             @if (Model.GroupType == BatchGroupType.DailyScan || Model.GroupType == BatchGroupType.DailyReturn)
                             {
                                 @Html.ActionLink($"添加{Model.GroupType.GetDescription()}", "CreateDailyBatchPerWarehouse", null, new { groupType = Model.GroupType }, new { @class = "btn btn-primary" })
                             }
-                            <div style="width: 1px; height: 100%; background-color: #ccc; margin-left:5px; margin-right: 5px;"></div>
-                            <button id='batch_inventory_search_btn' class='btn btn-primary'>搜索</button>
-                            <select class="form-control" id="recipient-select" style="width: 225px;">
-                                <option value="" selected>搜索客户归属</option>
-                            </select>
-                            <select class="form-control" id="agent-select" style="width: 225px;">
-                                <option value="" selected>搜索群主</option>
-                            </select>
                         </div>
                         <div class="table-responsive">
                             <table id="batch-listing" class="table table-striped">
@@ -72,14 +63,10 @@
                                         <th>ID</th>
                                         <th>名称</th>
                                         <th>创建日期</th>
-                                        <th>当前状态</th>
                                         <th>总单数</th>
                                         <th>总重量</th>
                                         <th>总费用</th>
-                                        <th>归属</th>
                                         <th>详情</th>
-                                        <th>删除</th>
-                                        <th>打印</th>
                                         <th>导出</th>
                                     </tr>
                                 </thead>
@@ -145,20 +132,13 @@
                             }</a>`
                     },
                     { "data": "dateCreatedDisplay", "autoWidth": true },
-                    { "data": "stageDescription", "autoWidth": true },
                     { "data": "totalOrders", "autoWidth": true },
                     { "data": "totalWeightKg", "autoWidth": true },
                     { "data": "totalShippingCost", "autoWidth": true },
-                    { "render": (data, type, full, meta) => 'TODO' },
                     {
                         "render": (data, type, full, meta) => `<a href='@Url.Action("Edit")?id=${full.id
                             }'><i class="fa fa-edit fa-lg"></i></a>`
                     },
-                    {
-                        "render": (data, type, full, meta) => `<a href='@Url.Action("Delete")?id=${full.id
-                            }&groupType=${groupType}&routeId=${routeId}&warehouseId=${warehouseId}'><i class="fa fa-trash-o fa-lg" style="color: red"></i></a>`
-                    },
-                    { "render": (data, type, full, meta) => `<a href='@Url.Action("PrintBatch")?id=${full.id}' target="_blank"><i class="fa fa-print fa-lg"></i></a>` },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("Export")?id=${full.id}' target="_blank"><i class="fa fa-table fa-lg"></i></a>` },
                 ],
                 "language": {

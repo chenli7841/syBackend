@@ -8624,6 +8624,11 @@ namespace Persistence.Data
                     .HasColumnType("datetime")
                     .HasColumnName("update_time")
                     .HasComment("更新时间");
+
+                entity.Property(e => e.Code)
+                    .HasColumnType("varchar(32)")
+                    .HasColumnName("code")
+                    .HasComment("权限编号");
             });
 
             modelBuilder.Entity<SysRolesMenu>(entity =>
@@ -8871,7 +8876,7 @@ namespace Persistence.Data
 
             modelBuilder.Entity<SysUsersRole>(entity =>
             {
-                entity.HasKey(e => new { e.UserId, e.RoleId })
+                entity.HasKey(e => new { e.UserId, e.RoleCode })
                     .HasName("PRIMARY")
                     .HasAnnotation("MySql:IndexPrefixLength", new[] { 0, 0 });
 
@@ -8892,6 +8897,11 @@ namespace Persistence.Data
                     .HasColumnType("bigint(20)")
                     .HasColumnName("role_id")
                     .HasComment("角色ID");
+
+                entity.Property(e => e.RoleCode)
+                    .HasColumnType("varchar(32)")
+                    .HasColumnName("role_code")
+                    .HasComment("角色 code");
             });
 
             modelBuilder.Entity<SysWechatUserinfo>(entity =>

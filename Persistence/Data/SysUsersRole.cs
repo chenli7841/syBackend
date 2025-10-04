@@ -9,5 +9,6 @@ namespace Persistence.Data
     {
         public long UserId { get; set; }
         public long RoleId { get; set; }
+        public string RoleCode { get; set; }
     }
 }

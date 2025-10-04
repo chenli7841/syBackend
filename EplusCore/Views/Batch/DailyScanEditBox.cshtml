@@ -1,0 +1,367 @@
+﻿@using Domain
+@using Domain.Enums
+@using Domain.Models.Extensions
+@model Domain.Entities.BatchEntity
+
+@{
+    ViewData["Title"] = "批次详情";
+}
+
+@section Styles
+    {
+    <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
+    <style>
+        .secondDispatched {
+            background-color: lightblue !important;
+        }
+
+        .thirdDispatched {
+            background-color: lightgreen !important;
+        }
+    </style>
+}
+
+<div class="row">
+    <div class="col-md-12 grid-margin">
+        <div class="card">
+            <div class="card-body order-card-body">
+                <h4>@Html.ActionLink(Model.Name, "Edit", new {id = Model.Id}) - @Model.Boxes.First(b => b.Id == (int)ViewData["BoxId"]).Number</h4>
+                <div class="row">
+                    <label for="add-order-input" class="col-3">请输入待添加运单号或国内单号:</label>
+                    <input id="add-order-input" class="form-control col-3" type="text" autofocus />
+                    <button type="button" id="add-order-button" class="btn btn-warning col-1 offset-1">添加</button>
+                    <div class="">
+                        @Html.ActionLink("刷新", "Refresh", "Batch", new { id = Model.Id, boxId = (int)ViewData["BoxId"] }, new { @id = "batch-editbox-refresh", @class = "btn btn-primary", @style="margin-left: 10px;" })
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="box-order-listing" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>单号</th>
+                                <th>国内单号</th>
+                                <th>收费重量</th>
+                                <th>箱数</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var order in Model.Boxes.First(b => b.Id == (int)ViewData["BoxId"]).Orders)
+                            {
+                                <tr orderId=@order.Id orderNumber='@order.OrderNumber' domesticNumber='@order.DomesticNumber' class='@(Utils.GetScanStatusClass(order))'>
+                                    <td>@Html.ActionLink(order.OrderNumber ?? "无", "Edit", "Order", new { @id = order.Id })</td>
+                                    <td>@order.DomesticNumber</td>
+                                    <td>@order.WeightKg.ToString("0.00")</td>
+                                    <td></td>
+                                    <td>@Html.ActionLink("移出", "RemoveOrder", new { boxId = (int)ViewData["BoxId"], orderId = order.Id })</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+    {
+    <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
+    <script>
+        const addOrderUrl = '@Url.Action("AddOrder")';
+        const boxId = @((int)ViewData["BoxId"]);
+
+        const ordersTable = $('#box-order-listing').DataTable({
+            paging: false,
+            info: false,
+            searching: false,
+            order: [],
+            language: {
+                search: "搜索:",
+            },
+        });
+
+        $('#add-order-input').keypress(function (event) {
+            var keycode = (event.keyCode ? event.keyCode : event.which);
+            if (keycode === 13) {
+                $('#add-order-button').click();
+            }
+        });
+
+        $('#add-order-button').click(() => {
+            const self = $('#add-order-button');
+            const orderNumber = $('#add-order-input').val();
+
+            self.text('添加中');
+            self.attr('disabled', true);
+
+            $.post(addOrderUrl,
+                {
+                    boxId,
+                    orderNumber,
+                },
+                function (result) {
+                    if (result.error && result.error.text) {
+                        $.toast({
+                            heading: 'Danger',
+                            text: result.error.text,
+                            showHideTransition: 'slide',
+                            icon: 'error',
+                            loaderBg: '#f2a654',
+                            position: 'mid-center',
+                            hideAfter: 2000,
+                        });
+                    } else {
+                        if (result.data) {
+                            const { orderNumber, creator, domesticNumber, pickUpLocation } = result.data;
+                            const creatorFull = $.extend({ name: '', belongsTo: { name: '' } }, creator);
+                            const row = $('<tr>')
+                                .append(`<td>${orderNumber}</td>`)
+                                .append(`<td>${domesticNumber}</td>`)
+                                .append(`<td>${creatorFull.name}</td>`)
+                                .append(`<td>${creatorFull.canadaPhoneNumber}</td>`)
+                                .append(`<td>${creatorFull.belongsTo.name}</td>`)
+                                .append(`<td>${(pickUpLocation || {}).name}</td>`)
+                                .append(`<td></td>`)
+                                .append(`<td></td>`)
+                                .append(`<td></td>`);
+
+                            ordersTable.row.add(row);
+                            $('#box-order-listing tbody').prepend(row);
+
+                            $('#add-order-input').val("");
+                            $.toast({
+                                heading: 'Success',
+                                text: `添加成功。运单线路:${result.data.route.name}`,
+                                showHideTransition: 'slide',
+                                icon: 'success',
+                                loaderBg: '#f2a654',
+                                position: 'mid-center',
+                                hideAfter: 2000,
+                            });
+                        } else {
+                            $.toast({
+                                heading: 'Warning',
+                                text: `单号不存在。已加入其他单。`,
+                                showHideTransition: 'slide',
+                                icon: 'warning',
+                                loaderBg: '#f2a654',
+                                position: 'mid-center'
+                            });
+                        }
+                    }
+
+                    self.text('添加');
+                    self.attr('disabled', false);
+                });
+        });
+
+        $('#merge').click(function () {
+            const sourceBatchAndBox = $('#targetBatch').val();
+            const targetBatchId = @Model.Id;
+            if (sourceBatchAndBox === '') {
+                alert('请填写从批次');
+                return false;
+            }
+
+            document.getElementById("site-overlay").style.display = "block";
+            const sourceBatchId = sourceBatchAndBox.split('-')[0].trim();
+            const sourceBoxNumber = (sourceBatchAndBox.split('-')[1] || '').trim();
+
+            $.post('@Url.Action("Merge")',
+                {
+                    targetBatchId,
+                    sourceBatchId,
+                    sourceBoxNumber
+                },
+                function (result) {
+                    document.getElementById("site-overlay").style.display = "none";
+
+                    if (result.error && result.error.text) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        $.toast({
+                            heading: '合并成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+
+                        setTimeout(() => { window.location.reload(); }, 2 * 1000);
+                    }
+                });
+        });
+
+        $('#second-scan-input').keypress(function (e) {
+            if (e.keyCode === 13) {
+                submitSecondScan();
+            }
+        });
+
+        $('#third-scan-input').keypress(function (e) {
+            if (e.keyCode === 13) {
+                submitThirdScan();
+            }
+        });
+
+        var successSoundUrl = "https://i.cloudup.com/baNnhH1I7M.ogg";
+        var failureSoundUrl = "http://i.cloudup.com/3gveeCqUD6.ogg";
+
+        function submitSecondScan() {
+            const input = $('#second-scan-input').val().trim();
+            if (input === '') {
+                const audio = new Audio(failureSoundUrl);
+                audio.play();
+                return;
+            }
+            const orderRow = $(`tr[orderNumber$='${input}'], tr[domesticNumber='${input}']`);
+            if (orderRow.length === 0) {
+                const audio = new Audio(failureSoundUrl);
+                audio.play();
+                $.toast({
+                    heading: 'Warning',
+                    text: `单号或国内单号不在下面的列表中，请输入列表中的单号。`,
+                    showHideTransition: 'slide',
+                    icon: 'warning',
+                    loaderBg: '#f2a654',
+                    position: 'bottom-right'
+                });
+                return;
+            }
+            const orderId = orderRow.attr('orderId');
+            if (!orderId) {
+                const audio = new Audio(failureSoundUrl);
+                audio.play();
+                $.toast({
+                    heading: 'Warning',
+                    text: `未找到这个单号或国内单号。`,
+                    showHideTransition: 'slide',
+                    icon: 'warning',
+                    loaderBg: '#f2a654',
+                    position: 'bottom-right'
+                });
+                return;
+            };
+            $.post(saveScanStatusUrl,
+                {
+                    OrderId: orderId,
+                    Status: @((int)OrderScanStatusType.SecondScan)
+                    },
+                function (result) {
+                    if (result.error && result.error.text) {
+                        const audio = new Audio(failureSoundUrl);
+                        audio.play();
+                        $.toast({
+                            heading: 'Warning',
+                            text: result.error.text,
+                            showHideTransition: 'slide',
+                            icon: 'warning',
+                            loaderBg: '#f2a654',
+                            position: 'bottom-right'
+                        });
+                    } else {
+                        const audio = new Audio(successSoundUrl);
+                        audio.play();
+                        const row = $(`tr[orderId=${orderId}]`);
+                        row.attr('class', 'secondDispatched');
+                        $('#box-order-listing tbody').prepend(row);
+                        $('#second-scan-input').val('');
+                    }
+                });
+        }
+
+        function submitThirdScan() {
+            const input = $('#third-scan-input').val().trim();
+            if (input === '') {
+                const audio = new Audio(failureSoundUrl);
+                audio.play();
+                return;
+            }
+            const orderRow = $(`tr[orderNumber$='${input}'], tr[domesticNumber='${input}']`);
+            if (orderRow.length === 0) {
+                const audio = new Audio(failureSoundUrl);
+                audio.play();
+                $.toast({
+                    heading: 'Warning',
+                    text: `单号或国内单号不在下面的列表中，请输入列表中的单号。`,
+                    showHideTransition: 'slide',
+                    icon: 'warning',
+                    loaderBg: '#f2a654',
+                    position: 'bottom-right'
+                });
+                return;
+            }
+            const orderId = orderRow.attr('orderId');
+            if (!orderId) {
+                const audio = new Audio(failureSoundUrl);
+                audio.play();
+                $.toast({
+                    heading: 'Warning',
+                    text: `未找到这个单号或国内单号。`,
+                    showHideTransition: 'slide',
+                    icon: 'warning',
+                    loaderBg: '#f2a654',
+                    position: 'bottom-right'
+                });
+                return;
+            };
+            $.post(saveScanStatusUrl,
+                {
+                    OrderId: orderId,
+                    Status: @((int)OrderScanStatusType.ThirdScan)
+                    },
+                function (result) {
+                    if (result.error && result.error.text) {
+                        const audio = new Audio(failureSoundUrl);
+                        audio.play();
+                        $.toast({
+                            heading: 'Warning',
+                            text: result.error.text,
+                            showHideTransition: 'slide',
+                            icon: 'warning',
+                            loaderBg: '#f2a654',
+                            position: 'bottom-right'
+                        });
+                    } else {
+                        const audio = new Audio(successSoundUrl);
+                        audio.play();
+                        const row = $(`tr[orderId=${orderId}]`);
+                        row.attr('class', 'thirdDispatched');
+                        $('#box-order-listing tbody').prepend(row);
+                        $('#third-scan-input').val('');
+                    }
+                });
+        }
+
+        $('#second-scan-success-button').click(() => {
+            const audio = new Audio(successSoundUrl);
+            audio.play();
+        });
+
+        $('#second-scan-fail-button').click(() => {
+            const audio = new Audio(failureSoundUrl);
+            audio.play();
+        });
+
+        const saveScanStatusUrl = '@Url.Action("SaveScanStatus")';
+        $('#second-scan-button').click(submitSecondScan);
+
+        $('#third-scan-button').click(submitThirdScan);
+
+        function init() {
+            const query = window.location.search;
+            if (query.indexOf('highlightOrderId=') >= 0) {
+                const orderId = query.split('highlightOrderId=')[1].split('&')[0];
+                const orderRow = $(`tr[orderid$='${orderId}']`);
+                if (orderRow.length === 0) return;
+                const className = orderRow.attr('class');
+                if (className.indexOf('secondDispatched') >= 0) $('#second-scan-input').focus();
+                else if (className.indexOf('thirdDispatched') >= 0) $('#third-scan-input').focus();
+            }
+        }
+        init();
+    </script>
+}

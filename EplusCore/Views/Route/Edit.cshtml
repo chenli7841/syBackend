@@ -20,7 +20,7 @@
                     @Html.TextBoxFor(r => r.Id, new { hidden = "hidden" })
 
                     <div class="row">
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="form-group row">
                                 @Html.LabelFor(r => r.Name, "名称", new { @class = "col-sm-4 col-form-label" })
                                 <div class="col-sm-8">
@@ -28,108 +28,71 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="form-group row">
-                                @Html.LabelFor(r => r.Code, "代码", new { @class = "col-sm-2 col-form-label" })
-                                <div class="col-sm-10">
+                                @Html.LabelFor(r => r.Code, "代码", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
                                     @Html.TextBoxFor(r => r.Code, new { @class = "form-control" })
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Type, "起始港", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.Type, new { hidden = "hidden" })
+                                    <select class="form-control" id="type-select">
+                                        <option value="yiwu">义乌(Y)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Type, "目的地", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.Type, new { hidden = "hidden" })
+                                    <select class="form-control" id="type-select">
+                                        <option value="toronto">多伦多(T)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
                             <div class="form-group row">
                                 @Html.LabelFor(r => r.Type, "类别", new { @class = "col-sm-4 col-form-label" })
                                 <div class="col-sm-8">
                                     @Html.TextBoxFor(r => r.Type, new { hidden = "hidden" })
                                     <select class="form-control" id="type-select">
                                         <option value="Mixed">集运</option>
-                                        <option value="Direct">直邮</option>
-                                        <option value="Group">团购</option>
-                                        <option value="China">回国</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="form-group row">
-                                @Html.LabelFor(r => r.WarehouseId, "仓库", new { @class = "col-sm-4 col-form-label" })
+                                @Html.LabelFor(r => r.Type, "运输方式", new { @class = "col-sm-4 col-form-label" })
                                 <div class="col-sm-8">
-                                    @Html.TextBoxFor(r => r.WarehouseId, new { hidden = "hidden" })
-                                    <select class="form-control" id="warehouse-select">
-                                        <option value="">---</option>
-                                        @foreach (var warehouse in warehouses)
-                                        {
-                                            <option value="@warehouse.Id">@warehouse.Name</option>
-                                        }
+                                    @Html.TextBoxFor(r => r.Type, new { hidden = "hidden" })
+                                    <select class="form-control" id="type-select">
+                                        <option value="ocean">海运</option>
+                                        <option value="local">陆运</option>
+                                        <option value="air">空运</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="form-group row">
-                                @Html.LabelFor(r => r.DisplaySequence, "排序", new { @class = "col-sm-4 col-form-label" })
-                                <div class="col-sm-8">
-                                    @Html.TextBoxFor(r => r.DisplaySequence, new { @class = "form-control" })
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group row">
-                                @Html.LabelFor(r => r.FixedPrice, "入库费", new { @class = "col-sm-4 col-form-label" })
+                                @Html.LabelFor(r => r.FixedPrice, "每公斤运费", new { @class = "col-sm-4 col-form-label" })
                                 <div class="col-sm-8">
                                     @Html.TextBoxFor(r => r.FixedPrice, new { @class = "form-control", type = "number", step = "0.01" })
                                 </div>
                             </div>
                         </div>
                     </div>
-                    @for (var j = 0; j < Model.ItemPrices.Count; j += 6)
-                    {
-                        <div class="row">
-                            @for (var i = 0; i < 6; i++)
-                            {
-                                if (i + j >= Model.ItemPrices.Count)
-                                {
-                                    break;
-                                }
-
-                                <div class="col-md-2">
-                                    <div class="form-group row">
-                                        @Html.HiddenFor(r => r.ItemPrices[i + j].Item)
-                                        @Html.LabelFor(r => r.ItemPrices[i + j].Price, Model.ItemPrices[i + j].Item, new { @class = "col-sm-4 col-form-label" })
-                                        <div class="col-sm-8">
-                                            @Html.TextBoxFor(r => r.ItemPrices[i + j].Price, new { @class = "form-control", type = "number", step = "0.01" })
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    }
                     <div class="row">
-                        <div class="col-2">
-                            <div class="form-group row">
-                                @Html.LabelFor(r => r.Description, "说明", new { @class = "col-sm-4 col-form-label" })
-                                <div class="col-sm-8">
-                                    @Html.TextAreaFor(r => r.Description, new { @class = "form-control" })
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-2">
-                            <div class="form-group row">
-                                @Html.LabelFor(r => r.SupportWechat, "客服电话", new { @class = "col-sm-4 col-form-label" })
-                                <div class="col-sm-8">
-                                    @Html.TextBoxFor(r => r.SupportWechat, new { @class = "form-control" })
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-2">
-                            <div class="form-group row">
-                                @Html.LabelFor(r => r.SupportDescription, "客服说明", new { @class = "col-sm-4 col-form-label" })
-                                <div class="col-sm-8">
-                                    @Html.TextAreaFor(r => r.SupportDescription, new { @class = "form-control" })
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-6">
+                        <div class="col-12">
                             @await Html.PartialAsync("Components/PhotoUpload/Default")
                         </div>
                     </div>

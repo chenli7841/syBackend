@@ -18,9 +18,11 @@ namespace Domain.Services
         Task TogglePickUpLocationVisibilityAsync(int id);
         Task UpdatePickupLocation(int id, string name, string address, decimal districtAdditionalRate, int sequence, string note);
         Task TransferUser(int fromPickupLocationId, int toPickupLocationId);
+        Task<UserEntity> CreateAsync(UserEntity user);
         Task<UserEntity> SaveAsync(UserEntity user);
         Task<IEnumerable<UserRoute>> ListRouteAsync(int id);
         Task SetRouteVisibilityAsync(int userId, int routeId, bool isVisible);
+        Task SetUserRoleAsync(int userId, string roleCode, bool enabled);
         Task<string> GetShippingAddressAsync(int id);
         Task ChangePassword(int userId, string password);
         void Transfer(int fromUserId, int toUserId, decimal amount, PayType payType, TransactionType transactionType,
@@ -29,5 +31,6 @@ namespace Domain.Services
         decimal Deposit(BalanceTransferInfo info);
         Task<decimal> GetBalanceSummaryAsync();
         Task DeletePickupLocation(int id);
+        Task<IEnumerable<RoleEntity>> ListRolesAsync();
     }
 }

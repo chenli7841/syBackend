@@ -1,0 +1,83 @@
+﻿@using Domain.Enums
+@model WebUI.Models.ViewModels.UserDetailViewModel
+
+@{
+    ViewData["Title"] = "创建用户";
+}
+
+<div class="row">
+    <div class="col-lg-12 grid-margin stretch-card">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">新用户信息</h4>
+
+                @using (Html.BeginForm("Save", "User", FormMethod.Post, new { @class = "", id = "user" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.TextBoxFor(r => r.Id, new { hidden = "hidden" })
+                    @Html.TextBoxFor(r => r.RegisteredPickUpLocation.Id, new { hidden = "hidden" })
+
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Name, "姓名", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.Name, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.CanadaPhoneNumber, "电话", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.CanadaPhoneNumber, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.UserName, "用户名", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.UserName, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <h4 class="card-title">权限管理</h4>
+                    <div class="row" id="user-role">
+                        @foreach (var role in Model.Roles)
+                        {
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <div class="form-check form-check-flat">
+                                        <label class="form-check-label">
+                                            <input type="checkbox" class="form-check-input" name="RoleCodes" value="@role.Code" data-rolecode="@role.Code"> @role.Name <i class="input-helper"></i>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+
+                    <div class="row">
+                        <div class="col-md-1">
+                            <button type="submit" class="btn btn-success mr-2">保存</button>
+                        </div>
+                        <div class="col-md-1">
+                            @Html.ActionLink("取消", "Inventory", "User", null, new { @class = "btn btn-secondary" })
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+    {
+    <script>
+        $(document).ready(function () {
+        });
+    </script>
+}

@@ -86,6 +86,10 @@ namespace WebUI.Controllers
                 SelectedRecipientUserId = recipientUserId,
                 SelectedBelongsToUserId = belongsToUserId
             };
+            if (groupType == BatchGroupType.DailyScan)
+            {
+                return View("DailyScanInventory", result);
+            }
             if (groupType == BatchGroupType.LoadDelivery)
             {
                 return View("LoadDeliveryInventory", result);
@@ -202,6 +206,13 @@ namespace WebUI.Controllers
             return ViewComponent("BatchInfo", new {batch});
         }
 
+        public async Task<IActionResult> DailyScanEdit(int id)
+        {
+            var batchEntity = await _batchService.GetForEditAsync(id);
+            await SetEditDropdownOptions(batchEntity);
+            return View(batchEntity);
+        }
+
         public async Task<IActionResult> Edit(int id)
         {
             var batchEntity = await _batchService.GetForEditAsync(id);
@@ -292,6 +303,29 @@ namespace WebUI.Controllers
                 }));
             }
         }
+
+        public async Task<IActionResult> DailyScanEditBox(int boxId, int? highlightOrderId = null)
+        {
+            var batchEntity = await _batchService.GetForEditBoxAsync(boxId);
+            var box = batchEntity.Boxes.FirstOrDefault(b => b.Id == boxId);
+            if (box != null && box.Orders != null && box.Orders.Any())
+            {
+                box.Orders = box.Orders.OrderByDescending(o => o.Status.Max(o => o.Date)).ToList();
+                var scanStatusEntities = _batchService.GetOrderScanStatusEntities(box.Orders.Select(o => o.Id));
+                foreach (var order in box.Orders)
+                {
+                    var scanStatus = scanStatusEntities.Where(s => s.OrderId == order.Id);
+                    if (scanStatus.Any())
+                    {
+                        order.ScanStatusType = (OrderScanStatusType)scanStatus.Max(s => s.Status);
+                    }
+                }
+            }
+            ViewData["BoxId"] = boxId;
+            return View(batchEntity);
+        }
+
+
 
         public async Task<IActionResult> EditBox(int boxId, int? highlightOrderId = null)
         {

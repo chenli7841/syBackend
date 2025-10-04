@@ -1,4 +1,5 @@
 ﻿using Domain.Enums;
+using System.Collections.Generic;
 
 namespace Domain.Entities
 {
@@ -31,6 +32,7 @@ namespace Domain.Entities
         // TODO: remove this
         public int CustomerId { get; set; }
         public int? BelongsToId { get; set; }
+        public List<string> RoleCodes { get; set; }
     }
 
     public class UserRoute
@@ -89,5 +91,12 @@ namespace Domain.Entities
         public int UserId { get; set; }
         public string WeChat { get; set; }
         public string Warehouse { get; set; }
+    }
+
+    public class RoleEntity
+    {
+        public long RoleId { get; set; }
+        public string Name { get; set; }
+        public string Code { get; set; }
     }
 }

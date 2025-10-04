@@ -155,6 +155,12 @@ namespace WebUI.Controllers
             return Json(new { draw = requestModel.Draw, recordsFiltered = data.Total, recordsTotal = data.Total, data = data.Items });
         }
 
+        public async Task<IActionResult> Create()
+        {
+            var roles = await _userService.ListRolesAsync();
+            return View(new UserDetailViewModel { Roles = roles.ToList() });
+        }
+
         public async Task<IActionResult> Edit(int id)
         {
             var user = await _userService.GetAsync(id);
@@ -278,6 +284,10 @@ namespace WebUI.Controllers
         [HttpPost]
         public async Task<IActionResult> Save(UserEntity user)
         {
+            if (user.Id == 0)
+            {
+                return RedirectToAction(nameof(Edit), new { id = 0 });
+            }
             var result = await _userService.SaveAsync(user);
             return RedirectToAction(nameof(Edit), new {id = result.Id});
         }
@@ -288,6 +298,14 @@ namespace WebUI.Controllers
             await _userService.SetRouteVisibilityAsync(userId, routeId, isVisible);
             return Json(new MethodResult<bool>(true));
         }
+
+        [HttpPost]
+        public async Task<IActionResult> SetUserRole(int userId, string roleCode, bool enabled)
+        {
+            await _userService.SetUserRoleAsync(userId, roleCode, enabled);
+            return Json(new MethodResult<bool>(true));
+        }
+
 
         public async Task<IActionResult> Export()
         {

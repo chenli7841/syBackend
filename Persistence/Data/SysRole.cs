@@ -18,5 +18,6 @@ namespace Persistence.Data
         public DateTime? UpdateTime { get; set; }
         public bool? Type { get; set; }
         public long? ShopId { get; set; }
+        public string Code { get; set; }
     }
 }

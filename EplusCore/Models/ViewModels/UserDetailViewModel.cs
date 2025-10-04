@@ -24,5 +24,7 @@ namespace WebUI.Models.ViewModels
         public IList<UserEntity> Agents { get; set; }
         public IList<PickUpLocationEntity> PickUpLocations { get; set; }
         public string UserName { get; set; }
+        public List<RoleEntity> Roles { get; set; }
+        public List<string> UserRoleCodes { get; set; }
     }
 }

@@ -17,6 +17,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Persistence.Data;
 using Persistence.Utils;
+using Domain;
 
 namespace Persistence.Services
 {
@@ -55,7 +56,7 @@ namespace Persistence.Services
         public async Task<PagedResult<OrderEntity>> ListAsync(OrderListFilterOptions filterOptions)
         {
             var orders = _context.TransportOrders
-                .Where(o => (o.IsFromChina)
+                .Where(o => o.CompanyId == Config.COMPANY_ID && (o.IsFromChina)
                             && (!filterOptions.OrderState.HasValue || o.State == (int)filterOptions.OrderState.Value)
                             && (string.IsNullOrEmpty(filterOptions.OrderNumberToSearch) || o.OrderNumber.Contains(filterOptions.OrderNumberToSearch))
                             && (string.IsNullOrEmpty(filterOptions.DomesticNumberToSearch) || o.DomesticNumber.Contains(filterOptions.DomesticNumberToSearch))
@@ -176,7 +177,7 @@ namespace Persistence.Services
                 .Include(o => o.OrderActionHistories).Include(o => o.OrderBaggages)
                 .Include(o => o.BatchBoxOrderMaps)
                 .Include(o => o.OrderPhotos)
-                .First(o => o.Id == id);
+                .First(o => o.Id == id && o.CompanyId == Config.COMPANY_ID);
 
             foreach (var photo in order.OrderPhotos)
             {
@@ -197,7 +198,7 @@ namespace Persistence.Services
 
         public async Task<OrderEntity> FindAsync(string number)
         {
-            var order = await FindAsync(o => o.OrderNumber == number || o.DomesticNumber == number);
+            var order = await FindAsync(o => (o.OrderNumber == number || o.DomesticNumber == number) && o.CompanyId == Config.COMPANY_ID);
             if (order == null)
             {
                 return null;
@@ -349,6 +350,7 @@ namespace Persistence.Services
             order.SenderId = entity.Creator.CustomerId;
             order.RouteId = entity.RouteId;
             order.PickUpLocationId = entity.PickUpLocationId;
+            order.CompanyId = Config.COMPANY_ID;
 
             // 在 “运单管理” -> “未匹配” 中添加运单时，运单要一个初始的 “预创建运单” 状态。
             if (entity.State == OrderState.Draft)
@@ -378,7 +380,7 @@ namespace Persistence.Services
                 return 0;
             }
 
-            var route = await _routeService.GetAsync(order.RouteId.Value);
+            var route = await _routeService.GetAsync(order.RouteId.Value, false);
             var categoryMap = route.ItemPrices.ToDictionary(it => it.Item, it => it.Price);
             var mostValuablePrice = route.ItemPrices.Max(it => it.Price);
             var mostExpensiveItemPrice = order.Items.Select(it =>
@@ -443,6 +445,7 @@ namespace Persistence.Services
             order.DomesticNumber = entity.DomesticNumber;
             order.DomesticCarrier = entity.DomesticCarrier;
             order.WeightKg = entity.WeightKg;
+            order.CompanyId = Config.COMPANY_ID;
             if (entity.WeightKg > 0 && entity.PickUpLocationId.HasValue)
             {
                 var pickUp = await _context.PickUpLocations.FirstOrDefaultAsync(p => p.Id == entity.PickUpLocationId);
@@ -485,7 +488,7 @@ namespace Persistence.Services
 
         private async Task<TransportOrder> UpdateAsync(OrderEntity entity)
         {
-            var order = await _context.TransportOrders.FirstAsync(o => o.Id == entity.Id);
+            var order = await _context.TransportOrders.FirstAsync(o => o.Id == entity.Id && o.CompanyId == Config.COMPANY_ID);
 
             if (entity.RouteId.HasValue && order.RouteId != entity.RouteId)
             {
@@ -590,6 +593,7 @@ namespace Persistence.Services
                 .Include(o => o.OrderInternalStatuses).ThenInclude(os => os.User).ThenInclude(u => u.Customer)
                 .Include(o => o.OrderPhotos)
                 .Include(o => o.PickUpLocation)
+                .Where(o => o.CompanyId == Config.COMPANY_ID)
                 .FirstOrDefaultAsync(searchCriteria);
 
             if (order == null)
@@ -601,17 +605,17 @@ namespace Persistence.Services
             result.Creator = await _userService.GetAsync(order.CreatedById);
 
             // order created in regular site has to calculate item cost by us
-            if (!order.IsItemCostUpdated)
-            {
-                var itemCost = await CalculateItemCostAsync(result);
-                result.ItemCost = itemCost;
-                result.ShippingCost += itemCost;
+            //if (!order.IsItemCostUpdated)
+            //{
+            //    var itemCost = await CalculateItemCostAsync(result);
+            //    result.ItemCost = itemCost;
+            //    result.ShippingCost += itemCost;
                 
-                order.ItemCost = itemCost;
-                order.ShippingCost = result.ShippingCost;
-                order.IsItemCostUpdated = true;
-                await _context.SaveChangesAsync();
-            }
+            //    order.ItemCost = itemCost;
+            //    order.ShippingCost = result.ShippingCost;
+            //    order.IsItemCostUpdated = true;
+            //    await _context.SaveChangesAsync();
+            //}
 
             if (order.RecipientAddressId != null)
             {

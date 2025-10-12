@@ -1,0 +1,669 @@
+﻿@using Domain.Entities
+@using Domain.Enums
+@using Domain.Models.Extensions
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model Domain.Entities.BatchEntity
+
+@{
+    ViewData["Title"] = "批次详情";
+}
+
+@section Styles
+    {
+    <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
+    <style>
+        #totalShippingCostBtn {
+            border: none;
+            background: transparent;
+            color: #6200EE;
+            padding-left: 0;
+            cursor: pointer;
+        }
+
+        #totalShippingCostModal td:nth-child(2) {
+            padding: 5px 20px;
+        }
+
+        #totalShippingCostModal td:nth-child(3) {
+            text-align: right;
+            padding: 5px 20px;
+        }
+    </style>
+}
+
+@{
+    var recipients = (IEnumerable<UserEntity>)ViewBag.Recipients;
+    var agents = (IEnumerable<UserEntity>)ViewBag.Agents;
+    var pickuplocations = (IEnumerable<PickUpLocationEntity>)ViewBag.PickUpLocations;
+    var masterBatches = (IEnumerable<BatchEntity>)ViewBag.MasterBatches;
+}
+
+<div class="row">
+    <div class="col-md-12 grid-margin">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">修改批次 装车发货</h4>
+                @using (Html.BeginForm("Save", "Batch", FormMethod.Post, new { @class = "" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.TextBoxFor(b => b.Id, new { hidden = "hidden" })
+                    @Html.TextBoxFor(b => b.GroupType, new { hidden = "hidden" })
+                    @Html.TextBoxFor(b => b.RouteId, new { hidden = "hidden" })
+                    @Html.TextBoxFor(b => b.WarehouseId, new { hidden = "hidden" })
+                    @Html.TextBoxFor(b => b.Stage, new { hidden = "hidden" })
+
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Name, "名称", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.Name, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Cost, "成本", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.Cost, "{0:0.00}", new { @class = "form-control", type = "number", step = "0.01" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Duty, "关税", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.Duty, "{0:0.00}", new { @class = "form-control", type = "number", step = "0.01" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        @if (Model.GroupType == BatchGroupType.LoadDelivery)
+                        {
+                            <div class="col-md-3">
+                                <div class="form-group row">
+                                    @Html.LabelFor(r => r.TargetWeightKg, "目标重量", new { @class = "col-sm-4 col-form-label" })
+                                    <div class="col-sm-8">
+                                        @Html.TextBoxFor(r => r.TargetWeightKg, "{0:0.00}", new { @class = "form-control", type = "number", step = "0.01" })
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Stage, "状态", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.Stage, new { hidden = "hidden" })
+                                    <select class="form-control" id="stage-select">
+                                        <option value="">---</option>
+                                        @foreach (var stage in Enum.GetValues<BatchStageType>().Where(r => r != BatchStageType.None))
+                                        {
+                                            <option value="@stage">@stage.GetDescription()</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group row">
+                                    @Html.LabelFor(r => r.FlightInfo, "航班信息", new { @class = "col-sm-4 col-form-label" })
+                                    <div class="col-sm-8">
+                                        @Html.TextBoxFor(r => r.FlightInfo, new { @class = "form-control" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group row">
+                                    @Html.LabelFor(r => r.CargoNumber, "货运号码", new { @class = "col-sm-4 col-form-label" })
+                                    <div class="col-sm-8">
+                                        @Html.TextBoxFor(r => r.CargoNumber, new { @class = "form-control" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group row">
+                                    @Html.LabelFor(r => r.ArrivalTime, "预计到货时间", new { @class = "col-sm-3 col-form-label" })
+                                    <div class="col-sm-9">
+                                        @Html.TextBoxFor(r => r.ArrivalTime, "{0:yyyy-MM-ddTHH:mm}", new { type = "datetime-local", @class = "form-control" })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label" for="TotalShippingCost"><button type="button" id="totalShippingCostBtn" data-toggle="modal" data-target="#totalShippingCostModal">运费总计</button></label>
+                                <div class="col-sm-8">
+                                    <input class="form-control" disabled id="TotalShippingCost" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row" style="gap: 20px;">
+                        <div>
+                            <button type="submit" class="btn btn-success">保存</button>
+                        </div>
+                        @*@if (Model.Id > 0)
+                    {
+                    <div class="col-md-1">
+                    <button class="btn btn-primary" id="send-message">发消息</button>
+                    </div>
+                    }*@
+                        @await Html.PartialAsync("BatchAction", Model)
+                            <div>
+                                <button id="batch_edit_split_by_locations_btn" class="btn btn-primary">取货点拆分</button>
+                            </div>
+                            <div>
+                                <button id="batch_edit_split_by_recipients_btn" class="btn btn-primary">按客户归属拆分(待提货)</button>
+                            </div>
+                        <div>
+                            <button id="batch_edit_sms_notify_btn" class="btn btn-primary" data-toggle="modal" data-target="#smsInputModal">短信通知</button>
+                        </div>
+                        <div>
+                            @Html.ActionLink("刷新", "Refresh", "Batch", new { id = Model.Id }, new { @class = "btn btn-primary" })
+                        </div>
+                        <div>
+                            @Html.ActionLink("取消", "Inventory", "Batch", new { groupType = Model.GroupType, routeId = Model.RouteId, warehouseId = Model.WarehouseId }, new { @class = "btn btn-secondary" })
+                        </div>
+                    </div>
+                }
+
+                <div class="modal fade" id="smsInputModal" tabindex="-1" role="dialog" aria-labelledby="smsInputModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-body">
+                                <div class="row">
+                                    <label class="col-form-label col-4">请输入取货地点：</label>
+                                    <input class="form-control col-8" id="batch-edit-pick-up-location-input" value="壹嘉万锦门店，333 Denison St Unit 16" />
+                                </div>
+                                <div class="row">
+                                    <label class="col-form-label col-4">请输入取货时间：</label>
+                                    <input class="form-control col-8" id="batch-edit-pick-up-time-input" value="周二-周四 12点-6点 周五 周六 10点-7点" />
+                                </div>
+                                <div class="row">
+                                    <label class="col-form-label col-4">自定义收信电话：</label>
+                                    <input class="form-control col-8" id="batch-edit-custom-number-input" />
+                                </div>
+                                <div class="row" style="margin-top: 5px;">
+                                    <textarea class="form-control" id="batch-edit-custom-content-input" placeholder="自定义短信内容："></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" id="batch-edit-sms-submit-btn" class="btn btn-success">Submit</button>
+                                <button type="button" id="batch-edit-sms-cancel-btn" class="btn btn-light" data-dismiss="modal">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if (Model.Id > 0)
+                {
+                    <div class="form-group row mt-4">
+                        <label class="col-form-label col-1">从批次:</label>
+                        <input class="form-control col-3" id="targetBatch" />
+                        <button class="btn btn-primary ml-3" id="merge">合并</button>
+                    </div>
+                }
+
+                @if (Model.Id > 0)
+                {
+                    <div class="table-responsive">
+                        <table id="box-listing" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>箱号</th>
+                                    <th>总单数</th>
+                                    <th>总重量</th>
+                                    <th>编号</th>
+                                    <th>打印</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var box in Model.Boxes.OrderBy(b => b.Number))
+                                {
+                                    <tr>
+                                        <td>@Html.ActionLink(box.Number.ToString(), "EditBox", new { boxId = box.Id })</td>
+                                        <td>@box.Orders.Count()</td>
+                                        <td>@box.Orders.Sum(o => o.WeightKg)</td>
+                                        <td>@Model.Id - @box.Number</td>
+                                        <td><a href='@Url.Action("PrintBatchBox")?id=@box.Id' target="_blank"><i class="fa fa-print fa-lg"></i></a></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    @Html.ActionLink("添加", "AddBox", null, new { id = Model.Id, boxNumber = Model.Boxes.Count + 1 }, new { @class = "btn btn-primary" })
+
+                    <h5 class="mt-2">其他单</h5>
+                    <div class="row">
+                        @foreach (var otherOrder in Model.OtherOrders)
+                        {
+                            <div class="col-2">@otherOrder</div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="totalShippingCostModal" tabindex="-1" role="dialog" aria-labelledby="totalShippingCostModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+                <p>运费 = 物品运费 + 实收关税 + 超长费用 + 熏蒸费用 + 仓库费用 + 港杂费 + 保险金额</p>
+                <p>注意：不包括仓储费 和 地区附加费</p>
+                <table>
+                    <tbody>
+                        <tr><td></td><td>物品运费总计</td><td id='totalItemCostText'></td></tr>
+                        <tr><td></td><td>实收关税总计</td><td id='totalDutyText'></td></tr>
+                        <tr><td></td><td>超长费用总计</td><td id='totalOversizeCostText'></td></tr>
+                        <tr><td></td><td>熏蒸费用总计</td><td id='totalFumigationCostText'></td></tr>
+                        <tr><td></td><td>仓库费用总计</td><td id='totalWarehouseCostText'></td></tr>
+                        <tr><td></td><td>港杂费总计</td><td id='totalPortMisCostText'></td></tr>
+                        <tr><td>+</td><td>保险金额总计</td><td id='totalInsuranceText'></td></tr>
+                        <tr style='border-bottom: 1px black solid'><td>-</td><td>总折扣</td><td id='totalDiscountText'></td></tr>
+                        <tr><td></td><td style='padding-bottom: 30px'>总运费</td><td id='totalShippingCostText' style='padding-bottom: 30px'></td></tr>
+                        <tr><td></td><td>仓储费总计</td><td id='totalStorageCostText'></td></tr>
+                        <tr><td></td><td>地区附加费总计</td><td id='totalDistrictAdditionalCostText'></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="totalShippingCost-cancel-btn" class="btn btn-light" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+    {
+    <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
+    <script>
+        $('#recipient-select').val($('#RecipientId').val());
+
+        $('#recipient-select').change(function () {
+            $('#RecipientId').val(this.value);
+        });
+
+        $('#agent-select').val($('#AgentId').val());
+
+        $('#agent-select').change(function () {
+            $('#AgentId').val(this.value);
+        });
+
+        $('#pickuplocation-select').val($('#PickUpLocationId').val());
+
+        $('#pickuplocation-select').change(function () {
+            $('#PickUpLocationId').val(this.value);
+        });
+
+        $('#master-batch-select').val($('#MasterBatchId').val());
+
+        $('#master-batch-select').change(function () {
+            $('#MasterBatchId').val(this.value);
+        });
+
+        $('#stage-select').val($('#Stage').val());
+
+        $('#stage-select').change(function () {
+            $('#Stage').val(this.value);
+        });
+
+        $("#batch-edit-sms-submit-btn").click(function () {
+            const location = $('#batch-edit-pick-up-location-input').val();
+            const time = $('#batch-edit-pick-up-time-input').val();
+            const customMessage = $('#batch-edit-custom-content-input').val();
+            const customRecipientPhone = $('#batch-edit-custom-number-input').val();
+            if (location.trim() === '' || time.trim() === '') {
+                return;
+            }
+
+            $.post('@Url.Action("SmsNotify")',
+                {
+                    id: @Model.Id,
+                    pickUpLocation: location,
+                    pickUpTime: time,
+                    customMessage: customMessage,
+                    recipientPhoneNumber: customRecipientPhone
+                },
+                function (result) {
+                    if (result.error) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        $.toast({
+                            heading: 'Success',
+                            text: '操作成功',
+                            showHideTransition: 'slide',
+                            icon: 'success',
+                            loaderBg: '#f2a654',
+                            position: 'mid-center'
+                        });
+                    }
+                }
+            );
+
+            $('#smsInputModal').removeClass("show");
+            $('#smsInputModal').hide();
+        });
+
+        $("#batch-edit-sms-cancel-btn").click(function () {
+            $('#smsInputModal').removeClass("show");
+            $('#smsInputModal').hide();
+        });
+
+        $('#batch_edit_sms_notify_btn').click(function () {
+            $('#smsInputModal').addClass("show");
+            $('#smsInputModal').show();
+            return false;
+        });
+
+        $('#batch_edit_split_by_locations_btn').click(function () {
+            fetch('/batch/SplitByLocations/' + @Model.Id)
+                .then(async response => {
+                    if (response.status === 400) {
+                        const body = await response.json();
+                        if (!body.value.error) {
+                            $.toast({
+                                heading: '未知错误',
+                                hideAfter: false,
+                                position: 'mid-center',
+                                icon: 'error'
+                            });
+                        } else {
+                            $.toast({
+                                heading: body.value.error.text,
+                                hideAfter: false,
+                                position: 'mid-center',
+                                icon: 'error'
+                            });
+                        }
+                    }
+                    else if (response.status === 200) {
+                        $.toast({
+                            heading: '拆分成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+                    }
+                });
+            return false;
+        });
+
+        $('#batch_edit_split_by_agents_btn').click(function () {
+            fetch('/batch/SplitByAgents/' + @Model.Id)
+                .then(async response => {
+                    if (response.status === 400) {
+                        const body = await response.json();
+                        if (!body.value.error) {
+                            $.toast({
+                                heading: '未知错误',
+                                hideAfter: false,
+                                position: 'mid-center',
+                                icon: 'error'
+                            });
+                        } else {
+                            $.toast({
+                                heading: body.value.error.text,
+                                hideAfter: false,
+                                position: 'mid-center',
+                                icon: 'error'
+                            });
+                        }
+                    }
+                    else if (response.status === 200) {
+                        $.toast({
+                            heading: '拆分成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+                    }
+                });
+            return false;
+        });
+
+        $('#batch_edit_split_by_recipients_btn').click(function () {
+            fetch('/batch/SplitByRecipients/' + @Model.Id)
+                .then(async response => {
+                    if (response.status === 400) {
+                        const body = await response.json();
+                        if (!body.value.error) {
+                            $.toast({
+                                heading: '未知错误',
+                                hideAfter: false,
+                                position: 'mid-center',
+                                icon: 'error'
+                            });
+                        } else {
+                            $.toast({
+                                heading: body.value.error.text,
+                                hideAfter: false,
+                                position: 'mid-center',
+                                icon: 'error'
+                            });
+                        }
+                    }
+                    else if (response.status === 200) {
+                        $.toast({
+                            heading: '拆分成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+                    }
+                });
+            return false;
+        });
+
+        $('#batch_edit_split_warehouse_cost_btn').click(function () {
+            fetch('/batch/SplitByNonAgent/' + @Model.Id)
+                .then(async response => {
+                    if (response.status === 400) {
+                        const body = await response.json();
+                        if (!body.value.error) {
+                            $.toast({
+                                heading: '未知错误',
+                                hideAfter: false,
+                                position: 'mid-center',
+                                icon: 'error'
+                            });
+                        } else {
+                            $.toast({
+                                heading: body.value.error.text,
+                                hideAfter: false,
+                                position: 'mid-center',
+                                icon: 'error'
+                            });
+                        }
+                    }
+                    else if (response.status === 200) {
+                        $.toast({
+                            heading: '拆分成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+                    }
+                });
+            return false;
+        });
+
+        $('#batch_edit_split_bill_btn').click(function () {
+            fetch('/batch/SplitByNonLocation/' + @Model.Id)
+                .then(async response => {
+                    if (response.status === 400) {
+                        const body = await response.json();
+                        if (!body.value.error) {
+                            $.toast({
+                                heading: '未知错误',
+                                hideAfter: false,
+                                position: 'mid-center',
+                                icon: 'error'
+                            });
+                        } else {
+                            $.toast({
+                                heading: body.value.error.text,
+                                hideAfter: false,
+                                position: 'mid-center',
+                                icon: 'error'
+                            });
+                        }
+                    }
+                    else if (response.status === 200) {
+                        $.toast({
+                            heading: '拆分成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+                    }
+                });
+            return false;
+        });
+
+        $('#batch_edit_update_order_load_delivery_properties_btn').click(function () {
+            fetch('/batch/UpdateLoadDeliveryProperties/' + @Model.Id)
+                .then(async response => {
+                    if (response.status === 400) {
+                        const body = await response.json();
+                        if (!body.value.error) {
+                            $.toast({
+                                heading: '未知错误',
+                                hideAfter: false,
+                                position: 'mid-center',
+                                icon: 'error'
+                            });
+                        } else {
+                            $.toast({
+                                heading: body.value.error.text,
+                                hideAfter: false,
+                                position: 'mid-center',
+                                icon: 'error'
+                            });
+                        }
+                    }
+                    else if (response.status === 200) {
+                        $.toast({
+                            heading: '批次名更新成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+                    }
+                });
+            return false;
+        });
+
+        $('#box-listing').DataTable({
+            paging: false,
+            searching: false,
+            info: false,
+            order: [],
+            language: {
+                search: "搜索:",
+            },
+        });
+
+        $('#batch-action').click(function () {
+            document.getElementById("site-overlay").style.display = "block";
+        });
+
+        $('#merge').click(function () {
+            const sourceBatchAndBox = $('#targetBatch').val();
+            const targetBatchId = @Model.Id;
+            if (sourceBatchAndBox === '') {
+                alert('请填写从批次');
+                return false;
+            }
+
+            document.getElementById("site-overlay").style.display = "block";
+            const sourceBatchId = sourceBatchAndBox.split('-')[0].trim();
+            const sourceBoxNumber = (sourceBatchAndBox.split('-')[1] || '').trim();
+
+            $.post('@Url.Action("Merge")',
+                {
+                    targetBatchId,
+                    sourceBatchId,
+                    sourceBoxNumber
+                },
+                function (result) {
+                    document.getElementById("site-overlay").style.display = "none";
+
+                    if (result.error && result.error.text) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        $.toast({
+                            heading: '合并成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+
+                        setTimeout(() => { window.location.reload(); }, 2 * 1000);
+                    }
+                });
+        });
+
+        $(document).ready(() => {
+            fetch('/batch/GetOrderCostSummary?batchId=' + @Model.Id)
+                .then(async response => {
+                    const body = await response.json();
+                    if (response.status === 400) {
+                        if (!body.value.error) {
+                            $.toast({
+                                heading: '未知错误',
+                                hideAfter: false,
+                                position: 'mid-center',
+                                icon: 'error'
+                            });
+                        } else {
+                            $.toast({
+                                heading: body.value.error.text,
+                                hideAfter: false,
+                                position: 'mid-center',
+                                icon: 'error'
+                            });
+                        }
+                    }
+                    else if (response.status === 200) {
+                        $('#totalItemCostText').text(body.data.totalItemCost.toFixed(2));
+                        $('#totalDutyText').text(body.data.totalDuty.toFixed(2));
+                        $('#totalOversizeCostText').text(body.data.totalOversizeCost.toFixed(2));
+                        $('#totalFumigationCostText').text(body.data.totalFumigationCost.toFixed(2));
+                        $('#totalWarehouseCostText').text(body.data.totalWarehouseCost.toFixed(2));
+                        $('#totalPortMisCostText').text(body.data.totalPortMisCost.toFixed(2));
+                        $('#totalInsuranceText').text(body.data.totalInsurance.toFixed(2));
+                        $('#totalDiscountText').text(body.data.totalDiscount.toFixed(2));
+                        const totalShippingCost =
+                            body.data.totalItemCost +
+                            body.data.totalDuty +
+                            body.data.totalOversizeCost +
+                            body.data.totalFumigationCost +
+                            body.data.totalWarehouseCost +
+                            body.data.totalPortMisCost +
+                            body.data.totalInsurance -
+                            body.data.totalDiscount;
+                        $('#totalShippingCostText').text(totalShippingCost.toFixed(2));
+                        $('#totalStorageCostText').text(body.data.totalStorageCost.toFixed(2));
+                        $('#totalDistrictAdditionalCostText').text(body.data.totalDistrictAdditionalCost.toFixed(2));
+
+                        $('#TotalShippingCost').val(totalShippingCost.toFixed(2));
+                        $('#TotalOversizeCost').val(body.data.totalDistrictAdditionalCost.toFixed(2))
+                        $('#TotalStorageCost').val(body.data.totalStorageCost.toFixed(2))
+                    }
+                });
+        })
+    </script>
+}

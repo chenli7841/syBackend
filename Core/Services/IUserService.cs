@@ -18,7 +18,7 @@ namespace Domain.Services
         Task TogglePickUpLocationVisibilityAsync(int id);
         Task UpdatePickupLocation(int id, string name, string address, decimal districtAdditionalRate, int sequence, string note);
         Task TransferUser(int fromPickupLocationId, int toPickupLocationId);
-        Task<UserEntity> CreateAsync(UserEntity user);
+        //Task<UserEntity> CreateAsync(UserEntity user);
         Task<UserEntity> SaveAsync(UserEntity user);
         Task<IEnumerable<UserRoute>> ListRouteAsync(int id);
         Task SetRouteVisibilityAsync(int userId, int routeId, bool isVisible);

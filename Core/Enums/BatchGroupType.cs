@@ -11,6 +11,8 @@ namespace Domain.Enums
         PendingDispatch = 15,
         [Description("装箱打包")]
         Package = 20,
+        [Description("托盘")]
+        Pallet = 21,
         [Description("待确认")]
         PendingConfirmation = 25,
         [Description("出库扫描")]

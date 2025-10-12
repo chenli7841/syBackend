@@ -18,13 +18,148 @@
             </a>
         </li>
         <li class="nav-item nav-category">菜单</li>
+        <li class="nav-item" style="display: none;">
+            <a class="nav-link" asp-area="" asp-controller="Batch" asp-action="Inventory" asp-route-groupType="DailyScan">
+                <i class="menu-icon typcn typcn-mail"></i>
+                <span class="menu-title">创建运单</span>
+            </a>
+        </li>
         <li class="nav-item">
+            <a class="nav-link" asp-area="" asp-controller="Order" asp-action="Search">
+                <i class="menu-icon typcn typcn-mail"></i>
+                <span class="menu-title">运单管理</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" asp-area="" asp-controller="Batch" asp-action="OtherOrder">
+                <i class="menu-icon typcn typcn-mail"></i>
+                <span class="menu-title">入库单查询</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" asp-area="" asp-controller="Order" asp-action="ContrabandInventory">
+                <i class="menu-icon typcn typcn-mail"></i>
+                <span class="menu-title">违禁品运单</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">
+                <i class="menu-icon typcn typcn-mail"></i>
+                <span class="menu-title">待办事项</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#china-warehouse" aria-expanded="false" aria-controls="china-warehouse">
+                <i class="menu-icon typcn typcn-upload-outline"></i>
+                <span class="menu-title">中国仓库操作</span>
+                <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="china-warehouse">
+                <ul class="nav flex-column sub-menu">
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Batch" asp-action="Inventory" asp-route-groupType="DailyScan">每日到货</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="Order" asp-action="InWarehouseInventory">量尺称重</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="Batch" asp-action="PackageInventory">装箱打包</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="Batch" asp-action="PalletInventory">开托盘</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="Batch" asp-action="LoadDeliveryInventory">装车发货</a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#canada-warehouse" aria-expanded="false" aria-controls="canada-warehouse">
+                <i class="menu-icon typcn typcn-upload-outline"></i>
+                <span class="menu-title">加拿大仓库操作</span>
+                <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="canada-warehouse">
+                <ul class="nav flex-column sub-menu">
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="Batch" asp-action="WarehouseReceiveInventory">仓库收货</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="Batch" asp-action="PickUpLocationInventory">取货点提货</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="Batch" asp-action="PendingPickUpInventory">待提货</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="Batch" asp-action="PendingDeliveryInventory">待派送订单</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="Batch" asp-action="Inventory">已完成</a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#system-admin" aria-expanded="false" aria-controls="system-admin">
+                <i class="menu-icon typcn typcn-upload-outline"></i>
+                <span class="menu-title">系统管理</span>
+                <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="system-admin">
+                <ul class="nav flex-column sub-menu">
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="User" asp-action="Inventory">用户管理</a>
+                    </li>
+                    <li style="display: none;" class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="DeliverProgress" asp-action="Inventory">进度管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="PickUpLocation" asp-action="Inventory" asp-route-numberOfMonths="3" asp-route-version="2">取货点管理</a>
+                    </li>
+                    <li style="display: none;" class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="User" asp-action="Inventory">账户充值</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="User" asp-action="Inventory">公告栏</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="User" asp-action="Inventory">图片管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="User" asp-action="Inventory">运输规则管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="Route" asp-action="Inventory">线路管理</a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#super-admin-pages" aria-expanded="false" aria-controls="super-admin-pages">
+                <i class="menu-icon typcn typcn-upload-outline"></i>
+                <span class="menu-title">高级管理员</span>
+                <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="super-admin-pages">
+                <ul class="nav flex-column sub-menu">
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="User" asp-action="Inventory">数据统计</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="User" asp-action="Inventory">账户余额管理</a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+
+        <li style="display: none;" class="nav-item">
             <a class="nav-link" asp-area="" asp-controller="Batch" asp-action="Inventory" asp-route-groupType="DailyScan">
                 <i class="menu-icon typcn typcn-mail"></i>
                 <span class="menu-title">每日到货</span>
             </a>
         </li>
-        <li class="nav-item">
+        <li style="display: none;" class="nav-item">
             <a class="nav-link" data-toggle="collapse" href="#batch-pages" aria-expanded="false" aria-controls="batch-pages">
                 <i class="menu-icon typcn typcn-upload-outline"></i>
                 <span class="menu-title">批次管理</span>
@@ -47,7 +182,7 @@
                 </ul>
             </div>
         </li>
-        <li class="nav-item">
+        <li style="display: none;" class="nav-item">
             <a class="nav-link" data-toggle="collapse" href="#order-pages" aria-expanded="false" aria-controls="order-pages">
                 <i class="menu-icon typcn typcn-upload-outline"></i>
                 <span class="menu-title">运单管理</span>
@@ -67,7 +202,7 @@
                 </ul>
             </div>
         </li>
-        <li class="nav-item">
+        <li style="display: none;" class="nav-item">
             <a class="nav-link" data-toggle="collapse" href="#user-pages" aria-expanded="false" aria-controls="user-pages">
                 <i class="menu-icon typcn typcn-upload-outline"></i>
                 <span class="menu-title">用户管理</span>
@@ -81,19 +216,19 @@
                 </ul>
             </div>
         </li>
-        <li class="nav-item">
+        <li style="display: none;" class="nav-item">
             <a class="nav-link" asp-area="" asp-controller="Warehouse" asp-action="Inventory">
                 <i class="menu-icon typcn typcn-mail"></i>
                 <span class="menu-title">仓库管理</span>
             </a>
         </li>
-        <li class="nav-item">
+        <li style="display: none;" class="nav-item">
             <a class="nav-link" asp-area="" asp-controller="Route" asp-action="Inventory">
                 <i class="menu-icon typcn typcn-mail"></i>
                 <span class="menu-title">线路管理</span>
             </a>
         </li>
-        <li class="nav-item">
+        <li style="display: none;" class="nav-item">
             <a class="nav-link" asp-area="" asp-controller="DeliverProgress" asp-action="Inventory">
                 <i class="menu-icon typcn typcn-mail"></i>
                 <span class="menu-title">进度管理</span>
@@ -101,26 +236,26 @@
         </li>
         @if (@SystemSession.CurrentUser.Role == RoleType.Admin)
         {
-            <li class="nav-item">
+            <li class="nav-item" style="display: none;">
                 <a class="nav-link" asp-area="" asp-controller="PickUpLocation" asp-action="Inventory">
                     <i class="menu-icon typcn typcn-mail"></i>
                     <span class="menu-title">取货点管理</span>
                 </a>
             </li>
         }
-        <li class="nav-item">
+        <li class="nav-item" style="display: none;">
             <a class="nav-link" asp-area="" asp-controller="User" asp-action="Transactions">
                 <i class="menu-icon typcn typcn-mail"></i>
                 <span class="menu-title">余额账单</span>
             </a>
         </li>
-        <li class="nav-item">
+        <li class="nav-item" style="display: none;">
             <a class="nav-link" asp-area="" asp-controller="System" asp-action="Index">
                 <i class="menu-icon typcn typcn-mail"></i>
                 <span class="menu-title">系统设置</span>
             </a>
         </li>
-        <li class="nav-item">
+        <li class="nav-item" style="display: none;">
             <a class="nav-link" data-toggle="collapse" href="#dataanalysis-pages" aria-expanded="false" aria-controls="dataanalysis-pages">
                 <i class="menu-icon typcn typcn-upload-outline"></i>
                 <span class="menu-title">数据分析</span>
@@ -137,7 +272,7 @@
                 </ul>
             </div>
         </li>
-        <li class="nav-item">
+        <li class="nav-item" style="display: none;">
             <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">
                 <i class="menu-icon typcn typcn-mail"></i>
                 <span class="menu-title">待办事项</span>

@@ -17,6 +17,7 @@ using Persistence.Data;
 using WebUI.Models;
 using WebUI.Models.DataTableRequest;
 using WebUI.Models.ViewModels;
+using Domain;
 
 namespace WebUI.Controllers
 {
@@ -68,6 +69,63 @@ namespace WebUI.Controllers
             _emailService = emailService;
             _serviceProvider = serviceProvider;
         }
+        
+        public async Task<IActionResult> PendingDeliveryInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId)
+        {
+            var warehouses = (await _warehouseService.ListAsync()).ToList();
+            var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
+            var users = await _userService.ListByBatchesAsync(BatchGroupType.PendingDelivery, routeId, warehouseId);
+            var result = new BatchInventoryResponse()
+            {
+                GroupType = BatchGroupType.PendingDelivery,
+                SelectedRouteId = routeId ?? routes.First().Id,
+                Routes = routes.OrderBy(r => r.DisplaySequence),
+                SelectedWarehouseId = (int?)null,
+                Warehouses = warehouses.OrderBy(w => w.DisplaySequence),
+                Users = users,
+                SelectedRecipientUserId = recipientUserId,
+                SelectedBelongsToUserId = belongsToUserId
+            };
+            return View(result);
+        }
+
+        public async Task<IActionResult> PendingPickUpInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId)
+        {
+            var warehouses = (await _warehouseService.ListAsync()).ToList();
+            var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
+            var users = await _userService.ListByBatchesAsync(BatchGroupType.PendingPickUp, routeId, warehouseId);
+            var result = new BatchInventoryResponse()
+            {
+                GroupType = BatchGroupType.PendingPickUp,
+                SelectedRouteId = routeId ?? routes.First().Id,
+                Routes = routes.OrderBy(r => r.DisplaySequence),
+                SelectedWarehouseId = (int?)null,
+                Warehouses = warehouses.OrderBy(w => w.DisplaySequence),
+                Users = users,
+                SelectedRecipientUserId = recipientUserId,
+                SelectedBelongsToUserId = belongsToUserId
+            };
+            return View(result);
+        }
+
+        public async Task<IActionResult> PickUpLocationInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId)
+        {
+            var warehouses = (await _warehouseService.ListAsync()).ToList();
+            var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
+            var users = await _userService.ListByBatchesAsync(BatchGroupType.PickUpLocation, routeId, warehouseId);
+            var result = new BatchInventoryResponse()
+            {
+                GroupType = BatchGroupType.PickUpLocation,
+                SelectedRouteId = routeId ?? routes.First().Id,
+                Routes = routes.OrderBy(r => r.DisplaySequence),
+                SelectedWarehouseId = (int?)null,
+                Warehouses = warehouses.OrderBy(w => w.DisplaySequence),
+                Users = users,
+                SelectedRecipientUserId = recipientUserId,
+                SelectedBelongsToUserId = belongsToUserId
+            };
+            return View(result);
+        }
 
         public async Task<IActionResult> Inventory(BatchGroupType groupType, int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId)
         {
@@ -99,6 +157,80 @@ namespace WebUI.Controllers
                 return View(result);
             }
         }
+        public async Task<IActionResult> WarehouseReceiveInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId)
+        {
+            var warehouses = (await _warehouseService.ListAsync()).ToList();
+            var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
+            var users = await _userService.ListByBatchesAsync(BatchGroupType.WarehouseReceive, routeId, warehouseId);
+            var result = new BatchInventoryResponse()
+            {
+                GroupType = BatchGroupType.WarehouseReceive,
+                SelectedRouteId = (routeId ?? routes.First().Id),
+                Routes = routes.OrderBy(r => r.DisplaySequence),
+                SelectedWarehouseId = warehouseId,
+                Warehouses = warehouses.OrderBy(w => w.DisplaySequence),
+                Users = users,
+                SelectedRecipientUserId = recipientUserId,
+                SelectedBelongsToUserId = belongsToUserId
+            };
+            return View(result);
+        }
+
+        public async Task<IActionResult> LoadDeliveryInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId)
+        {
+            var warehouses = (await _warehouseService.ListAsync()).ToList();
+            var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
+            var users = await _userService.ListByBatchesAsync(BatchGroupType.LoadDelivery, routeId, warehouseId);
+            var result = new BatchInventoryResponse()
+            {
+                GroupType = BatchGroupType.LoadDelivery,
+                SelectedRouteId = (routeId ?? routes.First().Id),
+                Routes = routes.OrderBy(r => r.DisplaySequence),
+                SelectedWarehouseId = warehouseId,
+                Warehouses = warehouses.OrderBy(w => w.DisplaySequence),
+                Users = users,
+                SelectedRecipientUserId = recipientUserId,
+                SelectedBelongsToUserId = belongsToUserId
+            };
+            return View(result);
+        }
+        public async Task<IActionResult> PalletInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId)
+        {
+            var warehouses = (await _warehouseService.ListAsync()).ToList();
+            var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
+            var users = await _userService.ListByBatchesAsync(BatchGroupType.Pallet, routeId, warehouseId);
+            var result = new BatchInventoryResponse()
+            {
+                GroupType = BatchGroupType.Pallet,
+                Routes = routes.OrderBy(r => r.DisplaySequence),
+                SelectedWarehouseId = warehouseId,
+                Warehouses = warehouses.OrderBy(w => w.DisplaySequence),
+                Users = users,
+                SelectedRecipientUserId = recipientUserId,
+                SelectedBelongsToUserId = belongsToUserId
+            };
+            return View(result);
+        }
+        
+        public async Task<IActionResult> PackageInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId)
+        {
+            var warehouses = (await _warehouseService.ListAsync()).ToList();
+            var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
+            var users = await _userService.ListByBatchesAsync(BatchGroupType.Package, routeId, warehouseId);
+            var result = new BatchInventoryResponse()
+            {
+                GroupType = BatchGroupType.Package,
+                SelectedRouteId = (routeId ?? routes.First().Id),
+                Routes = routes.OrderBy(r => r.DisplaySequence),
+                SelectedWarehouseId = (int?)null,
+                Warehouses = warehouses.OrderBy(w => w.DisplaySequence),
+                Users = users,
+                SelectedRecipientUserId = recipientUserId,
+                SelectedBelongsToUserId = belongsToUserId
+            };
+            return View(result);
+        }
+
 
         public IActionResult Refresh(int id, int? boxId)
         {
@@ -138,6 +270,14 @@ namespace WebUI.Controllers
                 PageSize = requestModel.Length,
                 Skip = requestModel.Start
             });
+
+            var orders = await _orderService.ListAsync(new OrderListFilterOptions()
+            {
+                OrderNumberToSearch = orderToSearch,
+                PageSize = requestModel.Length,
+                Skip = requestModel.Start
+            });
+
 
             return Json(new { requestModel.Draw, recordsFiltered = data.Total, recordsTotal = data.Total, data = data.Items });
         }
@@ -184,7 +324,24 @@ namespace WebUI.Controllers
                 {
                     filter.BelongsToUserIds.Add(belongsToUserId.Value);
                 }
-                var data = await _batchService.ListAsync(filter);
+
+                PagedResult<BatchEntity> data = null;
+                if (groupType == BatchGroupType.Pallet)
+                {
+                    data = await _batchService.ListPalletBatchAsync(filter);
+                }
+                else if (groupType == BatchGroupType.LoadDelivery)
+                {
+                    data = await _batchService.ListLoadDeliveryBatchAsync(filter);
+                }
+                else if (groupType == BatchGroupType.WarehouseReceive)
+                {
+                    data = await _batchService.ListWarehouseReceiveBatchAsync(filter);
+                }
+                else
+                {
+                    data = await _batchService.ListAsync(filter);
+                }
 
                 var viewModels = data.Items.Select(it => _mapper.Map<BatchViewModel>(it)).ToList();
                 return Json(new { requestModel.Draw, recordsFiltered = data.Total, recordsTotal = data.Total, data = viewModels });
@@ -238,6 +395,96 @@ namespace WebUI.Controllers
             }
         }
 
+        public async Task<IActionResult> CreatePackageBatch(int? routeId)
+        {
+            var batch = new BatchEntity()
+            {
+                GroupType = BatchGroupType.Package,
+                RouteId = routeId
+            };
+            await SetEditDropdownOptions(batch);
+            return View("CreatePackageBatch", batch);
+        }
+        public async Task<IActionResult> CreateLoadDeliveryBatch()
+        {
+            var batch = new LoadDeliveryBatchEntity()
+            {
+                GroupType = BatchGroupType.LoadDelivery,
+            };
+            var warehouses = await _warehouseService.ListAsync();
+            batch.Warehouses = warehouses;
+            //await SetEditDropdownOptions(batch);
+            return View("CreateLoadDeliveryBatch", batch);
+        }
+        public async Task<IActionResult> CreateWarehouseReceiveBatch()
+        {
+            var batch = new WarehouseReceiveBatchEntity()
+            {
+                GroupType = BatchGroupType.WarehouseReceive,
+            };
+            var warehouses = await _warehouseService.ListAsync();
+            batch.Warehouses = warehouses;
+            //await SetEditDropdownOptions(batch);
+            return View("CreateWarehouseReceiveBatch", batch);
+
+        }
+
+        public async Task<IActionResult> CreatePalletBatch()
+        {
+            var batch = new PalletBatchEntity()
+            {
+                GroupType = BatchGroupType.Package,
+            };
+            var warehouses = await _warehouseService.ListAsync();
+            batch.Warehouses = warehouses;
+            //await SetEditDropdownOptions(batch);
+            return View("CreatePalletBatch", batch);
+        }
+
+        public async Task<IActionResult> EditPackageBatch(int id)
+        {
+            var batchEntity = await _batchService.GetForEditAsync(id);
+            await SetEditDropdownOptions(batchEntity);
+            return View("EditPackageBatch", batchEntity);
+        }
+        public async Task<IActionResult> EditWarehouseReceiveBatch(int id)
+        {
+            var batchEntity = await _batchService.GetForEditAsync(id);
+            await SetEditDropdownOptions(batchEntity);
+            //return View(batchEntity);
+            //var batchEntity = await _batchService.GetForEditAsync(id);
+            return View("EditWarehouseReceiveBatch", batchEntity);
+        }
+
+        public async Task<IActionResult> EditLoadDeliveryBatch(int id)
+        {
+            var batchEntity = await _batchService.GetForEditAsync(id);
+            await SetEditDropdownOptions(batchEntity);
+            //return View(batchEntity);
+            //var batchEntity = await _batchService.GetForEditAsync(id);
+            return View("EditLoadDeliveryBatch", batchEntity);
+        }
+
+        public async Task<IActionResult> EditPalletBatch(int id)
+        {
+            var batchEntity = await _batchService.GetForEditPalletAsync(id);
+            return View("EditPalletBatch", batchEntity);
+        }
+
+        [HttpPost("updateBatchBox")]
+        public async Task<IActionResult> UpdateBatchBox(int boxId, double? length, double? width, double? height, double? actualWeightKg)
+        {
+            try
+            {
+                await _batchService.UpdateBatchBox(boxId, length, width, height, actualWeightKg);
+                return Json(new MethodResult<bool>(true));
+            }
+            catch (Exception e)
+            {
+                return Json(new MethodResult<bool>(new Error() { Text = e.Message }));
+            }
+        }
+
         public async Task<IActionResult> Create(BatchGroupType groupType, int? routeId)
         {
             var batch = new BatchEntity()
@@ -285,6 +532,30 @@ namespace WebUI.Controllers
             return RedirectToAction(nameof(Edit), new {id = result.Id });
         }
 
+        [ValidateAntiForgeryToken]
+        [HttpPost]
+        public async Task<IActionResult> SaveWarehouseReceiveBatch(WarehouseReceiveBatchEntity model)
+        {
+            var result = await _batchService.SaveWarehouseReceiveAsync(model);
+            return RedirectToAction(nameof(EditWarehouseReceiveBatch), new { id = result.Id });
+        }
+
+        [ValidateAntiForgeryToken]
+        [HttpPost]
+        public async Task<IActionResult> SaveLoadDeliveryBatch(LoadDeliveryBatchEntity model)
+        {
+            var result = await _batchService.SaveLoadDeliveryAsync(model);
+            return RedirectToAction(nameof(EditLoadDeliveryBatch), new { id = result.Id });
+        }
+
+        [ValidateAntiForgeryToken]
+        [HttpPost]
+        public async Task<IActionResult> SavePalletBatch(PalletBatchEntity model)
+        {
+            var result = await _batchService.SavePalletAsync(model);
+            return RedirectToAction(nameof(EditPalletBatch), new { id = result.Id });
+        }
+
         [HttpPost]
         public async Task<IActionResult> SaveScanStatus(OrderScanStatusEntity model)
         {
@@ -310,7 +581,7 @@ namespace WebUI.Controllers
             var box = batchEntity.Boxes.FirstOrDefault(b => b.Id == boxId);
             if (box != null && box.Orders != null && box.Orders.Any())
             {
-                box.Orders = box.Orders.OrderByDescending(o => o.Status.Max(o => o.Date)).ToList();
+                box.Orders = box.Orders.Where(o => o.CompanyId == Config.COMPANY_ID).OrderByDescending(o => o.Status.Max(o => o.Date)).ToList();
                 var scanStatusEntities = _batchService.GetOrderScanStatusEntities(box.Orders.Select(o => o.Id));
                 foreach (var order in box.Orders)
                 {
@@ -660,7 +931,20 @@ WHERE BatchId={id}");
                 return Json(new MethodResult<bool>(new Error() { Text = e.Message }));
             }
         }
-
+        
+        [HttpPost]
+        public async Task<JsonResult> AcceptBox(int targetBatchId, int sourceBatchId, int? sourceBoxNumber)
+        {
+            try
+            {
+                await _batchService.AcceptBoxAsync(targetBatchId, sourceBatchId, sourceBoxNumber);
+                return Json(new MethodResult<bool>(true));
+            }
+            catch (Exception e)
+            {
+                return Json(new MethodResult<bool>(new Error() { Text = e.Message }));
+            }
+        }
         [HttpPost]
         public async Task<JsonResult> Merge(int targetBatchId, int sourceBatchId, int? sourceBoxNumber)
         {

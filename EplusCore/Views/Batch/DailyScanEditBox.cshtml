@@ -25,7 +25,7 @@
     <div class="col-md-12 grid-margin">
         <div class="card">
             <div class="card-body order-card-body">
-                <h4>@Html.ActionLink(Model.Name, "Edit", new {id = Model.Id}) - @Model.Boxes.First(b => b.Id == (int)ViewData["BoxId"]).Number</h4>
+                <h4>@Html.ActionLink(Model.Name, "DailyScanEdit", new {id = Model.Id}) - @Model.Boxes.First(b => b.Id == (int)ViewData["BoxId"]).Number</h4>
                 <div class="row">
                     <label for="add-order-input" class="col-3">请输入待添加运单号或国内单号:</label>
                     <input id="add-order-input" class="form-control col-3" type="text" autofocus />

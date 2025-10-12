@@ -8,6 +8,9 @@ namespace Domain.Services
 {
     public interface IBatchService
     {
+        Task<PagedResult<BatchEntity>> ListWarehouseReceiveBatchAsync(BatchListFilterOptions filterOptions);
+        Task<PagedResult<BatchEntity>> ListLoadDeliveryBatchAsync(BatchListFilterOptions filterOptions);
+        Task<PagedResult<BatchEntity>> ListPalletBatchAsync(BatchListFilterOptions filterOptions);
         Task<PagedResult<BatchEntity>> ListAsync(BatchListFilterOptions filterOptions);
         Task<IEnumerable<BatchEntity>> ListMasterBatchesAsync(BatchGroupType groupType, int? routeId);
         Task<PagedResult<BatchOtherOrderEntity>> ListOtherOrderAsync(BatchListOtherOrderFilterOptions filterOptions);
@@ -16,6 +19,7 @@ namespace Domain.Services
         Task<BatchEntity> GetAsync(int id);
         Task<BatchEntity> GetForPrintAsync(int id);
         Task<BatchEntity> GetForEditAsync(int id);
+        Task<PalletBatchEntity> GetForEditPalletAsync(int id);
         Task<BatchEntity> GetByBoxIdAsync(int id);
         Task<BatchEntity> GetForAddOrderAsync(int boxId);
         Task<BatchEntity> GetForEditBoxAsync(int boxId);
@@ -23,6 +27,9 @@ namespace Domain.Services
         Task AddOtherOrderAsync(int boxId, string number);
         Task RemoveOrderAsync(int boxId, int orderId);
         Task<BatchEntity> SaveAsync(BatchEntity model);
+        Task<PalletBatchEntity> SavePalletAsync(PalletBatchEntity model);
+        Task<LoadDeliveryBatchEntity> SaveLoadDeliveryAsync(LoadDeliveryBatchEntity model);
+        Task<WarehouseReceiveBatchEntity> SaveWarehouseReceiveAsync(WarehouseReceiveBatchEntity model);
         Task AddBoxAsync(int id, int boxNumber);
         Task CreateDailyBatchPerWarehouseAsync(BatchGroupType groupType);
         Task MoveNextAsync(int id);
@@ -36,6 +43,7 @@ namespace Domain.Services
         Task SplitByNonAgent(int id);
         Task DeleteAsync(int id);
         Task MergeAsync(int targetBatchId, int sourceBatchId, int? sourceBoxNumber);
+        Task AcceptBoxAsync(int targetBatchId, int sourceBatchId, int? sourceBoxNumber);
         Task CommissionAsync(int id);
         void RemoveCache(int id);
         Task<OrderScanStatusEntity> SaveOrderScanStatus(OrderScanStatusEntity model, int userId);
@@ -44,5 +52,6 @@ namespace Domain.Services
         Task<int> CreateCouponBatchAsync(string name);
         Task<PagedResult<CouponBatchEntity>> ListCouponBatchAsync(FilterOptions filterOptions);
         Task<CouponBatchEntity> GetCouponBatch(int id);
+        Task UpdateBatchBox(int boxId, double? length, double? width, double? height, double? actualWeightKg);
     }
 }

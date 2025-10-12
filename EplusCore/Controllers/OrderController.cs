@@ -62,6 +62,22 @@ namespace WebUI.Controllers
             };
             return View(result);
         }
+        public IActionResult InWarehouseInventory()
+        {
+            var result = new OrderInventoryResponse()
+            {
+                OrderState = OrderState.InWarehouse
+            };
+            return View(result);
+        }
+        public IActionResult ContrabandInventory()
+        {
+            var result = new OrderInventoryResponse()
+            {
+                OrderState = OrderState.Illegal
+            };
+            return View(result);
+        }
 
         public IActionResult Search()
         {

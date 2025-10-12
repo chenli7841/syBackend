@@ -38,6 +38,10 @@ namespace Persistence.Data
 
         public int CompanyId { get; set; }
 
+        public string Destination { get; set; }
+
+        public string Departure { get; set; }
+
         public virtual Warehouse Warehouse { get; set; }
         public virtual ICollection<BannedUserRoute> BannedUserRoutes { get; set; }
         public virtual ICollection<Batch> Batches { get; set; }

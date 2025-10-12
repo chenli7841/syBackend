@@ -25,5 +25,7 @@ namespace WebUI.Models.ViewModels
         public string SupportDescription { get; set; }
         public int? DisplaySequence { get; set; }
         public IList<RouteItemPrice> ItemPrices { get; set; }
+        public string Departure { get; set; }
+        public string Destination { get; set; }
     }
 }

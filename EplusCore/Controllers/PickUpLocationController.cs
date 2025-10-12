@@ -6,6 +6,7 @@ using AutoMapper;
 using Domain.Services;
 using WebUI.Models;
 using WebUI.Models.ViewModels;
+using Domain;
 
 namespace WebUI.Controllers
 {
@@ -122,6 +123,7 @@ namespace WebUI.Controllers
                     LatAndLng = latAndLng,
                     AreaId = areaId,
                     Note = note,
+                    CompanyId = Config.COMPANY_ID,
                 },
                 belongsToId);
                 return Json(new MethodResult<bool>(true));

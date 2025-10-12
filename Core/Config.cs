@@ -8,6 +8,6 @@ namespace Domain
 {
     public static class Config
     {
-        public static int COMPANY_ID = 1;
+        public static int COMPANY_ID = 2;
     }
 }

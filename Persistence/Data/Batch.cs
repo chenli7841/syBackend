@@ -57,6 +57,9 @@ namespace Persistence.Data
         public long? PickUpLocationId { get; set; }
         public decimal Commission { get; set; }
         public DateTime? DateEntered { get; set; }
+        public string Note { get; set; }
+        public int? CompanyId { get; set; }
+
 
         public virtual User BelongsToUser { get; set; }
         public virtual Batch MasterBatch { get; set; }
@@ -74,5 +77,10 @@ namespace Persistence.Data
         public virtual ICollection<User> Users { get; set; }
         public virtual ICollection<LoadDeliveryBatch> LoadDeliveryBatches { get; set; }
         public virtual ICollection<EmailData> EmailDatas { get; set; }
+        public virtual ICollection<BatchBoxMap> BatchBoxMaps { get; set; }
+        public virtual ICollection<BatchPallet> BatchPallets { get; set; }
+        public virtual ICollection<BatchWarehouseReceive> BatchWarehouseReceives { get; set; }
+        public virtual Company Company { get; set; }
+
     }
 }

@@ -84,6 +84,7 @@ namespace Persistence.Data
         public string LoadDeliveryBatchName { get; set; }
         public int? LoadDeliveryBatchId { get; set; }
         public string Enclosure { get; set; }
+        public int? CompanyId { get; set; }
 
         public virtual User CreatedBy { get; set; }
         public virtual User Owner { get; set; }
@@ -105,5 +106,6 @@ namespace Persistence.Data
         public virtual ICollection<EmailData> EmailDatas { get; set; }
         public virtual ICollection<EmailData> EmailDataInWarehouses { get; set; }
         public virtual ICollection<TodoItemOrder> TodoItemOrders { get; set; }
+        public virtual Company Company { get; set; }
     }
 }

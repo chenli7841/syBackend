@@ -28,7 +28,8 @@ namespace Domain.Entities
         public int?  DisplaySequence { get; set; }
         public string Description { get; set; }
         public string Mailbox { get; set; }
-        
+        public int? CompanyId { get; set; }
+
         // TODO: remove this
         public int CustomerId { get; set; }
         public int? BelongsToId { get; set; }
@@ -59,6 +60,7 @@ namespace Domain.Entities
         public int AreaId { get; set; }
         public int Version { get; set; }
         public string Note { get; set; }
+        public int? CompanyId { get; set; }
     }
 
     public class PickUpLocationAreaEntity

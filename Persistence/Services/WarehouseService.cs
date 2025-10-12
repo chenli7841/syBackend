@@ -8,6 +8,7 @@ using Common;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Persistence.Data;
+using Domain;
 
 namespace Persistence.Services
 {
@@ -29,6 +30,7 @@ namespace Persistence.Services
         public async Task<IEnumerable<WarehouseEntity>> ListAsync()
         {
             var result = await _context.Warehouses
+                .Where(r => r.CompanyId == Config.COMPANY_ID)
                 .Select(r => _mapper.Map<WarehouseEntity>(r))
                 .ToListAsync();
             return result;
@@ -36,7 +38,7 @@ namespace Persistence.Services
 
         public async Task<WarehouseEntity> GetAsync(int id)
         {
-            var route = await _context.Warehouses.FirstAsync(r => r.Id == id);
+            var route = await _context.Warehouses.FirstAsync(r => r.Id == id && r.CompanyId == Config.COMPANY_ID);
             return _mapper.Map<WarehouseEntity>(route);
         }
 
@@ -83,6 +85,7 @@ namespace Persistence.Services
                 Location = model.Location,
                 Contact = model.Contact,
                 DisplaySequence = model.DisplaySequence,
+                CompanyId = Config.COMPANY_ID,
             };
             await _context.Warehouses.AddAsync(warehouse);
             await _context.SaveChangesAsync();
@@ -92,7 +95,7 @@ namespace Persistence.Services
 
         public async Task DeleteAsync(int id)
         {
-            var warehouse = _context.Warehouses.First(r => r.Id == id);
+            var warehouse = _context.Warehouses.First(r => r.Id == id && r.CompanyId == Config.COMPANY_ID);
             _context.Warehouses.Remove(warehouse);
             await _context.SaveChangesAsync();
         }

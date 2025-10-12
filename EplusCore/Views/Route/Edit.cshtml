@@ -38,10 +38,11 @@
                         </div>
                         <div class="col-md-3">
                             <div class="form-group row">
-                                @Html.LabelFor(r => r.Type, "起始港", new { @class = "col-sm-4 col-form-label" })
+                                @Html.LabelFor(r => r.Departure, "起始港", new { @class = "col-sm-4 col-form-label" })
                                 <div class="col-sm-8">
-                                    @Html.TextBoxFor(r => r.Type, new { hidden = "hidden" })
-                                    <select class="form-control" id="type-select">
+                                    @Html.TextBoxFor(r => r.Departure, new { hidden = "hidden" })
+                                    <select class="form-control" id="departure-select">
+                                        <option value=""></option>
                                         <option value="yiwu">义乌(Y)</option>
                                     </select>
                                 </div>
@@ -49,10 +50,11 @@
                         </div>
                         <div class="col-md-3">
                             <div class="form-group row">
-                                @Html.LabelFor(r => r.Type, "目的地", new { @class = "col-sm-4 col-form-label" })
+                                @Html.LabelFor(r => r.Destination, "目的地", new { @class = "col-sm-4 col-form-label" })
                                 <div class="col-sm-8">
-                                    @Html.TextBoxFor(r => r.Type, new { hidden = "hidden" })
-                                    <select class="form-control" id="type-select">
+                                    @Html.TextBoxFor(r => r.Destination, new { hidden = "hidden" })
+                                    <select class="form-control" id="destination-select">
+                                        <option value=""></option>
                                         <option value="toronto">多伦多(T)</option>
                                     </select>
                                 </div>
@@ -71,13 +73,15 @@
                         </div>
                         <div class="col-md-3">
                             <div class="form-group row">
-                                @Html.LabelFor(r => r.Type, "运输方式", new { @class = "col-sm-4 col-form-label" })
+                                @Html.LabelFor(r => r.WarehouseId, "运输方式", new { @class = "col-sm-4 col-form-label" })
                                 <div class="col-sm-8">
-                                    @Html.TextBoxFor(r => r.Type, new { hidden = "hidden" })
-                                    <select class="form-control" id="type-select">
-                                        <option value="ocean">海运</option>
-                                        <option value="local">陆运</option>
-                                        <option value="air">空运</option>
+                                    @Html.TextBoxFor(r => r.WarehouseId, new { hidden = "hidden" })
+                                    <select class="form-control" id="warehouse-select">
+                                        <option value="">---</option>
+                                        @foreach (var warehouse in warehouses)
+                                        {
+                                            <option value="@warehouse.Id">@warehouse.Name</option>
+                                        }
                                     </select>
                                 </div>
                             </div>
@@ -142,6 +146,18 @@
 
             $('#type-select').change(function () {
                 $('#Type').val(this.value);
+            });
+
+            $('#departure-select').val($('#Departure').val());
+
+            $('#departure-select').change(function () {
+                $('#Departure').val(this.value);
+            });
+
+            $('#destination-select').val($('#Destination').val());
+
+            $('#destination-select').change(function () {
+                $('#Destination').val(this.value);
             });
 
             $('#warehouse-select').val($('#WarehouseId').val());

@@ -16,7 +16,7 @@ using Persistence.Data;
 using Persistence.Utils;
 using System.Net;
 using System.Net.Mail;
-
+using Domain;
 
 namespace Persistence.Services
 {
@@ -58,6 +58,113 @@ namespace Persistence.Services
             _logService = logService;
         }
 
+        public async Task<PagedResult<BatchEntity>> ListLoadDeliveryBatchAsync(BatchListFilterOptions filterOptions)
+        {
+            var batchesFiltered = _context.Batches
+                .Include(b => b.LoadDeliveryBatches)
+                .Where(b => b.LoadDeliveryBatches.Count > 0 && b.LoadDeliveryBatches.First().WarehouseId == filterOptions.WarehouseId
+                    && (filterOptions.GroupType == BatchGroupType.LoadDelivery)
+                    && (!filterOptions.Ids.Any() || filterOptions.Ids.Contains(b.Id)) && b.CompanyId == Config.COMPANY_ID)
+                .Include(b => b.BatchBoxes)
+                    .ThenInclude(bx => bx.BatchBoxOrderMaps)
+                        .ThenInclude(m => m.Order)
+                            .ThenInclude(o => o.CreatedBy)
+                                .ThenInclude(o => o.BelongsToNavigation);
+
+            IOrderedQueryable<Batch> batches = batchesFiltered.OrderByDescending(b => b.DateCreated);
+
+            var total = await batches.CountAsync();
+            var pagedBatches = batches.Skip(filterOptions.Skip);
+
+            if (filterOptions.PageSize > 0)
+            {
+                pagedBatches = pagedBatches.Take(filterOptions.PageSize);
+            }
+
+            var itemsQuery = pagedBatches.Select(o => _mapper.Map<BatchEntity>(o));
+            var items = await itemsQuery.ToListAsync();
+
+            var result = new PagedResult<BatchEntity>()
+            {
+                Total = total,
+                Items = items
+            };
+
+            return result;
+        }
+
+
+        public async Task<PagedResult<BatchEntity>> ListWarehouseReceiveBatchAsync(BatchListFilterOptions filterOptions)
+        {
+            var batchesFiltered = _context.Batches
+                .Include(b => b.BatchWarehouseReceives)
+                .Where(b => b.BatchWarehouseReceives.Count > 0 && b.BatchWarehouseReceives.First().WarehouseId == filterOptions.WarehouseId
+                    && (filterOptions.GroupType == BatchGroupType.WarehouseReceive)
+                    && (!filterOptions.Ids.Any() || filterOptions.Ids.Contains(b.Id)) && b.CompanyId == Config.COMPANY_ID)
+                .Include(b => b.BatchBoxes)
+                    .ThenInclude(bx => bx.BatchBoxOrderMaps)
+                        .ThenInclude(m => m.Order)
+                            .ThenInclude(o => o.CreatedBy)
+                                .ThenInclude(o => o.BelongsToNavigation);
+
+            IOrderedQueryable<Batch> batches = batchesFiltered.OrderByDescending(b => b.DateCreated);
+
+            var total = await batches.CountAsync();
+            var pagedBatches = batches.Skip(filterOptions.Skip);
+
+            if (filterOptions.PageSize > 0)
+            {
+                pagedBatches = pagedBatches.Take(filterOptions.PageSize);
+            }
+
+            var itemsQuery = pagedBatches.Select(o => _mapper.Map<BatchEntity>(o));
+            var items = await itemsQuery.ToListAsync();
+
+            var result = new PagedResult<BatchEntity>()
+            {
+                Total = total,
+                Items = items
+            };
+
+            return result;
+        }
+
+
+        public async Task<PagedResult<BatchEntity>> ListPalletBatchAsync(BatchListFilterOptions filterOptions)
+        {
+            var batchesFiltered = _context.Batches
+                .Include(b => b.BatchPallets)
+                .Where(b => b.BatchPallets.Count > 0 && b.BatchPallets.First().WarehouseId == filterOptions.WarehouseId
+                    && (filterOptions.GroupType == BatchGroupType.Pallet)
+                    && (!filterOptions.Ids.Any() || filterOptions.Ids.Contains(b.Id)) && b.CompanyId == Config.COMPANY_ID)
+                .Include(b => b.BatchBoxes)
+                    .ThenInclude(bx => bx.BatchBoxOrderMaps)
+                        .ThenInclude(m => m.Order)
+                            .ThenInclude(o => o.CreatedBy)
+                                .ThenInclude(o => o.BelongsToNavigation);
+
+            IOrderedQueryable<Batch> batches = batchesFiltered.OrderByDescending(b => b.DateCreated);
+            
+            var total = await batches.CountAsync();
+            var pagedBatches = batches.Skip(filterOptions.Skip);
+
+            if (filterOptions.PageSize > 0)
+            {
+                pagedBatches = pagedBatches.Take(filterOptions.PageSize);
+            }
+
+            var itemsQuery = pagedBatches.Select(o => _mapper.Map<BatchEntity>(o));
+            var items = await itemsQuery.ToListAsync();
+
+            var result = new PagedResult<BatchEntity>()
+            {
+                Total = total,
+                Items = items
+            };
+
+            return result;
+        }
+
         public async Task<PagedResult<BatchEntity>> ListAsync(BatchListFilterOptions filterOptions)
         {
             var batchesFiltered = _context.Batches
@@ -68,6 +175,7 @@ namespace Persistence.Services
                 && (!filterOptions.Ids.Any() || filterOptions.Ids.Contains(b.Id))
                 && (!filterOptions.RecipientIds.Any() || (b.RecipientUserId != null && filterOptions.RecipientIds.Contains(b.RecipientUserId.Value)))
                 && (!filterOptions.BelongsToUserIds.Any() || (b.BelongsToUserId != null && filterOptions.BelongsToUserIds.Contains(b.BelongsToUserId.Value)))
+                && (filterOptions.GroupType == BatchGroupType.DailyScan || b.CompanyId == Config.COMPANY_ID)
                 )
                 .Include(b => b.BatchBoxes)
                     .ThenInclude(bx => bx.BatchBoxOrderMaps)
@@ -75,7 +183,7 @@ namespace Persistence.Services
                             .ThenInclude(o => o.CreatedBy)
                                 .ThenInclude(o => o.BelongsToNavigation)
                 .Include(b => b.LoadDeliveryBatches);
-
+            
             IOrderedQueryable<Batch> batches;
             if (filterOptions.GroupType.HasValue)
             {
@@ -100,6 +208,13 @@ namespace Persistence.Services
             {
                 pagedBatches = pagedBatches.Take(filterOptions.PageSize);
             }
+            foreach (var b in pagedBatches)
+            {
+                foreach (var box in b.BatchBoxes)
+                {
+                    box.BatchBoxOrderMaps = box.BatchBoxOrderMaps.Where(bbom => bbom.Order.CompanyId == Config.COMPANY_ID).ToList();
+                }
+            }
 
             var itemsQuery = pagedBatches.Select(o => _mapper.Map<BatchEntity>(o));
             var items = await itemsQuery.ToListAsync();
@@ -118,7 +233,7 @@ namespace Persistence.Services
             var batches = await _context.Batches
             .Where(b => b.IsFromChina
                 && ((int)groupType == b.GroupType)
-                && (!routeId.HasValue || routeId == b.RouteId))
+                && (!routeId.HasValue || routeId == b.RouteId) && b.CompanyId == Config.COMPANY_ID)
             .Select(b => new Batch
             {
                 Id = b.Id,
@@ -267,6 +382,7 @@ WHERE bb.BatchId=@batchId
                 Id = b.Id,
                 BatchBoxes = b.BatchBoxes.Select(bx => new BatchBox
                 {
+                    Id = bx.Id,
                     Number = bx.Number,
                     BatchBoxOrderMaps = bx.BatchBoxOrderMaps.Select(m => new BatchBoxOrderMap
                     {
@@ -278,7 +394,7 @@ WHERE bb.BatchId=@batchId
                 }).ToList()
 
             })
-            .FirstAsync(b => b.Id == id);
+            .FirstAsync(b => b.Id == id && b.CompanyId == Config.COMPANY_ID);
             var result = _mapper.Map<BatchEntity>(batch);
             return result;
         }
@@ -297,7 +413,7 @@ WHERE bb.BatchId=@batchId
                 .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps)
                     .ThenInclude(m => m.Order).ThenInclude(o => o.PickUpLocation).ThenInclude(p => p.BelongsTo)
                 .Include(b => b.Route);
-            var batch = await batchSQL.FirstAsync(b => b.Id == id);
+            var batch = await batchSQL.FirstAsync(b => b.Id == id && b.CompanyId == Config.COMPANY_ID);
             var result = _mapper.Map<BatchEntity>(batch);
             return result;
         }
@@ -337,7 +453,7 @@ WHERE bb.BatchId=@batchId
                         }).ToList() 
                     }).ToList()
                 });
-            var batch = await batchSQL.FirstAsync(b => b.Id == id);
+            var batch = await batchSQL.FirstAsync(b => b.Id == id && b.CompanyId == Config.COMPANY_ID);
             var result = _mapper.Map<BatchEntity>(batch);
             return result;
         }
@@ -380,7 +496,7 @@ WHERE bb.BatchId=@batchId
                         }).ToList()
                     }).ToList()
                 });
-            var batch = await batchSQL.FirstAsync(b => b.Id == id);
+            var batch = await batchSQL.FirstAsync(b => b.Id == id && b.CompanyId == Config.COMPANY_ID);
             var result = _mapper.Map<BatchEntity>(batch);
             return result;
         }
@@ -420,7 +536,7 @@ WHERE bb.BatchId=@batchId
                         }).ToList() 
                     }).ToList()
                 });
-            var batch = await batchSQL.FirstAsync(b => b.Id == id);
+            var batch = await batchSQL.FirstAsync(b => b.Id == id && b.CompanyId == Config.COMPANY_ID);
             var result = _mapper.Map<BatchEntity>(batch);
             return result;
         }
@@ -463,7 +579,7 @@ WHERE bb.BatchId=@batchId
                         }).ToList() 
                     }).ToList()
                 });
-            var batch = await batchSQL.FirstAsync(b => b.Id == id);
+            var batch = await batchSQL.FirstAsync(b => b.Id == id && b.CompanyId == Config.COMPANY_ID);
             var result = _mapper.Map<BatchEntity>(batch);
             return result;
         }
@@ -475,7 +591,7 @@ WHERE bb.BatchId=@batchId
             var batch = await _context.Batches
                 .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order).ThenInclude(o => o.OrderStatuses)
                 .Include(b => b.Route)
-                .FirstAsync(b => b.Id == id);
+                .FirstAsync(b => b.Id == id && b.CompanyId == Config.COMPANY_ID);
             return _mapper.Map<BatchEntity>(batch);
         }
 
@@ -527,7 +643,7 @@ WHERE bb.BatchId=@batchId
                 .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order).ThenInclude(o => o.OrderStatuses)
                 .Include(b => b.Route)
                 .Include(b => b.PickUpLocation).ThenInclude(p => p.BelongsTo)
-                .FirstAsync(b => b.Id == id);
+                .FirstAsync(b => b.Id == id && b.CompanyId == Config.COMPANY_ID);
 
             var result = _mapper.Map<BatchEntity>(batch);
 
@@ -591,14 +707,46 @@ WHERE bb.BatchId=@batchId
                 .Include(b => b.BatchOtherOrders)
                 .Include(b => b.Route)
                 .Include(b => b.LoadDeliveryBatches)
+                .Include(b => b.BatchBoxMaps).ThenInclude(bx => bx.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
                 .FirstAsync(b => b.Id == id);
+            foreach(var b in batch.BatchBoxes)
+            {
+                b.BatchBoxOrderMaps = b.BatchBoxOrderMaps.Where(bbom => bbom.Order.CompanyId == Config.COMPANY_ID).ToList();
+            }
             var result = _mapper.Map<BatchEntity>(batch);
             return result;
         }
 
+        public async Task<PalletBatchEntity> GetForEditPalletAsync(int id)
+        {
+            // Need batchId, batch.GroupType, batch.RouteId, otherOrders, box.Number, count box.order, total box.order.WeightKg
+            // batch.Route.Type, batch.Stage
+            var batch = await _context.Batches.Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps)
+                .ThenInclude(m => m.Order)
+                .Include(b => b.BatchOtherOrders)
+                .Include(b => b.BatchPallets)
+                .Include(b => b.BatchBoxMaps).ThenInclude(bx => bx.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
+                .FirstAsync(b => b.Id == id && b.CompanyId == Config.COMPANY_ID);
+            var result = _mapper.Map<PalletBatchEntity>(batch);
+            return result;
+        }
+        public async Task UpdateBatchBox(int boxId, double? length, double? width, double? height, double? actualWeightKg)
+        {
+            var box = await _context.BatchBoxes.FirstOrDefaultAsync(b => b.Id == boxId);
+            if (box == null)
+            {
+                throw new Exception("箱号 " + boxId + " 不存在");
+            }
+            box.Length = length;
+            box.Width = width;
+            box.Height = height;
+            box.ActualWeightKg = actualWeightKg;
+            await _context.SaveChangesAsync();
+        }
+
         public async Task UpdateOrdersLoadDeliveryProperties(int batchId)
         {
-            var batch = await _context.Batches.Select(b => new Batch{Id = b.Id, GroupType = b.GroupType}).FirstOrDefaultAsync(b => b.Id == batchId);
+            var batch = await _context.Batches.Select(b => new Batch{Id = b.Id, GroupType = b.GroupType}).FirstOrDefaultAsync(b => b.Id == batchId && b.CompanyId == Config.COMPANY_ID);
             if (batch == null)
             {
                 throw new Exception("批次号 " + batchId + " 不存在");
@@ -700,6 +848,7 @@ WHERE bb.BatchId=@batchId
                                 CanadaPhoneNumber = m.Order.CreatedBy.CanadaPhoneNumber,
                                 BelongsToNavigation = new User { Customer = new Customer { Name = m.Order.CreatedBy.BelongsToNavigation.Customer.Name } }
                             },
+                            CompanyId = m.Order.CompanyId,
                             OrderStatuses = m.Order.OrderStatuses
                         }
                     }).ToList()
@@ -892,6 +1041,50 @@ WHERE bb.BatchId=@batchId
                 await _context.SaveChangesAsync();
             }
         }
+        public async Task<WarehouseReceiveBatchEntity> SaveWarehouseReceiveAsync(WarehouseReceiveBatchEntity model)
+        {
+            if (model.Id == 0)
+            {
+                var result = await CreateWarehouseReceiveAsync(model);
+                model.Id = result.Id;
+                return model;
+            }
+            else
+            {
+                var result = await UpdateWarehouseReceiveAsync(model);
+                return model;
+            }
+        }
+
+        public async Task<LoadDeliveryBatchEntity> SaveLoadDeliveryAsync(LoadDeliveryBatchEntity model)
+        {
+            if (model.Id == 0)
+            {
+                var result = await CreateLoadDeliveryAsync(model);
+                model.Id = result.Id;
+                return model;
+            }
+            else
+            {
+                var result = await UpdateLoadDeliveryAsync(model);
+                return model;
+            }
+        }
+
+        public async Task<PalletBatchEntity> SavePalletAsync(PalletBatchEntity model)
+        {
+            if (model.Id == 0)
+            {
+                var result = await CreatePalletAsync(model);
+                model.Id = result.Id;
+                return model;
+            }
+            else
+            {
+                var result = await UpdatePalletAsync(model);
+                return model;
+            }
+        }
 
         public async Task<BatchEntity> SaveAsync(BatchEntity model)
         {
@@ -917,9 +1110,13 @@ WHERE bb.BatchId=@batchId
                 throw new ArgumentException($"This box number {boxNumber} already exists in batch {id}");
             }
 
-            batch.BatchBoxes.Add(new BatchBox() {Number = boxNumber });
+            var batchBox = new BatchBox() { Number = boxNumber, Name = $"{id} - {boxNumber}" };
+            batch.BatchBoxes.Add(batchBox);
 
             _memoryCache.Remove($"batch-{batch.Id}");
+            await _context.SaveChangesAsync();
+            batch.BatchBoxMaps = new List<BatchBoxMap>();
+            batch.BatchBoxMaps.Add(new BatchBoxMap { BatchId = id, BoxId = batchBox.Id });
             await _context.SaveChangesAsync();
         }
 
@@ -946,22 +1143,16 @@ WHERE bb.BatchId=@batchId
             var existingBatches = await _context.Batches.Where(b =>
                 b.IsFromChina && b.DateCreated >= today && b.GroupType == (int) groupType).ToListAsync();
 
-            var warehouses = await _warehouseService.ListAsync();
             
-            foreach (var warehouse in warehouses)
+            if (!existingBatches.Any())
             {
-                if (existingBatches.Any(b => b.WarehouseId == warehouse.Id))
-                {
-                    continue;
-                }
-
                 await CreateAsync(new BatchEntity()
                 {
-                    Name = $"{today:yyyy-MM-dd} {groupType.GetDescription()} {warehouse.Name}",
+                    Name = $"{today:yyyy-MM-dd} {groupType.GetDescription()}",
                     GroupType = groupType,
-                    WarehouseId = warehouse.Id
                 });
             }
+
         }
 
         public async Task MoveNextAsync(int id)
@@ -1060,7 +1251,7 @@ WHERE bb.BatchId=@batchId
 
             foreach (var order in batch.Boxes.SelectMany(b => b.Orders))
             {
-                var orderToUpdate = await _context.TransportOrders.FirstAsync(o => o.Id == order.Id);
+                var orderToUpdate = await _context.TransportOrders.FirstAsync(o => o.Id == order.Id && o.CompanyId == Config.COMPANY_ID);
                 orderToUpdate.State = (int)orderState;
             }
 
@@ -1547,6 +1738,24 @@ WHERE bb.BatchId=@batchId
             }
         }
 
+        public async Task AcceptBoxAsync(int targetBatchId, int sourceBatchId, int? sourceBoxNumber)
+        {
+            var targetBatch = await GetAsyncForMerge(targetBatchId);
+            var sourceBatch = await GetAsyncForMerge(sourceBatchId);
+            var box = sourceBatch.Boxes.FirstOrDefault(b => b.Number == sourceBoxNumber.Value);
+            if (box == null)
+            {
+                throw new Exception($"源箱号不存在: {sourceBoxNumber}");
+            }
+            var existingMap =  await _context.BatchBoxMaps.FirstOrDefaultAsync(m => m.BatchId == targetBatchId && m.BoxId == box.Id);
+            if (existingMap == null)
+            {
+                await _context.BatchBoxMaps.AddAsync(new BatchBoxMap { BatchId = targetBatchId, BoxId = box.Id });
+            }
+            await _context.SaveChangesAsync();
+        }
+
+
         public async Task CommissionAsync(int id)
         {
             var batch = await GetAsync(id);
@@ -1639,6 +1848,7 @@ WHERE bb.BatchId=@batchId
             batch.TargetWeightKg = model.TargetWeightKg;
             batch.Commission = model.Commission;
             batch.DateEntered = model.DateEntered;
+            batch.Note = model.Note;
 
             List<TransportOrder> orders = null;
             if (isIntNumberChanged || isIntCarrierChanged)
@@ -1693,6 +1903,188 @@ WHERE bb.BatchId=@batchId
             return batch;
         }
 
+        private async Task<Batch> UpdateWarehouseReceiveAsync(WarehouseReceiveBatchEntity model, bool isSaving = true, params int[] orderIds)
+        {
+            Batch batch = await _context.Batches.Include(b => b.BatchWarehouseReceives).FirstAsync(b => b.GroupType == (int)BatchGroupType.WarehouseReceive && b.Id == model.Id);
+
+            batch.Name = model.Name;
+            batch.GroupType = (int)model.GroupType;
+            batch.Note = model.Note;
+            if (batch.BatchWarehouseReceives == null || batch.BatchWarehouseReceives.Count == 0)
+            {
+                batch.BatchWarehouseReceives = new List<BatchWarehouseReceive>();
+            }
+            var warehouseReceiveBatch = batch.BatchWarehouseReceives.First();
+
+            _memoryCache.Remove($"warehousereceivebatch-{batch.Id}");
+            await _context.SaveChangesAsync();
+            return batch;
+        }
+
+        private async Task<Batch> UpdateLoadDeliveryAsync(LoadDeliveryBatchEntity model, bool isSaving = true, params int[] orderIds)
+        {
+            Batch batch = await _context.Batches.Include(b => b.LoadDeliveryBatches).FirstAsync(b => b.GroupType == (int)BatchGroupType.LoadDelivery && b.Id == model.Id);
+
+            batch.Name = model.Name;
+            batch.GroupType = (int)model.GroupType;
+            batch.Note = model.Note;
+            if (batch.LoadDeliveryBatches == null || batch.LoadDeliveryBatches.Count == 0)
+            {
+                batch.LoadDeliveryBatches = new List<LoadDeliveryBatch>();
+            }
+            var loadDeliveryBatch = batch.LoadDeliveryBatches.First();
+
+            _memoryCache.Remove($"loaddeliverybatch-{batch.Id}");
+            await _context.SaveChangesAsync();
+            return batch;
+        }
+
+        private async Task<Batch> UpdatePalletAsync(PalletBatchEntity model, bool isSaving = true, params int[] orderIds)
+        {
+            Batch batch = await _context.Batches.Include(b => b.BatchPallets).FirstAsync(b => b.GroupType == (int)BatchGroupType.Pallet && b.Id == model.Id);
+
+            batch.Name = model.Name;
+            batch.GroupType = (int)model.GroupType;
+            batch.Note = model.Note;
+            if (batch.BatchPallets == null || batch.BatchPallets.Count == 0)
+            {
+                batch.BatchPallets = new List<BatchPallet>();
+            }
+            var batchPallet = batch.BatchPallets.First();
+
+            batchPallet.Length = model.Length;
+            batchPallet.Width = model.Width;
+            batchPallet.Height = model.Height;
+            batchPallet.WeightKg = model.WeightKg;
+
+            _memoryCache.Remove($"batchpallet-{batch.Id}");
+            await _context.SaveChangesAsync();
+            return batch;
+        }
+
+        private async Task<Batch> CreateWarehouseReceiveAsync(WarehouseReceiveBatchEntity model, bool isSaving = true, params int[] orderIds)
+        {
+            var batch = new Batch
+            {
+                Name = model.Name,
+                IsFromChina = true,
+                DateCreated = _date.UserNow,
+                GroupType = (int)BatchGroupType.WarehouseReceive,
+                UserId = _session.CurrentUser.Id,
+                Note = model.Note,
+                BatchWarehouseReceives = new List<BatchWarehouseReceive>
+                {
+                    new BatchWarehouseReceive
+                    {
+                        WarehouseId = model.WarehouseId,
+                    },
+                },
+                CompanyId = Config.COMPANY_ID,
+            };
+
+            var batchBox = new BatchBox() { Number = 1 };
+            if (orderIds != null && orderIds.Any())
+            {
+                batchBox.BatchBoxOrderMaps = orderIds.Distinct().Select(o => new BatchBoxOrderMap()
+                {
+                    OrderId = o
+                }).ToList();
+            }
+
+            batch.BatchBoxes.Add(batchBox);
+            await _context.Batches.AddAsync(batch);
+
+            if (isSaving)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            return batch;
+        }
+        private async Task<Batch> CreateLoadDeliveryAsync(LoadDeliveryBatchEntity model, bool isSaving = true, params int[] orderIds)
+        {
+            var batch = new Batch
+            {
+                Name = model.Name,
+                IsFromChina = true,
+                DateCreated = _date.UserNow,
+                GroupType = (int)BatchGroupType.LoadDelivery,
+                UserId = _session.CurrentUser.Id,
+                Note = model.Note,
+                LoadDeliveryBatches = new List<LoadDeliveryBatch>
+                {
+                    new LoadDeliveryBatch
+                    {
+                        WarehouseId = model.WarehouseId,
+                    },
+                },
+                CompanyId = Config.COMPANY_ID,
+            };
+
+            var batchBox = new BatchBox() { Number = 1 };
+            if (orderIds != null && orderIds.Any())
+            {
+                batchBox.BatchBoxOrderMaps = orderIds.Distinct().Select(o => new BatchBoxOrderMap()
+                {
+                    OrderId = o
+                }).ToList();
+            }
+
+            batch.BatchBoxes.Add(batchBox);
+            await _context.Batches.AddAsync(batch);
+
+            if (isSaving)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            return batch;
+        }
+
+        private async Task<Batch> CreatePalletAsync(PalletBatchEntity model, bool isSaving = true, params int[] orderIds)
+        {
+            var batch = new Batch
+            {
+                Name = model.Name,
+                IsFromChina = true,
+                DateCreated = _date.UserNow,
+                GroupType = (int) BatchGroupType.Pallet,
+                UserId = _session.CurrentUser.Id,
+                Note = model.Note,
+                BatchPallets = new List<BatchPallet>
+                {
+                    new BatchPallet
+                    {
+                        WarehouseId = model.WarehouseId,
+                        Length = model.Length, 
+                        Width = model.Width,
+                        Height = model.Height,
+                        WeightKg = model.WeightKg,
+                    },
+                },
+                CompanyId = Config.COMPANY_ID,
+            };
+
+            var batchBox = new BatchBox() {Number = 1};
+            if (orderIds != null && orderIds.Any())
+            {
+                batchBox.BatchBoxOrderMaps = orderIds.Distinct().Select(o => new BatchBoxOrderMap()
+                {
+                    OrderId = o
+                }).ToList();
+            }
+
+            batch.BatchBoxes.Add(batchBox);
+            await _context.Batches.AddAsync(batch);
+
+            if (isSaving)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            return batch;
+        }
+
         private async Task<Batch> CreateAsync(BatchEntity model, bool isSaving = true, params int[] orderIds)
         {
             var batch = new Batch
@@ -1700,7 +2092,7 @@ WHERE bb.BatchId=@batchId
                 Name = model.Name,
                 IsFromChina = true,
                 DateCreated = _date.UserNow,
-                GroupType = (int) model.GroupType,
+                GroupType = (int)model.GroupType,
                 IntCarrier = model.IntCarrier,
                 IntNumber = model.IntNumber,
                 Cost = model.Cost,
@@ -1718,14 +2110,16 @@ WHERE bb.BatchId=@batchId
                 MasterBatchId = model.MasterBatchId,
                 WarehouseId = model.WarehouseId,
                 RouteId = model.RouteId,
-                Stage = (int) model.Stage,
+                Stage = (int)model.Stage,
                 TargetWeightKg = model.TargetWeightKg,
                 Commission = model.Commission,
                 DateEntered = model.DateEntered,
                 UserId = _session.CurrentUser.Id,
+                Note = model.Note,
+                CompanyId = model.GroupType == BatchGroupType.DailyScan ? null : Config.COMPANY_ID,
             };
 
-            var batchBox = new BatchBox() {Number = 1};
+            var batchBox = new BatchBox() { Number = 1 };
             if (orderIds != null && orderIds.Any())
             {
                 batchBox.BatchBoxOrderMaps = orderIds.Distinct().Select(o => new BatchBoxOrderMap()

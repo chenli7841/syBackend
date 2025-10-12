@@ -35,7 +35,10 @@ namespace Persistence.Data
         public virtual DbSet<BaseRechargeSet> BaseRechargeSets { get; set; }
         public virtual DbSet<BaseSeting> BaseSetings { get; set; }
         public virtual DbSet<Batch> Batches { get; set; }
+        public virtual DbSet<BatchPallet> BatchPallets { get; set; }
+        public virtual DbSet<BatchWarehouseReceive> BatchWarehouseReceives { get; set; }
         public virtual DbSet<BatchBox> BatchBoxes { get; set; }
+        public virtual DbSet<BatchBoxMap> BatchBoxMaps { get; set; }
         public virtual DbSet<BatchBoxOrderMap> BatchBoxOrderMaps { get; set; }
         public virtual DbSet<BatchOrderMap> BatchOrderMaps { get; set; }
         public virtual DbSet<BatchOtherOrder> BatchOtherOrders { get; set; }
@@ -1685,6 +1688,13 @@ namespace Persistence.Data
 
                 entity.Property(e => e.WarehouseId).HasColumnType("int(11)");
 
+                entity.Property(e => e.Note)
+                    .HasColumnType("text")
+                    .HasColumnName("note")
+                    .HasComment("备注");
+
+                entity.Property(e => e.CompanyId).HasColumnType("int");
+
                 entity.HasOne(d => d.BelongsToUser)
                     .WithMany(p => p.BatchBelongsToUsers)
                     .HasForeignKey(d => d.BelongsToUserId)
@@ -1724,6 +1734,93 @@ namespace Persistence.Data
                     .WithMany(p => p.Batches)
                     .HasForeignKey(d => d.WarehouseId)
                     .HasConstraintName("FK_dbo.Batch_dbo.Warehouse_WarehouseId");
+
+                entity.HasOne(d => d.Company)
+                    .WithMany(p => p.Batches)
+                    .HasForeignKey(d => d.CompanyId)
+                    .HasConstraintName("FK_Batch_CompanyId");
+            });
+
+            modelBuilder.Entity<BatchPallet>(entity =>
+            {
+                entity.Property(e => e.Id).HasColumnType("int(11)");
+
+                entity.ToTable("batch_pallet");
+
+                entity.HasComment("托盘订单二级表");
+
+                entity.HasIndex(e => e.BatchId, "IX_dbo.Batch_BatchId");
+
+                entity.Property(e => e.BatchId)
+                    .HasColumnType("int(11)")
+                    .HasComment("批次id");
+
+                entity.Property(e => e.WarehouseId)
+                    .HasColumnType("int(11)")
+                    .HasComment("仓库id");
+
+                entity.Property(e => e.Length)
+                    .HasColumnType("decimal(18,0)")
+                    .HasColumnName("Length")
+                    .HasComment("托盘长度");
+
+                entity.Property(e => e.Width)
+                    .HasColumnType("decimal(18,0)")
+                    .HasColumnName("Width")
+                    .HasComment("托盘宽度");
+
+                entity.Property(e => e.Height)
+                    .HasColumnType("decimal(18,0)")
+                    .HasColumnName("Height")
+                    .HasComment("托盘高度");
+
+                entity.Property(e => e.WeightKg)
+                    .HasColumnType("decimal(18,0)")
+                    .HasColumnName("WeightKg")
+                    .HasComment("托盘重量(千克)");
+
+                entity.HasOne(d => d.Warehouse)
+                    .WithMany(p => p.BatchPallets)
+                    .HasForeignKey(d => d.WarehouseId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_dbo.BatchPallet_dbo.Warehouse_WarehouseId");
+
+                entity.HasOne(d => d.Batch)
+                    .WithMany(p => p.BatchPallets)
+                    .HasForeignKey(d => d.BatchId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_dbo.BatchPallet_dbo.Batch_BatchId");
+            });
+
+            modelBuilder.Entity<BatchWarehouseReceive>(entity =>
+            {
+                entity.Property(e => e.Id).HasColumnType("int(11)");
+
+                entity.ToTable("batch_warehouse_receive");
+
+                entity.HasComment("仓库收货二级表");
+
+                entity.HasIndex(e => e.BatchId, "IX_dbo.Batch_BatchId");
+
+                entity.Property(e => e.BatchId)
+                    .HasColumnType("int(11)")
+                    .HasComment("批次id");
+
+                entity.Property(e => e.WarehouseId)
+                    .HasColumnType("int(11)")
+                    .HasComment("仓库id");
+
+                entity.HasOne(d => d.Warehouse)
+                    .WithMany(p => p.BatchWarehouseReceives)
+                    .HasForeignKey(d => d.WarehouseId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_dbo.BatchWarehouseReceive_dbo.Warehouse_WarehouseId");
+
+                entity.HasOne(d => d.Batch)
+                    .WithMany(p => p.BatchWarehouseReceives)
+                    .HasForeignKey(d => d.BatchId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_dbo.BatchWarehouseReceive_dbo.Batch_BatchId");
             });
 
             modelBuilder.Entity<BatchBox>(entity =>
@@ -1744,11 +1841,70 @@ namespace Persistence.Data
                     .HasColumnType("int(11)")
                     .HasComment("数量");
 
+                entity.Property(e => e.Name)
+                    .HasColumnType("varchar(32)")
+                    .HasComment("箱名称，格式为 原始批次ID - 序号");
+
+                entity.Property(e => e.Length)
+                    .HasColumnType("decimal(18,0)")
+                    .HasColumnName("Length")
+                    .HasComment("长");
+
+                entity.Property(e => e.Width)
+                    .HasColumnType("decimal(18,0)")
+                    .HasColumnName("Width")
+                    .HasComment("宽");
+
+                entity.Property(e => e.Height)
+                    .HasColumnType("decimal(18,0)")
+                    .HasColumnName("Height")
+                    .HasComment("高");
+
+                entity.Property(e => e.ActualWeightKg)
+                    .HasColumnType("decimal(18,0)")
+                    .HasColumnName("ActualWeightKg")
+                    .HasComment("实际重量(kg)");
+
                 entity.HasOne(d => d.Batch)
                     .WithMany(p => p.BatchBoxes)
                     .HasForeignKey(d => d.BatchId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_dbo.BatchBox_dbo.BatchId_BatchId");
+            });
+
+            modelBuilder.Entity<BatchBoxMap>(entity =>
+            {
+                entity.HasKey(e => new { e.Id })
+                    .HasName("PRIMARY")
+                    .HasAnnotation("MySql:IndexPrefixLength", new[] { 0, 0 });
+
+                entity.ToTable("batch_box_map");
+
+                entity.HasComment("批次箱与箱号");
+
+                entity.HasIndex(e => e.BatchId, "IX_dbo.BatchBoxMap_BatchId");
+
+                entity.HasIndex(e => e.BoxId, "IX_dbo.BatchBoxMap_OrderId");
+
+                entity.Property(e => e.BoxId)
+                    .HasColumnType("int(11)")
+                    .HasComment("批次箱id");
+
+                entity.Property(e => e.BatchId)
+                    .HasColumnType("int(11)")
+                    .HasComment("批次id");
+
+                entity.HasOne(d => d.BatchBox)
+                    .WithMany(p => p.BatchBoxMaps)
+                    .HasForeignKey(d => d.BoxId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_dbo.BatchBoxMap_dbo.BatchBox_BoxId");
+
+                entity.HasOne(d => d.Batch)
+                    .WithMany(p => p.BatchBoxMaps)
+                    .HasForeignKey(d => d.BatchId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_dbo.BatchBoxMap_dbo.Batch_BatchId");
             });
 
             modelBuilder.Entity<BatchBoxOrderMap>(entity =>
@@ -4386,7 +4542,7 @@ namespace Persistence.Data
             {
                 entity.ToTable("load_delivery_batch");
 
-                entity.HasComment("装车发货批次");
+                entity.HasComment("装车发货批次二级表");
 
                 entity.Property(e => e.Id).HasColumnType("int");
 
@@ -4401,6 +4557,16 @@ namespace Persistence.Data
                 entity.Property(e => e.ArrivalTime)
                     .HasColumnType("datetime")
                     .HasColumnName("ArrivalTime");
+
+                entity.Property(e => e.WarehouseId)
+                    .HasColumnType("int(11)")
+                    .HasComment("仓库id");
+
+                entity.HasOne(d => d.Warehouse)
+                    .WithMany(p => p.LoadDeliveryBatches)
+                    .HasForeignKey(d => d.WarehouseId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_dbo.LoadDeliveryBatch_dbo.Warehouse_WarehouseId");
 
                 entity.HasOne(d => d.Batch)
                     .WithMany(p => p.LoadDeliveryBatches)
@@ -6467,10 +6633,17 @@ namespace Persistence.Data
                     .HasColumnType("text")
                     .HasComment("备注");
 
+                entity.Property(e => e.CompanyId).HasColumnType("int");
+
                 entity.HasOne(d => d.BelongsTo)
                     .WithMany(p => p.PickUpLocations)
                     .HasForeignKey(d => d.BelongsToId)
                     .HasConstraintName("fk_pick_up_location_user_belongs_to_id");
+
+                entity.HasOne(d => d.Company)
+                    .WithMany(p => p.PickUpLocations)
+                    .HasForeignKey(d => d.CompanyId)
+                    .HasConstraintName("FK_PickUpLocation_CompanyId");
             });
 
             modelBuilder.Entity<QiniuConfig>(entity =>
@@ -6923,6 +7096,14 @@ namespace Persistence.Data
                 entity.Property(e => e.IsRegular).HasColumnType("bit");
 
                 entity.Property(e => e.CompanyId).HasColumnType("int");
+
+                entity.Property(e => e.Destination)
+                    .HasColumnType("varchar(64)")
+                    .HasColumnName("Destination");
+
+                entity.Property(e => e.Departure)
+                    .HasColumnType("varchar(64)")
+                    .HasColumnName("Departure");
 
                 entity.HasOne(d => d.Warehouse)
                     .WithMany(p => p.Routes)
@@ -9476,6 +9657,8 @@ namespace Persistence.Data
                     .HasPrecision(18)
                     .HasComment("宽");
 
+                entity.Property(e => e.CompanyId).HasColumnType("int");
+
                 entity.HasOne(d => d.CreatedBy)
                     .WithMany(p => p.TransportOrderCreatedBies)
                     .HasForeignKey(d => d.CreatedById)
@@ -9506,6 +9689,12 @@ namespace Persistence.Data
                     .WithMany(p => p.TransportOrderSenders)
                     .HasForeignKey(d => d.SenderId)
                     .HasConstraintName("FK_dbo.Order_dbo.Customer_SenderId");
+
+                entity.HasOne(d => d.Company)
+                    .WithMany(p => p.TransportOrders)
+                    .HasForeignKey(d => d.CompanyId)
+                    .HasConstraintName("FK_TransportOrder_CompanyId");
+
             });
 
             modelBuilder.Entity<TransportOrderAudit>(entity =>
@@ -9723,6 +9912,7 @@ namespace Persistence.Data
                     .HasComment("邮箱")
                     .HasCharSet("utf8");
 
+                entity.Property(e => e.CompanyId).HasColumnType("int");
 
                 entity.HasOne(d => d.BelongsToNavigation)
                     .WithMany(p => p.InverseBelongsToNavigation)
@@ -9744,6 +9934,11 @@ namespace Persistence.Data
                     .WithMany(p => p.Users)
                     .HasForeignKey(d => d.PickUpLocationId)
                     .HasConstraintName("fk_user_pick_up_location_pick_up_location_id");
+
+                entity.HasOne(d => d.Company)
+                    .WithMany(p => p.Users)
+                    .HasForeignKey(d => d.CompanyId)
+                    .HasConstraintName("FK_User_CompanyId");
             });
 
             modelBuilder.Entity<Warehouse>(entity =>
@@ -9768,6 +9963,13 @@ namespace Persistence.Data
                     .HasComment("名称");
 
                 entity.Property(e => e.Photo).HasComment("照片");
+
+                entity.Property(e => e.CompanyId).HasColumnType("int");
+
+                entity.HasOne(d => d.Company)
+                    .WithMany(p => p.Warehouses)
+                    .HasForeignKey(d => d.CompanyId)
+                    .HasConstraintName("FK_Warehouse_CompanyId");
             });
 
             modelBuilder.Entity<YoudumallUser>(entity =>

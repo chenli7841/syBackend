@@ -4,6 +4,13 @@
     <TargetFramework>net5.0</TargetFramework>
     <UserSecretsId>aspnet-EplusCore-C55CC83C-5BBF-40CB-BF60-85046A37DFC1</UserSecretsId>
     <ApplicationInsightsResourceId>/subscriptions/aa157e2b-7370-4638-9013-342deec0c1c5/resourceGroups/trial/providers/microsoft.insights/components/eplusapi</ApplicationInsightsResourceId>
+
+	  <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+	  <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+	  <OutputType>Exe</OutputType>
+	  <PublishSingleFile>true</PublishSingleFile>
+	  <SelfContained>true</SelfContained>
+	  <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>

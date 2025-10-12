@@ -35,9 +35,9 @@ namespace Persistence.Services
             return routes;
         }
 
-        public async Task<RouteEntity> GetAsync(int id)
+        public async Task<RouteEntity> GetAsync(int id, bool checkCompany = true)
         {
-            var route = await _context.Routes.FirstAsync(r => r.Id == id && r.CompanyId == Config.COMPANY_ID);
+            var route = await _context.Routes.FirstAsync(r => r.Id == id && (!checkCompany || r.CompanyId == Config.COMPANY_ID));
             var result = _mapper.Map<RouteEntity>(route);
             
             if (string.IsNullOrEmpty(route.Price))
@@ -88,6 +88,8 @@ namespace Persistence.Services
             route.Price = JsonConvert.SerializeObject(model.ItemPrices);
             route.DisplaySequence = model.DisplaySequence;
             route.CompanyId = Config.COMPANY_ID;
+            route.Destination = model.Destination;
+            route.Departure = model.Departure;
             await _context.SaveChangesAsync();
             return route;
         }
@@ -107,6 +109,8 @@ namespace Persistence.Services
                 SupportDescription = model.SupportDescription,
                 DisplaySequence = model.DisplaySequence,
                 CompanyId = Config.COMPANY_ID,
+                Destination = model.Destination,
+                Departure = model.Departure,
             };
             await _context.Routes.AddAsync(route);
             await _context.SaveChangesAsync();

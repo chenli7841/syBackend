@@ -35,10 +35,9 @@
                                 <th data-searchable="true">单号</th>
                                 <th data-searchable="true">国内单号</th>
                                 <th>创建时间</th>
-                                <th>所属批次</th>
+                                <th>所属船号/航空号</th>
                                 <th>当前状态</th>
                                 <th data-searchable="true">用户</th>
-                                <th>备注</th>
                                 <th>详情</th>
                                 <th>删除</th>
                                 <th>打印</th>
@@ -103,13 +102,6 @@
                     { "data": "deliveryBatch", "name": "DeliveryBatch", "autoWidth": true },
                     { "data": "stateText", "name": "stateText", "autoWidth": true },
                     { "data": "creator.name", "name": "Creator", "autoWidth": true },
-                    {
-                        "name": "Memo",
-                        "autoWidth": true,
-                        "render": (data, type, full, meta) => {
-                            return full.memo != null ? '<i class="fa fa-check fa-lg" style="color: green"></i>' : '<i class="fa fa-times fa-lg" style="color: #fc0324de"></i>';
-                        }
-                    },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("Edit")?id=${full.id}'><i class="fa fa-edit fa-lg"></i></a>` },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("Delete")?id=${full.id}'><i class="fa fa-trash-o fa-lg" style="color: red"></i></a>` },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("PrintBarcode")?id=${full.id}' target="_blank"><i class="fa fa-print fa-lg"></i></a>` },

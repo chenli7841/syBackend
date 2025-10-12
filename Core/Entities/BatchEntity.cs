@@ -17,7 +17,6 @@ namespace Domain.Entities
         public BatchGroupType GroupType { get; set; }
         public DateTime DateCreated { get; set; }
         public IList<BatchBoxEntity> Boxes { get; set; }
-
         public string IntNumber { get; set; }
         public string IntCarrier { get; set; }
         public decimal Cost { get; set; }
@@ -53,6 +52,8 @@ namespace Domain.Entities
         public string FlightInfo { get; set; }
         public string CargoNumber { get; set; }
         public DateTime? ArrivalTime { get; set; }
+        public string Note { get; set; }
+        public IEnumerable<WarehouseEntity> Warehouses { get; set; }
 
         public OrderState GetOrderState(BatchGroupType? groupTypeToUse = null)
         {
@@ -271,6 +272,11 @@ namespace Domain.Entities
     {
         public int Id { get; set; }
         public int Number { get; set; }
+        public string Name { get; set; }
+        public double? Length { get; set; }
+        public double? Width { get; set; }
+        public double? Height { get; set; }
+        public double? ActualWeightKg { get; set; }
         public IEnumerable<OrderEntity> Orders { get; set; }
     }
 
@@ -326,5 +332,66 @@ namespace Domain.Entities
         public string PhotoUrl { get; set; }
         public string EmailContent { get; set; }
         public string SmsContent { get; set; }
+    }
+
+    public class PalletBatchEntity
+    {
+        public PalletBatchEntity()
+        {
+            Boxes = new List<BatchBoxEntity>();
+        }
+
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public BatchGroupType GroupType { get; set; }
+        public IList<BatchBoxEntity> Boxes { get; set; }
+        public int WarehouseId { get; set; }
+        public string Note { get; set; }
+        public string Destination { get; set; }
+        public IEnumerable<WarehouseEntity> Warehouses { get; set; }
+        public double? Length { get; set; }
+        public double? Width { get; set; }
+        public double? Height { get; set; }
+        public double? WeightKg { get; set; }
+        public string ShipFlightNumber { get; set; }
+        public string State { get; set; }
+    }
+
+    public class LoadDeliveryBatchEntity
+    {
+        public LoadDeliveryBatchEntity()
+        {
+            Boxes = new List<BatchBoxEntity>();
+        }
+
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public BatchGroupType GroupType { get; set; }
+        public IList<BatchBoxEntity> Boxes { get; set; }
+        public int WarehouseId { get; set; }
+        public string Note { get; set; }
+        public string Destination { get; set; }
+        public IEnumerable<WarehouseEntity> Warehouses { get; set; }
+        public string ShipFlightNumber { get; set; }
+        public string State { get; set; }
+    }
+
+    public class WarehouseReceiveBatchEntity
+    {
+        public WarehouseReceiveBatchEntity()
+        {
+            Boxes = new List<BatchBoxEntity>();
+        }
+
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public BatchGroupType GroupType { get; set; }
+        public IList<BatchBoxEntity> Boxes { get; set; }
+        public int WarehouseId { get; set; }
+        public string Note { get; set; }
+        public string Destination { get; set; }
+        public IEnumerable<WarehouseEntity> Warehouses { get; set; }
+        public string ShipFlightNumber { get; set; }
+        public string State { get; set; }
     }
 }

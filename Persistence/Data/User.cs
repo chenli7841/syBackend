@@ -69,6 +69,8 @@ namespace Persistence.Data
         public int? DisplaySequence { get; set; }
         public string Description { get; set; }
         public string Mailbox { get; set; }
+        public int? CompanyId { get; set; }
+
 
         public virtual User BelongsToNavigation { get; set; }
         public virtual Customer Customer { get; set; }
@@ -104,5 +106,6 @@ namespace Persistence.Data
         public virtual ICollection<TodoItemAssignee> TodoItemAssignees { get; set; }
         public virtual ICollection<TodoItemCustomer> TodoItemCustomers { get; set; }
         public virtual ICollection<TodoItem> TodoItems { get; set; }
+        public virtual Company Company { get; set; }
     }
 }

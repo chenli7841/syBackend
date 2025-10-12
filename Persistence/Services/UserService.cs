@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using Common;
+using Domain;
 using Domain.Entities;
 using Domain.Enums;
 using Domain.Models;
@@ -89,7 +90,7 @@ namespace Persistence.Services
                              u.OrderStartNumber == filterOptions.CodeToSearch) &&
                             (string.IsNullOrWhiteSpace(filterOptions.PhoneToSearch) ||
                              u.CanadaPhoneNumber.Contains(filterOptions.PhoneToSearch)) &&
-                            (filterOptions.RoleToSearch == null || u.Role == (int)filterOptions.RoleToSearch.Value))
+                            (filterOptions.RoleToSearch == null || u.Role == (int)filterOptions.RoleToSearch.Value) && u.CompanyId == Config.COMPANY_ID)
                 .Include(u => u.Customer)
                 .Include(u => u.BelongsToNavigation)
                 .ThenInclude(b => b.Customer);
@@ -146,7 +147,7 @@ namespace Persistence.Services
 
         public async Task<IEnumerable<PickUpLocationEntity>> ListPickUpLocationsAsync(int version = 1)
         {
-            var result = await _context.PickUpLocations.Where(l => l.Version == version).Select(u => _mapper.Map<PickUpLocationEntity>(u)).ToListAsync();
+            var result = await _context.PickUpLocations.Where(l => l.Version == version && l.CompanyId == Config.COMPANY_ID).Select(u => _mapper.Map<PickUpLocationEntity>(u)).ToListAsync();
             return result;
         }
 
@@ -411,6 +412,7 @@ namespace Persistence.Services
                 return fromUser.Balance;
             }
         }
+        /*
         public async Task<UserEntity> CreateAsync(UserEntity model)
         {
             await _context.Users.AddAsync(new User
@@ -424,6 +426,7 @@ namespace Persistence.Services
             });
             
         }
+        */
         public async Task<UserEntity> SaveAsync(UserEntity model)
         {
             var user = await _context.Users.Include(u => u.Customer).FirstAsync(u => u.Id == model.Id);

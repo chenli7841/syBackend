@@ -30,6 +30,8 @@ namespace Domain.Entities
         public string SupportDescription { get; set; }
         public int? DisplaySequence { get; set; }
         public bool IsRegular { get; set; }
+        public string Departure { get; set; }
+        public string Destination { get; set; }
         public IList<RouteItemPrice> ItemPrices;
     }
 

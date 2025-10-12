@@ -19,8 +19,13 @@ namespace Persistence.Data
         public string Contact { get; set; }
         public string Photo { get; set; }
         public int? DisplaySequence { get; set; }
+        public int CompanyId { get; set; }
 
         public virtual ICollection<Batch> Batches { get; set; }
+        public virtual ICollection<BatchPallet> BatchPallets { get; set; }
+        public virtual ICollection<BatchWarehouseReceive> BatchWarehouseReceives { get; set; }
+        public virtual ICollection<LoadDeliveryBatch> LoadDeliveryBatches { get; set; }
         public virtual ICollection<Route> Routes { get; set; }
+        public virtual Company Company { get; set; }
     }
 }

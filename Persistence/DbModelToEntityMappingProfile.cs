@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using AutoMapper;
 using Domain.Entities;
@@ -45,7 +47,8 @@ namespace Persistence
                 .ForMember(dest => dest.Photos, opt => opt.MapFrom(src => src.OrderPhotos))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.OrderStatuses))
                 .ForMember(dest => dest.InternalStatus, opt => opt.MapFrom(src => src.OrderInternalStatuses))
-                .ForMember(dest => dest.PickUpLocation, opt => opt.MapFrom(src => src.PickUpLocation));
+                .ForMember(dest => dest.PickUpLocation, opt => opt.MapFrom(src => src.PickUpLocation))
+                .ForMember(dest => dest.CompanyId, opt => opt.MapFrom(src => src.CompanyId));
 
             // TODO: use IDateTime
             CreateMap<OrderStatusInternal, OrderStatusEntity>()
@@ -80,7 +83,7 @@ namespace Persistence
                 .ForMember(dest => dest.OtherOrders, opt => opt.MapFrom(src => src.BatchOtherOrders.Select(bo => bo.OtherOrder)))
                 .ForMember(dest => dest.Creator, opt => opt.MapFrom(src => src.User))
                 .ForMember(dest => dest.WeightKg, opt => opt.MapFrom(src => src.PaidWeightKg ?? 0))
-                .ForMember(dest => dest.Boxes, opt => opt.MapFrom(src => src.BatchBoxes))
+                .ForMember(dest => dest.Boxes, opt => opt.MapFrom(src => GetAllBatchBoxes(src)))
                 .ForMember(dest => dest.RecipientId, opt => opt.MapFrom(src => src.RecipientUserId))
                 .ForMember(dest => dest.Recipient, opt => opt.MapFrom(src => src.RecipientUser))
                 .ForMember(dest => dest.AgentId, opt => opt.MapFrom(src => src.BelongsToUserId))
@@ -89,6 +92,13 @@ namespace Persistence
                 .ForMember(dest => dest.FlightInfo, opt => opt.MapFrom(src => GetLoadDeliveryBatch(src).FlightInfo))
                 .ForMember(dest => dest.CargoNumber, opt => opt.MapFrom(src => GetLoadDeliveryBatch(src).CargoNumber))
                 .ForMember(dest => dest.ArrivalTime, opt => opt.MapFrom(src => GetLoadDeliveryBatch(src).ArrivalTime));
+
+            CreateMap<Batch, PalletBatchEntity>()
+                .ForMember(dest => dest.WeightKg, opt => opt.MapFrom(src => src.BatchPallets != null && src.BatchPallets.Any() ? src.BatchPallets.First().WeightKg : 0))
+                .ForMember(dest => dest.Length, opt => opt.MapFrom(src => src.BatchPallets != null && src.BatchPallets.Any() ? src.BatchPallets.First().Length : 0))
+                .ForMember(dest => dest.Width, opt => opt.MapFrom(src => src.BatchPallets != null && src.BatchPallets.Any() ? src.BatchPallets.First().Width : 0))
+                .ForMember(dest => dest.Height, opt => opt.MapFrom(src => src.BatchPallets != null && src.BatchPallets.Any() ? src.BatchPallets.First().Height: 0))
+                .ForMember(dest => dest.Boxes, opt => opt.MapFrom(src => GetAllBatchBoxes(src)));
 
             CreateMap<BalanceHistory, TransactionEntity>();
 
@@ -106,6 +116,20 @@ namespace Persistence
             CreateMap<TodoItem, TodoItemEntity>()
                 .ForMember(dest => dest.Assignees, opt => opt.MapFrom(src => src.TodoItemAssignees.Select(a => a.Assignee)))
                 .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.CreatedBy));
+        }
+
+        private ICollection<BatchBox> GetAllBatchBoxes(Batch batch)
+        {
+            var boxes = new List<BatchBox>();
+            if (batch.BatchBoxMaps != null)
+            {
+                foreach (var m in batch.BatchBoxMaps)
+                {
+                    boxes.Add(m.BatchBox);
+                }
+            }
+            boxes.AddRange(batch.BatchBoxes);
+            return boxes;
         }
         
         private LoadDeliveryBatch GetLoadDeliveryBatch(Batch batch)

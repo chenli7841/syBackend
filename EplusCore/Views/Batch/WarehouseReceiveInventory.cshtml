@@ -1,13 +1,13 @@
-@using Domain.Enums
+﻿@using Domain.Enums
 @using Domain.Models.Extensions
 @model WebUI.Models.BatchInventoryResponse
 
 @{
-    ViewData["Title"] = "装车发货";
+    ViewData["Title"] = "仓库收货";
 }
 
 @section Styles
-{
+    {
     <link rel="stylesheet" href="~/vendors/select2/select2.min.css">
     <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
 }
@@ -31,18 +31,14 @@
                     @foreach (var warehouse in Model.Warehouses)
                     {
                         <li class="nav-item">
-                            @Html.ActionLink(warehouse.Name, "LoadDeliveryInventory", new { warehouseId = warehouse.Id }, new { @class = "nav-link " + (warehouse.Id == Model.SelectedWarehouseId ? "active" : "") })
+                            @Html.ActionLink(warehouse.Name, "WarehouseReceiveInventory", new { warehouseId = warehouse.Id }, new { @class = "nav-link " + (warehouse.Id == Model.SelectedWarehouseId ? "active" : "") })
                         </li>
                     }
                 </ul>
                 <div class="tab-content tab-content-solid">
                     <div class="tab-pane fade show active" id="home-5-1" role="tabpanel" aria-labelledby="tab-5-1">
                         <div style="display: flex; gap: 4px; height: 32px;">
-                            @Html.ActionLink("添加", "CreateLoadDeliveryBatch", null, new { warehouseId = Model.SelectedWarehouseId }, new { @class = "btn btn-primary" })
-                            @if (Model.GroupType == BatchGroupType.DailyScan || Model.GroupType == BatchGroupType.DailyReturn)
-                            {
-                                @Html.ActionLink($"添加{Model.GroupType.GetDescription()}", "CreateDailyBatchPerWarehouse", null, new { groupType = Model.GroupType }, new { @class = "btn btn-primary" })
-                            }
+                            @Html.ActionLink("添加", "CreateWarehouseReceiveBatch", null, new { warehouseId = Model.SelectedWarehouseId }, new { @class = "btn btn-primary" })
                             <div style="width: 1px; height: 100%; background-color: #ccc; margin-left:5px; margin-right: 5px;"></div>
                             <button id='batch_inventory_search_btn' class='btn btn-primary'>搜索</button>
                             <select class="form-control" id="recipient-select" style="width: 225px;">
@@ -84,7 +80,7 @@
 </div>
 
 @section Scripts
-{
+    {
     <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
     <script src="~/vendors/select2/select2.min.js"></script>
     <script>
@@ -118,7 +114,7 @@
                 "searchPanes": true,
                 "ajax": {
                     "url":
-                        '@Html.Raw(Url.Action("LoadData", new {groupType = Model.GroupType, routeId = Model.SelectedRouteId, recipientUserId=Model.SelectedRecipientUserId, belongsToUserId=Model.SelectedBelongsToUserId, warehouseId = Model.SelectedWarehouseId}))',
+                        '@Html.Raw(Url.Action("LoadData", new {groupType = Model.GroupType, warehouseId = Model.SelectedWarehouseId, recipientUserId=Model.SelectedRecipientUserId, belongsToUserId=Model.SelectedBelongsToUserId}))',
                     "type": "POST",
                     "datatype": "json"
                 },
@@ -142,7 +138,7 @@
                     { "data": "cargoNumber", "autoWidth": true },
                     { "data": "arrivalTimeDisplay", "autoWidth": true },
                     {
-                        "render": (data, type, full, meta) => `<a href='@Url.Action("EditLoadDeliveryBatch")?id=${full.id
+                        "render": (data, type, full, meta) => `<a href='@Url.Action("EditWarehouseReceiveBatch")?id=${full.id
                             }'><i class="fa fa-edit fa-lg"></i></a>`
                     },
                     {
@@ -171,7 +167,7 @@
                     pickUpLocationId: u.selectedPickUpLocationId
                 }
             });
-            $('#recipient-select').select2({data: users});
+            $('#recipient-select').select2({ data: users });
             $('.select2-selection').css('height', '32px');
             $('#select2-recipient-select-container').css('height', '32px');
             $('.select2-container--default .select2-selection--single .select2-selection__arrow').css('top', '4px');
@@ -183,45 +179,39 @@
                     pickUpLocationId: u.selectedPickUpLocationId
                 }
             });
-            $('#agent-select').select2({data: agents});
+            $('#agent-select').select2({ data: agents });
             $('.select2-selection').css('height', '32px');
             $('#select2-agent-select-container').css('height', '32px');
             $('.select2-container--default .select2-selection--single .select2-selection__arrow').css('top', '4px');
 
             let params = window.location.search.split('recipientUserId=');
-            if (params.length === 2)
-            {
+            if (params.length === 2) {
                 let currentRecipientUserId = params[1].split('&')[0];
                 $('#recipient-select').val(currentRecipientUserId).trigger('change');
             }
             params = window.location.search.split('belongsToUserId=');
-            if (params.length === 2)
-            {
+            if (params.length === 2) {
                 let currentBelongsToUserId = params[1].split('&')[0];
                 $('#agent-select').val(currentBelongsToUserId).trigger('change');
             }
 
             $('#batch_inventory_search_btn').click(() => {
                 let location = `/Batch/Inventory?groupType=${groupType}`
-                if (routeId && routeId.trim() !== '')
-                {
+                if (routeId && routeId.trim() !== '') {
                     location = location + `&routeId=${routeId}`;
                 }
-                if (warehouseId && warehouseId.trim() !== '')
-                {
+                if (warehouseId && warehouseId.trim() !== '') {
                     location = location + `&warehouseId=${warehouseId}`;
                 }
                 const recipientUserId = $('#recipient-select').val();
-                if (recipientUserId && recipientUserId.trim() !== '')
-                {
+                if (recipientUserId && recipientUserId.trim() !== '') {
                     location = location + `&recipientUserId=${recipientUserId}`;
                 }
                 const belongsToUserId = $('#agent-select').val();
-                if (belongsToUserId && belongsToUserId.trim() !== '')
-                {
+                if (belongsToUserId && belongsToUserId.trim() !== '') {
                     location = location + `&belongsToUserId=${belongsToUserId}`;
                 }
-                window.location.href=location;
+                window.location.href = location;
             });
 
             $('#batch_inventory_export_all_btn').click(() => {
@@ -243,7 +233,7 @@
         (function displayBatchCount() {
             const needToDisplayCount =
                 '@(Model.GroupType != BatchGroupType.DailyScan && Model.GroupType != BatchGroupType.DailyReturn)' ===
-                    'True';
+                'True';
 
             if (!needToDisplayCount) {
                 return;
@@ -252,7 +242,7 @@
             $.ajax({
                 url: '@Url.Action("GetBatchCountByRoute", "Batch")',
                 data: { groupType: '@Model.GroupType' },
-                success: function(result) {
+                success: function (result) {
                     if (result.data) {
                         result.data.forEach(element => {
                             const routeHeader = $(`#route${element.routeId}`);

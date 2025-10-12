@@ -8,7 +8,7 @@ namespace Domain.Services
     public interface IRouteService
     {
         Task<IEnumerable<RouteEntity>> ListAsync();
-        Task<RouteEntity> GetAsync(int id);
+        Task<RouteEntity> GetAsync(int id, bool checkCompany = true);
         Task<RouteEntity> SaveAsync(RouteEntity model, string photoData);
         Task HideAsync(int id);
         Task ShowAsync(int id);

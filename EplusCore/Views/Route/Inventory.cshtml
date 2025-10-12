@@ -15,20 +15,24 @@
                             <tr>
                                 <th>名称</th>
                                 <th>代码</th>
-                                <th>起始港</th>
-                                <th>目的地</th>
-                                <th>运输方式</th>
-                                <th>每公斤运费</th>
+                                <th>类型</th>
+                                <th style="display: none;">常规</th>
+                                <th>仓库</th>
+                                <th>说明</th>
+                                <th>排序</th>
+                                <th style="display: none;">显示</th>
+                                <th style="display: none;">永久删除</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var route in Model)
                             {
                                 <tr>
-                                    <td>@Html.ActionLink(route.Name, "Edit", new { @id = route.Id }, new { @class = "" })</td>
+                                    <td style="display: none;">@Html.ActionLink(route.Name, "Edit", new { @id = route.Id }, new { @class = "" })</td>
+                                    <td>@route.Name</td>
                                     <td>@route.Code</td>
                                     <td>@route.Type.GetDescription()</td>
-                                    <td><a href='@Url.Action("ToggleIsRegular")?id=@route.Id'>
+                                    <td style="display: none;"><a href='@Url.Action("ToggleIsRegular")?id=@route.Id'>
                                         @if (route.IsRegular)
                                         {
                                             <i class="fa fa-check fa-lg" style="color: #fc0324de"></i>
@@ -41,7 +45,7 @@
                                     <td>@route.Warehouse?.Name</td>
                                     <td>@route.Description</td>
                                     <td>@route.DisplaySequence</td>
-                                    <td>
+                                    <td style="display: none;">
                                         @if (route.IsDeleted)
                                         {
                                             <i class="fa fa-times fa-lg" style="color: #fc0324de"></i>
@@ -51,7 +55,7 @@
                                             <i class="fa fa-check fa-lg" style="color: green"></i>
                                         }
                                     </td>
-                                    <td><a href='@Url.Action("Delete")?id=@route.Id'><i class="fa fa-times fa-lg" style="color: #fc0324de"></i></a></td>
+                                    <td style="display: none;"><a href='@Url.Action("Delete")?id=@route.Id'><i class="fa fa-times fa-lg" style="color: #fc0324de"></i></a></td>
                                 </tr>
                             }
                         </tbody>
@@ -76,7 +80,7 @@
       },
     });
 
-    $('#route-listing').closest('.dataTables_wrapper').find('div.row:first-child > div:first-child')
-      .append(`<a class="btn btn-primary ml-2" href="${createUrl}">添加</button>`);
+    //$('#route-listing').closest('.dataTables_wrapper').find('div.row:first-child > div:first-child')
+    //  .append(`<a class="btn btn-primary ml-2" href="${createUrl}">添加</button>`);
     </script>
 }

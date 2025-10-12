@@ -1,13 +1,13 @@
-@using Domain.Enums
+﻿@using Domain.Enums
 @using Domain.Models.Extensions
 @model WebUI.Models.BatchInventoryResponse
 
 @{
-    ViewData["Title"] = "装车发货";
+    ViewData["Title"] = "待提货";
 }
 
 @section Styles
-{
+    {
     <link rel="stylesheet" href="~/vendors/select2/select2.min.css">
     <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
 }
@@ -28,29 +28,33 @@
             <div class="card-body">
                 <h4 class="card-title">@Model.GroupType.GetDescription()</h4>
                 <ul class="nav nav-tabs tab-solid tab-solid-danger" role="tablist">
-                    @foreach (var warehouse in Model.Warehouses)
+                    @if (Model.GroupType == BatchGroupType.DailyScan || Model.GroupType == BatchGroupType.DailyReturn)
                     {
-                        <li class="nav-item">
-                            @Html.ActionLink(warehouse.Name, "LoadDeliveryInventory", new { warehouseId = warehouse.Id }, new { @class = "nav-link " + (warehouse.Id == Model.SelectedWarehouseId ? "active" : "") })
-                        </li>
+                        foreach (var warehouse in Model.Warehouses)
+                        {
+                            <li class="nav-item">
+                                @Html.ActionLink(warehouse.Name, "Inventory", new { groupType = Model.GroupType, warehouseId = warehouse.Id }, new { @class = "nav-link " + (warehouse.Id == Model.SelectedWarehouseId ? "active" : "") })
+                            </li>
+                        }
+                    }
+                    else
+                    {
+                        foreach (var route in Model.Routes)
+                        {
+                            <li class="nav-item">
+                                <a href="@Url.Action("Inventory", new {groupType = Model.GroupType, routeId = route.Id})" class="nav-link @(route.Id == Model.SelectedRouteId ? "active" : "")" id='@($"route{route.Id}")'>@route.Name (<i class='fa fa-spinner fa-spin'></i>)</a>
+                                @*@Html.ActionLink(route.Name + "(<i class='fas fa - cog fa - spin'></i>)", "Inventory", new {groupType = Model.GroupType, routeId = route.Id}, new {@class = "nav-link " + (route.Id == Model.SelectedRouteId ? "active" : ""), @id = $"route{route.Id}"})*@
+                            </li>
+                        }
                     }
                 </ul>
                 <div class="tab-content tab-content-solid">
                     <div class="tab-pane fade show active" id="home-5-1" role="tabpanel" aria-labelledby="tab-5-1">
                         <div style="display: flex; gap: 4px; height: 32px;">
-                            @Html.ActionLink("添加", "CreateLoadDeliveryBatch", null, new { warehouseId = Model.SelectedWarehouseId }, new { @class = "btn btn-primary" })
                             @if (Model.GroupType == BatchGroupType.DailyScan || Model.GroupType == BatchGroupType.DailyReturn)
                             {
                                 @Html.ActionLink($"添加{Model.GroupType.GetDescription()}", "CreateDailyBatchPerWarehouse", null, new { groupType = Model.GroupType }, new { @class = "btn btn-primary" })
                             }
-                            <div style="width: 1px; height: 100%; background-color: #ccc; margin-left:5px; margin-right: 5px;"></div>
-                            <button id='batch_inventory_search_btn' class='btn btn-primary'>搜索</button>
-                            <select class="form-control" id="recipient-select" style="width: 225px;">
-                                <option value="" selected>搜索客户归属</option>
-                            </select>
-                            <select class="form-control" id="agent-select" style="width: 225px;">
-                                <option value="" selected>搜索群主</option>
-                            </select>
                         </div>
                         <div class="table-responsive">
                             <table id="batch-listing" class="table table-striped">
@@ -59,16 +63,10 @@
                                         <th>ID</th>
                                         <th>名称</th>
                                         <th>创建日期</th>
-                                        <th>当前状态</th>
                                         <th>总单数</th>
                                         <th>总重量</th>
                                         <th>总费用</th>
-                                        <th>航班信息</th>
-                                        <th>货运号码</th>
-                                        <th>预计到货时间</th>
                                         <th>详情</th>
-                                        <th>删除</th>
-                                        <th>打印</th>
                                         <th>导出</th>
                                     </tr>
                                 </thead>
@@ -84,7 +82,7 @@
 </div>
 
 @section Scripts
-{
+    {
     <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
     <script src="~/vendors/select2/select2.min.js"></script>
     <script>
@@ -134,22 +132,13 @@
                             }</a>`
                     },
                     { "data": "dateCreatedDisplay", "autoWidth": true },
-                    { "data": "stageDescription", "autoWidth": true },
                     { "data": "totalOrders", "autoWidth": true },
                     { "data": "totalWeightKg", "autoWidth": true },
                     { "data": "totalShippingCost", "autoWidth": true },
-                    { "data": "flightInfo", "autoWidth": true },
-                    { "data": "cargoNumber", "autoWidth": true },
-                    { "data": "arrivalTimeDisplay", "autoWidth": true },
                     {
-                        "render": (data, type, full, meta) => `<a href='@Url.Action("EditLoadDeliveryBatch")?id=${full.id
+                        "render": (data, type, full, meta) => `<a href='@Url.Action("Edit")?id=${full.id
                             }'><i class="fa fa-edit fa-lg"></i></a>`
                     },
-                    {
-                        "render": (data, type, full, meta) => `<a href='@Url.Action("Delete")?id=${full.id
-                            }&groupType=${groupType}&routeId=${routeId}&warehouseId=${warehouseId}'><i class="fa fa-trash-o fa-lg" style="color: red"></i></a>`
-                    },
-                    { "render": (data, type, full, meta) => `<a href='@Url.Action("PrintBatch")?id=${full.id}' target="_blank"><i class="fa fa-print fa-lg"></i></a>` },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("Export")?id=${full.id}' target="_blank"><i class="fa fa-table fa-lg"></i></a>` },
                 ],
                 "language": {
@@ -171,7 +160,7 @@
                     pickUpLocationId: u.selectedPickUpLocationId
                 }
             });
-            $('#recipient-select').select2({data: users});
+            $('#recipient-select').select2({ data: users });
             $('.select2-selection').css('height', '32px');
             $('#select2-recipient-select-container').css('height', '32px');
             $('.select2-container--default .select2-selection--single .select2-selection__arrow').css('top', '4px');
@@ -183,52 +172,39 @@
                     pickUpLocationId: u.selectedPickUpLocationId
                 }
             });
-            $('#agent-select').select2({data: agents});
+            $('#agent-select').select2({ data: agents });
             $('.select2-selection').css('height', '32px');
             $('#select2-agent-select-container').css('height', '32px');
             $('.select2-container--default .select2-selection--single .select2-selection__arrow').css('top', '4px');
 
             let params = window.location.search.split('recipientUserId=');
-            if (params.length === 2)
-            {
+            if (params.length === 2) {
                 let currentRecipientUserId = params[1].split('&')[0];
                 $('#recipient-select').val(currentRecipientUserId).trigger('change');
             }
             params = window.location.search.split('belongsToUserId=');
-            if (params.length === 2)
-            {
+            if (params.length === 2) {
                 let currentBelongsToUserId = params[1].split('&')[0];
                 $('#agent-select').val(currentBelongsToUserId).trigger('change');
             }
 
             $('#batch_inventory_search_btn').click(() => {
                 let location = `/Batch/Inventory?groupType=${groupType}`
-                if (routeId && routeId.trim() !== '')
-                {
+                if (routeId && routeId.trim() !== '') {
                     location = location + `&routeId=${routeId}`;
                 }
-                if (warehouseId && warehouseId.trim() !== '')
-                {
+                if (warehouseId && warehouseId.trim() !== '') {
                     location = location + `&warehouseId=${warehouseId}`;
                 }
                 const recipientUserId = $('#recipient-select').val();
-                if (recipientUserId && recipientUserId.trim() !== '')
-                {
+                if (recipientUserId && recipientUserId.trim() !== '') {
                     location = location + `&recipientUserId=${recipientUserId}`;
                 }
                 const belongsToUserId = $('#agent-select').val();
-                if (belongsToUserId && belongsToUserId.trim() !== '')
-                {
+                if (belongsToUserId && belongsToUserId.trim() !== '') {
                     location = location + `&belongsToUserId=${belongsToUserId}`;
                 }
-                window.location.href=location;
-            });
-
-            $('#batch_inventory_export_all_btn').click(() => {
-                $.ajax({
-                    url: '@Url.Action("ExportAll", "Batch")',
-                    data: {}
-                });
+                window.location.href = location;
             });
         });
 
@@ -243,7 +219,7 @@
         (function displayBatchCount() {
             const needToDisplayCount =
                 '@(Model.GroupType != BatchGroupType.DailyScan && Model.GroupType != BatchGroupType.DailyReturn)' ===
-                    'True';
+                'True';
 
             if (!needToDisplayCount) {
                 return;
@@ -252,7 +228,7 @@
             $.ajax({
                 url: '@Url.Action("GetBatchCountByRoute", "Batch")',
                 data: { groupType: '@Model.GroupType' },
-                success: function(result) {
+                success: function (result) {
                     if (result.data) {
                         result.data.forEach(element => {
                             const routeHeader = $(`#route${element.routeId}`);

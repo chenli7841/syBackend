@@ -31,7 +31,7 @@
                     <input id="add-order-input" class="form-control col-3" type="text" autofocus />
                     <button type="button" id="add-order-button" class="btn btn-warning col-1 offset-1">添加</button>
                     <div class="">
-                        @Html.ActionLink("刷新", "Refresh", "Batch", new { id = Model.Id, boxId = (int)ViewData["BoxId"] }, new { @id = "batch-editbox-refresh", @class = "btn btn-primary", @style="margin-left: 10px;" })
+                        @Html.ActionLink("刷新", "DailyScanEditBoxRefresh", "Batch", new { id = Model.Id, boxId = (int)ViewData["BoxId"] }, new { @id = "batch-editbox-refresh", @class = "btn btn-primary", @style = "margin-left: 10px;" })
                     </div>
                 </div>
                 <div class="table-responsive">
@@ -52,7 +52,7 @@
                                     <td>@Html.ActionLink(order.OrderNumber ?? "无", "Edit", "Order", new { @id = order.Id })</td>
                                     <td>@order.DomesticNumber</td>
                                     <td>@order.WeightKg.ToString("0.00")</td>
-                                    <td></td>
+                                    <td>@order.Baggages.Count()</td>
                                     <td>@Html.ActionLink("移出", "RemoveOrder", new { boxId = (int)ViewData["BoxId"], orderId = order.Id })</td>
                                 </tr>
                             }
@@ -113,17 +113,13 @@
                         });
                     } else {
                         if (result.data) {
-                            const { orderNumber, creator, domesticNumber, pickUpLocation } = result.data;
+                            const { orderNumber, creator, domesticNumber, pickUpLocation, weightKg, baggages } = result.data;
                             const creatorFull = $.extend({ name: '', belongsTo: { name: '' } }, creator);
                             const row = $('<tr>')
                                 .append(`<td>${orderNumber}</td>`)
                                 .append(`<td>${domesticNumber}</td>`)
-                                .append(`<td>${creatorFull.name}</td>`)
-                                .append(`<td>${creatorFull.canadaPhoneNumber}</td>`)
-                                .append(`<td>${creatorFull.belongsTo.name}</td>`)
-                                .append(`<td>${(pickUpLocation || {}).name}</td>`)
-                                .append(`<td></td>`)
-                                .append(`<td></td>`)
+                                .append(`<td>${weightKg}</td>`)
+                                .append(`<td>${baggages.length}</td>`)
                                 .append(`<td></td>`);
 
                             ordersTable.row.add(row);

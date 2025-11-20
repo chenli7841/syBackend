@@ -32,6 +32,9 @@ namespace Domain.Entities
         public bool IsRegular { get; set; }
         public string Departure { get; set; }
         public string Destination { get; set; }
+        public bool? NeedInsurance { get; set; }
+        public decimal? InsuranceRatio { get; set; }
+        public decimal? VolumeWeightRatio { get; set; }
         public IList<RouteItemPrice> ItemPrices;
     }
 

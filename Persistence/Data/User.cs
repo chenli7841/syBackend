@@ -107,5 +107,6 @@ namespace Persistence.Data
         public virtual ICollection<TodoItemCustomer> TodoItemCustomers { get; set; }
         public virtual ICollection<TodoItem> TodoItems { get; set; }
         public virtual Company Company { get; set; }
+        public virtual Role UserRole { get; set; }
     }
 }

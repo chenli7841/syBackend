@@ -1,4 +1,5 @@
-﻿@model WebUI.Models.OrderInventoryResponse
+﻿@using Domain.Enums
+@model WebUI.Models.OrderInventoryResponse
 
 @{
     ViewData["Title"] = "运单管理";
@@ -26,7 +27,10 @@
     <div class="col-md-12 grid-margin">
         <div class="card">
             <div class="card-body order-card-body">
-                <h4 class="card-title">搜索</h4>
+                <div style="display: flex; align-items: center; gap: 40px;">
+                    <h4 class="card-title" style="margin: 0;">搜索</h4>
+                    @Html.ActionLink("创建运单", "Create", null, new { OrderState = OrderState.Created }, new { @class = "btn btn-primary" })
+                </div>
                 <div class="table-responsive">
                     <table id='order-listing-search' class="table table-striped">
                         <thead>

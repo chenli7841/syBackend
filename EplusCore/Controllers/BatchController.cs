@@ -231,6 +231,18 @@ namespace WebUI.Controllers
             return View(result);
         }
 
+        public IActionResult DailyScanEditBoxRefresh(int id, int? boxId)
+        {
+            _batchService.RemoveCache(id);
+            if (boxId.HasValue)
+            {
+                return RedirectToAction(nameof(DailyScanEditBox), new { boxId });
+            }
+            else
+            {
+                return RedirectToAction(nameof(Edit), new { id });
+            }
+        }
 
         public IActionResult Refresh(int id, int? boxId)
         {
@@ -624,7 +636,7 @@ namespace WebUI.Controllers
         {
             try
             {
-                var order = await _orderService.FindAsync(orderNumber);
+                var order = await _orderService.FindAsync(orderNumber, false);
 
                 if (order == null)
                 {
@@ -681,6 +693,13 @@ namespace WebUI.Controllers
             await _batchService.AddBoxAsync(id, boxNumber);
             return RedirectToAction(nameof(Edit), new {id});
         }
+
+        public async Task<IActionResult> AddBoxPalletBatch(int id, int boxNumber)
+        {
+            await _batchService.AddBoxAsync(id, boxNumber);
+            return RedirectToAction(nameof(EditPalletBatch), new { id });
+        }
+        
 
         public async Task<IActionResult> MoveNext(int id)
         {

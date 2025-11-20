@@ -299,6 +299,13 @@
     <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
     <script src="~/js/orderDetail.js"></script>
     <script>
+        let global_routes = [];
+        $.get('@Url.Action("List", "Route")',
+            { },
+            function(result) {
+                global_routes = result;
+            }
+        );
         $(document).ready(function () {
             const uploaders = $('.photo-uploader');
             for (let i = 0, il = uploaders.length; i < il; i++) {

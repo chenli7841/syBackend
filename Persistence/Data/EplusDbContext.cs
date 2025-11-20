@@ -116,6 +116,7 @@ namespace Persistence.Data
         public virtual DbSet<RecordBalanceHistory> RecordBalanceHistories { get; set; }
         public virtual DbSet<RecordExpressTransport> RecordExpressTransports { get; set; }
         public virtual DbSet<RingCentralCredential> RingCentralCredentials { get; set; }
+        public virtual DbSet<Role> Roles { get; set; }
         public virtual DbSet<Route> Routes { get; set; }
         public virtual DbSet<ShopAudit> ShopAudits { get; set; }
         public virtual DbSet<ShopCategory> ShopCategories { get; set; }
@@ -7041,6 +7042,35 @@ namespace Persistence.Data
                     .HasComment("发送方号码");
             });
 
+            modelBuilder.Entity<Role>(entity =>
+            {
+                entity.ToTable("role");
+
+                entity.HasComment("权限");
+
+                entity.Property(e => e.Id).HasColumnType("int(11)");
+
+                entity.Property(e => e.Code)
+                    .HasColumnName("code")
+                    .HasColumnType("varchar(32)");
+
+                entity.Property(e => e.Name)
+                    .HasColumnName("name")
+                    .HasColumnType("varchar(64)");
+
+                entity.Property(e => e.RoleId)
+                    .HasColumnName("roleid")
+                    .HasColumnType("int");
+
+                entity.Property(e => e.IsInternal)
+                    .HasColumnName("is_internal")
+                    .HasColumnType("bit");
+
+                entity.Property(e => e.DisplayOrder)
+                    .HasColumnName("display_order")
+                    .HasColumnType("int");
+            });
+
             modelBuilder.Entity<Route>(entity =>
             {
                 entity.ToTable("route");
@@ -7096,6 +7126,13 @@ namespace Persistence.Data
                 entity.Property(e => e.IsRegular).HasColumnType("bit");
 
                 entity.Property(e => e.CompanyId).HasColumnType("int");
+
+                entity.Property(e => e.NeedInsurance).HasColumnType("bit");
+
+                entity.Property(e => e.InsuranceRatio).HasColumnType("decimal(16,3)");
+
+                entity.Property(e => e.VolumeWeightRatio).HasColumnType("decimal(16,3)");
+
 
                 entity.Property(e => e.Destination)
                     .HasColumnType("varchar(64)")
@@ -9657,6 +9694,14 @@ namespace Persistence.Data
                     .HasPrecision(18)
                     .HasComment("宽");
 
+                entity.Property(e => e.TotalVolume)
+                    .HasPrecision(16, 2)
+                    .HasComment("总体积");
+
+                entity.Property(e => e.InsuranceCost)
+                    .HasPrecision(16, 2)
+                    .HasComment("保险费用");
+
                 entity.Property(e => e.CompanyId).HasColumnType("int");
 
                 entity.HasOne(d => d.CreatedBy)
@@ -9939,6 +9984,11 @@ namespace Persistence.Data
                     .WithMany(p => p.Users)
                     .HasForeignKey(d => d.CompanyId)
                     .HasConstraintName("FK_User_CompanyId");
+
+                entity.HasOne(d => d.UserRole)
+                    .WithMany(r => r.Users)
+                    .HasForeignKey(d => d.Role)
+                    .HasConstraintName("FK_dbo.User_dbo.Role_RoleId");
             });
 
             modelBuilder.Entity<Warehouse>(entity =>

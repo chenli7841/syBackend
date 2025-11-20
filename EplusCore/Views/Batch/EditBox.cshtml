@@ -144,7 +144,7 @@
                                 .append(`<td>${domesticNumber}</td>`)
                                 .append(`<td>${creatorFull.name}</td>`)
                                 .append(`<td>${creatorFull.canadaPhoneNumber}</td>`)
-                                .append(`<td>${creatorFull.belongsTo.name}</td>`)
+                                .append(`<td>${creatorFull.belongsTo ? creatorFull.belongsTo.name : ""}</td>`)
                                 .append(`<td>${(pickUpLocation || {}).name}</td>`)
                                 .append(`<td></td>`)
                                 .append(`<td></td>`)

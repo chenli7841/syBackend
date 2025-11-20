@@ -14,7 +14,7 @@ namespace Domain.Services
         Task AddInternalStatus(OrderStatusType status, int operatorId, params int[] orders);
         Task<string> UpdateChinaStatus();
         Task Delete(int id);
-        Task<OrderEntity> FindAsync(string number);
+        Task<OrderEntity> FindAsync(string number, bool currentCompany);
         Task<OrderEntity> SaveAsync(OrderEntity entity);
         Task SetOrderState(int id, OrderState state, string reason);
         Task<OrderEntity> SaveDraftAsync(OrderEntity entity);

@@ -45,7 +45,7 @@ namespace WebUI.Controllers
                 try
                 {
                     count++;
-                    var order = await _orderService.FindAsync(orderNumber);
+                    var order = await _orderService.FindAsync(orderNumber, true);
                     if (order == null)
                     {
                         throw new Exception($"Order with number: {orderNumber} doesn't exist.");

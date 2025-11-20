@@ -92,11 +92,12 @@ namespace Persistence.Services
                              u.CanadaPhoneNumber.Contains(filterOptions.PhoneToSearch)) &&
                             (filterOptions.RoleToSearch == null || u.Role == (int)filterOptions.RoleToSearch.Value) && u.CompanyId == Config.COMPANY_ID)
                 .Include(u => u.Customer)
+                .Include(u => u.UserRole)
                 .Include(u => u.BelongsToNavigation)
                 .ThenInclude(b => b.Customer);
             var users = isOrderByCode
                 ? filteredUsers.OrderBy(u => u.OrderStartNumber)
-                : filteredUsers.OrderBy(u => u.Role).ThenBy(u => u.OrderStartNumber);
+                : filteredUsers.OrderBy(u => u.UserRole.DisplayOrder).ThenBy(u => u.OrderStartNumber);
             var total = await users.CountAsync();
             var pagedUsers = users.Skip(filterOptions.Skip).Take(filterOptions.PageSize);
             var items = await pagedUsers.Select(u => _mapper.Map<UserEntity>(u)).ToListAsync();
@@ -151,9 +152,9 @@ namespace Persistence.Services
             return result;
         }
 
-        public async Task<IEnumerable<RoleEntity>> ListRolesAsync()
+        public async Task<IEnumerable<RoleEntity>> ListRolesAsync(string[] exclude)
         {
-            return await _context.SysRoles.Where(r => r.Code != null).Select(r => new RoleEntity { RoleId = r.RoleId, Name = r.Name, Code = r.Code }).ToListAsync();
+            return await _context.Roles.Where(r => r.Code != null && !exclude.Contains(r.Code)).Select(r => new RoleEntity { RoleId = r.RoleId, Name = r.Name, Code = r.Code }).ToListAsync();
         }
 
         public async Task TogglePickUpLocationVisibilityAsync(int id)
@@ -431,7 +432,7 @@ namespace Persistence.Services
         {
             var user = await _context.Users.Include(u => u.Customer).FirstAsync(u => u.Id == model.Id);
             user.Credit = model.Credit;
-            user.BelongsToId = model.BelongsToId;
+            user.BelongsToId = model.BelongsToId > 0 ? model.BelongsToId : user.BelongsToId;
             user.PickUpLocationId = model.SelectedPickUpLocationId;
             user.CanadaPhoneNumber = model.CanadaPhoneNumber;
             user.Level = model.Level;

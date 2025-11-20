@@ -137,11 +137,8 @@ namespace Persistence.Services
                 .Where(b => b.BatchPallets.Count > 0 && b.BatchPallets.First().WarehouseId == filterOptions.WarehouseId
                     && (filterOptions.GroupType == BatchGroupType.Pallet)
                     && (!filterOptions.Ids.Any() || filterOptions.Ids.Contains(b.Id)) && b.CompanyId == Config.COMPANY_ID)
-                .Include(b => b.BatchBoxes)
-                    .ThenInclude(bx => bx.BatchBoxOrderMaps)
-                        .ThenInclude(m => m.Order)
-                            .ThenInclude(o => o.CreatedBy)
-                                .ThenInclude(o => o.BelongsToNavigation);
+                .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order).ThenInclude(o => o.CreatedBy).ThenInclude(o => o.BelongsToNavigation)
+                .Include(b => b.BatchBoxMaps).ThenInclude(m => m.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order);
 
             IOrderedQueryable<Batch> batches = batchesFiltered.OrderByDescending(b => b.DateCreated);
             
@@ -284,24 +281,21 @@ namespace Persistence.Services
                 RouteId = r.Id,
                 BatchCount = 0
             }).ToList();
-            
-            var threeMonthAgoFromToday = _date.UserNow.AddMonths(-3);
-            var counts= await _context.Batches
+            var threeMonthAgoFromToday = DateTime.Now.AddMonths(-3);
+            var counts = await _context.Batches.Include(b => b.Route)
                 .Where(b => b.IsFromChina && b.DateCreated >= threeMonthAgoFromToday &&
-                            b.GroupType == (int) groupType && b.RouteId.HasValue).GroupBy(b => b.RouteId).Select(pair =>
+                            b.GroupType == (int)groupType && b.RouteId.HasValue && b.Route.CompanyId == Config.COMPANY_ID).GroupBy(b => b.RouteId).Select(pair =>
                     new RouteBatchCount()
                     {
                         RouteId = pair.Key.Value,
                         BatchCount = pair.Count()
                     }).ToListAsync();
-            
             foreach (var routeBatchCount in counts)
             {
                 var route = result.First(r => r.RouteId == routeBatchCount.RouteId);
                 route.BatchCount = routeBatchCount.BatchCount;
             }
-
-            return result;
+            return result;            
         }
 
         public async Task<OrderCostSummaryEntity> GetOrderCostSummary(int batchId)
@@ -314,7 +308,7 @@ namespace Persistence.Services
                 {
                     command.CommandText = @$"
 SELECT SUM(ItemCost) TotalItemCost, SUM(OversizeCost) TotalOversizeCost, SUM(WarehouseCost) TotalWarehouseCost,
-SUM(FumigationCost) TotalFumigationCost, SUM(PortMisCost) TotalPortMisCost, SUM(Insurance) TotalInsurance,
+SUM(FumigationCost) TotalFumigationCost, SUM(PortMisCost) TotalPortMisCost, COALESCE(SUM(InsuranceCost), 0) TotalInsuranceCost,
 SUM(Duty) TotalDuty, SUM(StorageCost) TotalStorageCost, SUM(DistrictAdditionalCost) TotalDistrictAdditionalCost, SUM(Discount) TotalDiscount
 FROM batch_box bb JOIN batch_box_order_map bbom ON bb.Id=bbom.BatchBoxId
 JOIN transport_order o ON bbom.OrderId=o.Id
@@ -394,7 +388,7 @@ WHERE bb.BatchId=@batchId
                 }).ToList()
 
             })
-            .FirstAsync(b => b.Id == id && b.CompanyId == Config.COMPANY_ID);
+            .FirstAsync(b => b.Id == id);
             var result = _mapper.Map<BatchEntity>(batch);
             return result;
         }
@@ -828,6 +822,7 @@ WHERE bb.BatchId=@batchId
                 .Include(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order).ThenInclude(o => o.CreatedBy).ThenInclude(u => u.BelongsToNavigation)
                 .Include(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order).ThenInclude(o => o.PickUpLocation)
                 .Include(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order).ThenInclude(o => o.OrderStatuses)
+                .Include(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order).ThenInclude(o => o.OrderBaggages)
                 .Select(bx => new BatchBox
                 {
                     Id = bx.Id,
@@ -849,7 +844,8 @@ WHERE bb.BatchId=@batchId
                                 BelongsToNavigation = new User { Customer = new Customer { Name = m.Order.CreatedBy.BelongsToNavigation.Customer.Name } }
                             },
                             CompanyId = m.Order.CompanyId,
-                            OrderStatuses = m.Order.OrderStatuses
+                            OrderStatuses = m.Order.OrderStatuses,
+                            OrderBaggages = m.Order.OrderBaggages,
                         }
                     }).ToList()
               })
@@ -1088,16 +1084,25 @@ WHERE bb.BatchId=@batchId
 
         public async Task<BatchEntity> SaveAsync(BatchEntity model)
         {
-            if (model.Id == 0)
+            try
             {
-                var result = await CreateAsync(model);
-                model.Id = result.Id;
-                return model;
-            }
-            else
+                if (model.Id == 0)
+                {
+                    Console.WriteLine(nameof(SaveAsync) + " start ");
+                    var result = await CreateAsync(model);
+                    model.Id = result.Id;
+                    Console.WriteLine(nameof(SaveAsync) + " end ");
+                    return model;
+                }
+                else
+                {
+                    var result = await UpdateAsync(model);
+                    return model;
+                }
+            } catch(Exception e)
             {
-                var result = await UpdateAsync(model);
-                return model;
+                Console.WriteLine(e.Message);
+                throw;
             }
         }
 
@@ -2091,7 +2096,7 @@ WHERE bb.BatchId=@batchId
             {
                 Name = model.Name,
                 IsFromChina = true,
-                DateCreated = _date.UserNow,
+                DateCreated = DateTime.UtcNow,
                 GroupType = (int)model.GroupType,
                 IntCarrier = model.IntCarrier,
                 IntNumber = model.IntNumber,
@@ -2104,7 +2109,7 @@ WHERE bb.BatchId=@batchId
                 HeBaoCost = model.HeBaoCost,
                 TotalExpense = model.TotalExpense,
                 PaidWeightKg = model.WeightKg,
-                RecipientUserId = model.RecipientId,
+                //RecipientUserId = model.RecipientId,
                 BelongsToUserId = model.AgentId,
                 ProgressId = model.ProgressId,
                 MasterBatchId = model.MasterBatchId,

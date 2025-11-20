@@ -35,6 +35,7 @@ namespace Persistence.Services
                 AreaId = location.AreaId,
                 Visible = true,
                 Note = location.Note,
+                CompanyId = location.CompanyId,
             });
             await _context.SaveChangesAsync();
         }

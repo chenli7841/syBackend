@@ -41,6 +41,9 @@ namespace Persistence.Data
         public string Destination { get; set; }
 
         public string Departure { get; set; }
+        public bool? NeedInsurance { get; set; }
+        public decimal? InsuranceRatio { get; set; }
+        public decimal? VolumeWeightRatio { get; set; }
 
         public virtual Warehouse Warehouse { get; set; }
         public virtual ICollection<BannedUserRoute> BannedUserRoutes { get; set; }

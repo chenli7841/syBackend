@@ -27,7 +27,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-3" style="display: none;">
                         <div class="form-group row">
                             @Html.LabelFor(r => r.Balance, "余额", new { @class = "col-sm-3 col-form-label" })
                             <div class="col-sm-9 col-form-label">
@@ -35,7 +35,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-3" style="display: none;">
                         <div class="form-group row">
                             @Html.LabelFor(r => r.Code, "最近发货单数", new { @class = "col-sm-3 col-form-label" })
                             <div class="col-sm-9 col-form-label">
@@ -61,7 +61,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-3" style="display: none;">
                             <div class="form-group row">
                                 @Html.LabelFor(r => r.BelongsToId, "所属群主", new { @class = "col-sm-3 col-form-label" })
                                 <div class="col-sm-9">
@@ -97,7 +97,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-3" style="display: none;">
                             <div class="form-group row">
                                 @Html.LabelFor(r => r.DisplaySequence, "显示顺序", new { @class = "col-sm-3 col-form-label" })
                                 <div class="col-sm-9">
@@ -105,7 +105,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-3" style="display: none;">
                             <div class="form-group row">
                                 @Html.LabelFor(r => r.Level, "级别", new { @class = "col-sm-3 col-form-label" })
                                 <div class="col-sm-9">
@@ -113,7 +113,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-3" style="display: none;">
                             <div class="form-group row">
                                 @Html.LabelFor(r => r.Credit, "信用度", new { @class = "col-sm-3 col-form-label" })
                                 <div class="col-sm-9">
@@ -125,10 +125,17 @@
                             <div class="form-group row">
                                 @Html.LabelFor(r => r.Role, "权限", new { @class = "col-sm-3 col-form-label" })
                                 <div class="col-sm-9">
-                                    @Html.TextBoxFor(r => r.Role, new { @class = "form-control" })
+                                    @Html.HiddenFor(r => r.Role)
+                                    <select class="form-control" id="role-select">
+                                        @foreach (var role in Model.Roles)
+                                        {
+                                            <option value="@role.Code">@role.Name</option>
+                                        }
+                                    </select>
                                 </div>
                             </div>
                         </div>
+
                         <div class="col-md-3">
                             <div class="form-group row">
                                 @Html.LabelFor(r => r.UserName, "用户名", new { @class = "col-sm-3 col-form-label" })
@@ -149,8 +156,8 @@
 
                     @if (Model.Role != RoleType.Regular)
                     {
-                        <h5 class="card-title">创建自提点</h5>
-                        <div class="row">
+                        <h5 class="card-title" style="display: none;">创建自提点</h5>
+                        <div class="row" style="display: none;">
                             <div class="col-md-3">
                                 <div class="form-group row">
                                     @Html.LabelFor(r => r.RegisteredPickUpLocation.Name, "名称", new { @class = "col-sm-3 col-form-label" })
@@ -232,8 +239,10 @@
                     </div>
                 }
 
+                <!--
                 <h4 class="card-title mt-4">线路权限</h4>
                 @await Component.InvokeAsync("UserRoutePermission", Model.Id)
+                -->
             </div>
         </div>
     </div>
@@ -246,6 +255,10 @@
             $('#agent-select').val($('#BelongsToId').val());
             $('#agent-select').change(function() {
                 $('#BelongsToId').val(this.value);
+            });
+            $('#role-select').val($('#Role').val());
+            $('#role-select').change(function() {
+                $('#Role').val(this.value);
             });
 
             $('#location-select').val($('#SelectedPickUpLocationId').val());

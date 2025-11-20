@@ -157,7 +157,7 @@ namespace WebUI.Controllers
 
         public async Task<IActionResult> Create()
         {
-            var roles = await _userService.ListRolesAsync();
+            var roles = await _userService.ListRolesAsync(new string[] { "Admin" });
             return View(new UserDetailViewModel { Roles = roles.ToList() });
         }
 
@@ -166,10 +166,12 @@ namespace WebUI.Controllers
             var user = await _userService.GetAsync(id);
             var agents = await _userService.ListAgentsAsync();
             var pickUpLocations = await _userService.ListPickUpLocationsAsync(2);
+            var roles = await _userService.ListRolesAsync(new string[] { "Admin", "SuperAdmin" });
             var result = _mapper.Map<UserDetailViewModel>(user);
             result.RegisteredPickUpLocation ??= new PickUpLocationEntity();
             result.PickUpLocations = pickUpLocations.ToList();
             result.Agents = agents.ToList();
+            result.Roles = roles.ToList();
             return View(result);
         }
 

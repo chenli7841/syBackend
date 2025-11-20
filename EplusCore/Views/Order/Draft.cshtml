@@ -3,7 +3,7 @@
 @using Domain.Models.Extensions
 
 @{
-    ViewData["Title"] = "未匹配运单";
+    ViewData["Title"] = "@(Model.OrderState.GetDescription())运单";
 }
 
 @section Styles
@@ -57,7 +57,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div style="display: none;" class="col-md-4">
                             <div class="form-group row">
                                 @Html.LabelFor(r => r.DomesticNumber, "国内主单号", new { @class = "col-sm-3 col-form-label" })
                                 <div class="col-sm-9">
@@ -110,10 +110,16 @@
                     pickUpLocationId: u.selectedPickUpLocationId
                 }
             });
-            $('#recipient-select').select2({data: users});
+            $('#recipient-select').select2({data: [{id: 0, text: '请选择客户', pickUpLocationId: 0}, ...users]});
             $('#recipient-select').on('select2:select', e => {
                 $('#pickuplocation-select').val(e.params.data.pickUpLocationId);
                 $('#PickupLocationId').val(e.params.data.pickUpLocationId);
+            });
+
+            $('#recipient-select').on('select2:input', e => {
+                console.log("input");
+                //$('#pickuplocation-select').val(e.params.data.pickUpLocationId);
+                //$('#PickupLocationId').val(e.params.data.pickUpLocationId);
             });
 
             $('#recipient-select').val($('#RecipientId').val());

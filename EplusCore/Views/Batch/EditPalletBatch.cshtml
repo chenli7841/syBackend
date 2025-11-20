@@ -170,14 +170,13 @@
                         <table id="box-listing" class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th>箱号</th>
+                                    <th>编号</th>
                                     <th>总单数</th>
                                     <th>包裹总重量(kg)</th>
                                     <th>长(cm)</th>
                                     <th>宽(cm)</th>
                                     <th>高(cm)</th>
                                     <th>实际重量(kg)</th>
-                                    <th>编号</th>
                                     <th>打印</th>
                                     <th>保存</th>
                                 </tr>
@@ -186,14 +185,13 @@
                                 @foreach (var box in Model.Boxes.OrderBy(b => b.Number))
                                 {
                                     <tr>
-                                        <td>@Html.ActionLink(box.Number.ToString(), "EditBox", new { boxId = box.Id })</td>
+                                        <td>@Html.ActionLink(string.IsNullOrWhiteSpace(box.Name) ? ($"{Model.Id} - {box.Number}") : box.Name, "EditBox", new { boxId = box.Id })</td>
                                         <td>@box.Orders.Count()</td>
                                         <td>@box.Orders.Sum(o => o.WeightKg)</td>
                                         <td><input id="length_@(box.Id)_input" type="number" class="form-control" value="@box.Length" /></td>
                                         <td><input id="width_@(box.Id)_input" type="number" class="form-control" value="@box.Width" /></td>
                                         <td><input id="height_@(box.Id)_input" type="number" class="form-control" value="@box.Height" /></td>
                                         <td><input id="actualWeight_@(box.Id)_input" type="number" class="form-control" value="@box.ActualWeightKg" /></td>
-                                        <td>@(string.IsNullOrWhiteSpace(box.Name) ? ($"{Model.Id} - {box.Number}") : box.Name)</td>
                                         <td><a href='@Url.Action("PrintBatchBox")?id=@box.Id' target="_blank"><i class="fa fa-print fa-lg"></i></a></td>
                                         <td><button class="link" onclick="UpdateBatchBox(@box.Id)"><i class="fa fa-save fa-lg"></i></button></td>
                                     </tr>
@@ -201,8 +199,7 @@
                             </tbody>
                         </table>
                     </div>
-                    @Html.ActionLink("添加", "AddBox", null, new { id = Model.Id, boxNumber = Model.Boxes.Select(b => b.Number).Max() + 1 }, new { @class = "btn btn-primary" })
-
+                    @Html.ActionLink("添加", "AddBoxPalletBatch", null, new { id = Model.Id, boxNumber = Model.Boxes.Where(b => b.BatchId == Model.Id).Select(b => b.Number).Max() + 1 }, new { @class = "btn btn-primary" })
             </div>
         </div>
     </div>

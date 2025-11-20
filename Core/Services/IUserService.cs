@@ -31,6 +31,6 @@ namespace Domain.Services
         decimal Deposit(BalanceTransferInfo info);
         Task<decimal> GetBalanceSummaryAsync();
         Task DeletePickupLocation(int id);
-        Task<IEnumerable<RoleEntity>> ListRolesAsync();
+        Task<IEnumerable<RoleEntity>> ListRolesAsync(string[] exclude);
     }
 }

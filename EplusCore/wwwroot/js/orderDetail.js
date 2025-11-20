@@ -11,6 +11,11 @@ orderDetails = (function () {
     }
 
     function calculateTotalVolume() {
+        let route = global_routes.find(r => r.id === parseInt($('#route-select').val()));
+        let volumeWeightRatio = 0;
+        if (route) {
+            volumeWeightRatio = route.volumeWeightRatio;
+        }
         const baggageRows = $('.row.baggage');
         let totalVolume = 0;
         for (let i = 0, il = baggageRows.length; i < il; i++) {
@@ -18,10 +23,10 @@ orderDetails = (function () {
                 parseFloat($(baggageRows[i]).find('.baggage-width').val()) *
                     parseFloat($(baggageRows[i]).find('.baggage-height').val());
 
-            totalVolume += (baggageSize / 5000);
+            totalVolume += (baggageSize / (volumeWeightRatio || 5000));
         }
 
-        $('#totalVolume').text(totalVolume);
+        $('#TotalVolume').val(totalVolume.toFixed(2));
     }
 
     function updateBaggageSummary() {
@@ -39,7 +44,7 @@ orderDetails = (function () {
         let weight = parseFloat($('#WeightKg').val());
         let districtAdditionalCost = rate*weight;
         shippingCost += districtAdditionalCost;
-        shippingCost += parseFloat($('#Insurance').val()) / 10;
+        shippingCost += parseFloat($('#InsuranceCost').val());
         shippingCost -= parseFloat($('#Discount').val());
         shippingCost = Math.round(shippingCost * 100) / 100
 
@@ -48,10 +53,11 @@ orderDetails = (function () {
     }
 
     function calculateItemCost() {
+        calculateInsuranceFee();
+        calculateTotalVolume();
         if (!$('#RouteId').val() || parseFloat($('#WeightKg').val()) === 0) {
             return;
         }
-
         var model = $('form').serialize();
         $.ajax({
             type: "POST",
@@ -61,7 +67,7 @@ orderDetails = (function () {
                 if (result.error) {
                     alert('Error!' + result.error);
                 } else {
-                    $('#ItemCost').val(result.data);
+                    $('#ItemCost').val(Math.round(result.data * 100) / 100);
                     calculateShippingCost();
                 }
             },
@@ -125,8 +131,13 @@ orderDetails = (function () {
     }
 
     function calculateInsuranceFee() {
-        const insurance = parseFloat($('#Insurance').val());
-        $('#insuranceFee').text(insurance / 10);
+        let route = global_routes.find(r => r.id === parseInt($('#route-select').val()));
+        let insuranceRatio = 0;
+        if (route) {
+            insuranceRatio = route.insuranceRatio;
+        }
+        let insuranceAmount = (parseFloat($("#Insurance").val()) || 0);
+        $("#InsuranceCost").val(Math.round(insuranceAmount * insuranceRatio * 100) / 100);
     }
 
 

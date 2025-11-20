@@ -277,6 +277,7 @@ namespace Domain.Entities
         public double? Width { get; set; }
         public double? Height { get; set; }
         public double? ActualWeightKg { get; set; }
+        public int BatchId { get; set; }
         public IEnumerable<OrderEntity> Orders { get; set; }
     }
 
@@ -310,6 +311,7 @@ namespace Domain.Entities
         public decimal TotalWarehouseCost { get; set; }
         public decimal TotalFumigationCost { get; set; }
         public decimal TotalPortMisCost { get; set; }
+        // 保险费用，而非保险价值
         public decimal TotalInsurance { get; set; }
         public decimal TotalDiscount { get; set; }
         public decimal TotalDuty { get; set; }

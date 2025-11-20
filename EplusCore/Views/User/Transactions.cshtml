@@ -21,21 +21,21 @@
             <div class="card-body order-card-body">
                 <a href='@Url.Action("ExportBill")?userId=@Model' class = "btn btn-primary">导出</a>
                 <div class="table-responsive" style="margin-top: 20px">
-                    <table id="transaction-listing" class="table table-striped">
+                    <table style="width: 100%" id="transaction-listing" class="table table-striped">
                         <thead>
                             <tr>
                                 <th>ID</th>
                                 <th>日期</th>
                                 <th>运单</th>
-                                <th>批次</th>
-                                <th>收件人</th>
+                                <th style="display: none;">批次</th>
+                                <th style="display: none;">收件人</th>
                                 <th>金额</th>
-                                <th>账单类型</th>
+                                <th style="display: none;">账单类型</th>
                                 <th>支付方式</th>
                                 <th>用户</th>
-                                <th>群主</th>
-                                <th>余额</th>
-                                <th>备注</th>
+                                <th style="display: none;">群主</th>
+                                <th style="display: none;">余额</th>
+                                <th style="display: none;">备注</th>
                             </tr>
                         </thead>
                     </table>
@@ -77,19 +77,19 @@
                     { "data": "id", "name": "Id", "autoWidth": true },
                     { "data": "displayDate", "name": "displayDate", "autoWidth": true },
                     { "render": (data, type, full, meta) => full.orderId ? `<a href='@Url.Action("Edit", "Order")?id=${full.orderId}'>${full.orderName}</a>` : '' },
-                    { "render": (data, type, full, meta) => full.batchId ? `<a href='@Url.Action("Edit", "Batch")?id=${full.batchId}'>${full.batchName}</a>` : '' },
-                    {
-                        "render": (data, type, full, meta) => (full.order && full.order.creator) ? full.order.creator.name : (full.batch && full.batch.recipient ? full.batch.recipient.name : '')
-                    },
+                    //{ "render": (data, type, full, meta) => full.batchId ? `<a href='@Url.Action("Edit", "Batch")?id=${full.batchId}'>${full.batchName}</a>` : '' },
+                    //{
+                    //    "render": (data, type, full, meta) => (full.order && full.order.creator) ? full.order.creator.name : (full.batch && full.batch.recipient ? full.batch.recipient.name : '')
+                    //},
                     { "data": "amount", "name": "amount", "autoWidth": true },
-                    { "data": "typeDisplayText", "name": "amount", "autoWidth": true },
+                    //{ "data": "typeDisplayText", "name": "amount", "autoWidth": true },
                     { "data": "method", "name": "method", "autoWidth": true },
                     { "data": "user.name", "name": "user", "autoWidth": true },
-                    {
-                        "render": (data, type, full, meta) => full.user.belongsTo ? full.user.belongsTo.name : ''
-                    },
-                    { "data": "currentBalance", "name": "currentBalance", "autoWidth": true },
-                    { "data": "notes", "name": "notes", "autoWidth": true },
+                    //{
+                    //    "render": (data, type, full, meta) => full.user.belongsTo ? full.user.belongsTo.name : ''
+                    //},
+                    //{ "data": "currentBalance", "name": "currentBalance", "autoWidth": true },
+                    //{ "data": "notes", "name": "notes", "autoWidth": true },
                 ],
                 "language": {
                     // https://datatables.net/manual/i18n

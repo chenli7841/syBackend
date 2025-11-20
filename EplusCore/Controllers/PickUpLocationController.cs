@@ -130,6 +130,37 @@ namespace WebUI.Controllers
             }
             catch (Exception e)
             {
+                string message = e.Message;
+                if (e.InnerException != null)
+                {
+                    message += ". " + e.InnerException.Message;
+                }
+                return Json(new MethodResult<bool>(new Error() { Text = message }));
+            }
+        }
+
+        [HttpPost("new")]
+        public async Task<IActionResult> New(string name, string address, decimal districtAdditionalRate, int sequence, int version, string latAndLng, int areaId, int? belongsToId, string note)
+        {
+            try
+            {
+                await _locationService.CreateAsync(new Domain.Entities.PickUpLocationEntity
+                {
+                    Name = name,
+                    DetailArea = address,
+                    DistrictAdditionalCost = districtAdditionalRate,
+                    Number = sequence,
+                    Version = version,
+                    LatAndLng = latAndLng,
+                    AreaId = areaId,
+                    Note = note,
+                    CompanyId = Config.COMPANY_ID,
+                },
+                belongsToId);
+                return Json(new MethodResult<bool>(true));
+            }
+            catch (Exception e)
+            {
                 return Json(new MethodResult<bool>(new Error() { Text = e.Message }));
             }
         }

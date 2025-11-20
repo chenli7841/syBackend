@@ -40,8 +40,8 @@ namespace WebUI.Models.ViewModels
         public decimal TotalWeightKg => Orders.Sum(o => o.WeightKg);
         public decimal TotalOrderShippingCost => Orders.Sum(o => o.ShippingCost);
         public decimal TotalShippingCost => TotalOrderShippingCost + Duty + StorageCost - Discount;
-        public int RecipientMismatchCount => Orders.Count(o => o.Creator.Id != RecipientId);
-        public int AgentMismatchCount => Orders.Count(o => o.Creator.BelongsTo?.Id != AgentId);
+        public int RecipientMismatchCount => 0; // Orders.Count(o => o.Creator.Id != RecipientId);
+        public int AgentMismatchCount => 0; // Orders.Count(o => o.Creator.BelongsTo?.Id != AgentId);
         //public int RouteMismatchCount => Orders.Count(o => o.rou)
         public bool IsInDeliveryStage = false;
         public string FlightInfo { get; set; }

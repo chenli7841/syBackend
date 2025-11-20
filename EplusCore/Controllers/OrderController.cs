@@ -125,7 +125,7 @@ namespace WebUI.Controllers
         public async Task<IActionResult> Delete(int id, OrderState orderState)
         {
             await _orderService.Delete(id);
-            return RedirectToAction(nameof(Inventory), new {orderState});
+            return RedirectToAction(nameof(Search), new {orderState});
         }
 
         public async Task<IActionResult> Edit(int id)
@@ -197,7 +197,7 @@ namespace WebUI.Controllers
             {
                 PageSize = int.MaxValue
             });
-            var locations = await _userService.ListPickUpLocationsAsync();
+            var locations = await _userService.ListPickUpLocationsAsync(2);
             return View("Draft", new OrderDraftViewModel() {
                 Users = users.Items, Routes = routes,
                 OrderState = orderState,

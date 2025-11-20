@@ -45,7 +45,7 @@ namespace WebUI.Controllers
                 return View("Login", model);
             }
 
-            if (user.Role != RoleType.Admin)
+            if (user.Role != RoleType.Admin && user.Role != RoleType.ChinaWarehouse && user.Role != RoleType.CanadaWarehouse && user.Role != RoleType.SubAdmin && user.Role != RoleType.SuperAdmin)
             {
                 ModelState.AddModelError("", "Only Admin can log in.");
                 return View("Login", model);

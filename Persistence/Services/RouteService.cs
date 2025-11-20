@@ -90,6 +90,9 @@ namespace Persistence.Services
             route.CompanyId = Config.COMPANY_ID;
             route.Destination = model.Destination;
             route.Departure = model.Departure;
+            route.NeedInsurance = model.NeedInsurance;
+            route.VolumeWeightRatio = model.VolumeWeightRatio;
+            route.InsuranceRatio = model.InsuranceRatio;
             await _context.SaveChangesAsync();
             return route;
         }
@@ -111,6 +114,9 @@ namespace Persistence.Services
                 CompanyId = Config.COMPANY_ID,
                 Destination = model.Destination,
                 Departure = model.Departure,
+                NeedInsurance = model.NeedInsurance,
+                InsuranceRatio = model.InsuranceRatio,
+                VolumeWeightRatio = model.VolumeWeightRatio,
             };
             await _context.Routes.AddAsync(route);
             await _context.SaveChangesAsync();

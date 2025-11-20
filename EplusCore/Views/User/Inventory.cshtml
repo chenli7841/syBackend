@@ -26,7 +26,6 @@
             <div class="card-body order-card-body">
                 <div class="table-responsive">
                     @Html.ActionLink("导出", "Export", null, null, new { @class = "btn btn-primary" })
-                    @Html.ActionLink("新用户", "Create", null, null, new { @class = "btn btn-primary" })
 
                     <table id="user-listing" class="table table-striped">
                         <thead>
@@ -35,12 +34,12 @@
                                 <th>姓名</th>
                                 <th data-searchable="true">代码</th>
                                 <th>权限</th>
-                                <th data-searchable="true">电话（发短信）</th>
-                                <th>邮箱（发邮件）</th>
+                                <th data-searchable="true">电话</th>
+                                <th>邮箱</th>
                                 <th>微信</th>
-                                <th>群主</th>
+                                <th style="display: none;">群主</th>
                                 <th>取货点</th>
-                                <th><button class='userInventoryBalanceTitleBtn' onclick="initializeBalanceSummaryModal()" data-toggle="modal" data-target="#userBalanceSummaryModal">余额</button></th>
+                                <th style="display: none;"><button class='userInventoryBalanceTitleBtn' onclick="initializeBalanceSummaryModal()" data-toggle="modal" data-target="#userBalanceSummaryModal">余额</button></th>
                                 <th>账单</th>
                                 <th>详情</th>
                                 <th>密码</th>
@@ -102,7 +101,7 @@
         let emailRecipientUserId = -1;
         let totalBalance = undefined;
         function GetSendEmailButtonHTML(userId, userName, mailbox) {
-            if (mailbox) return `<button class='iconBtn' onclick='openEmail(${userId}, "${userName}", "${mailbox}")'><i class="fa fa-envelope"></i></button>`;
+            if (mailbox) return `<button  style="display: none;" class='iconBtn' onclick='openEmail(${userId}, "${userName}", "${mailbox}")'><i class="fa fa-envelope"></i></button>`;
             else return "";
         }
 
@@ -150,12 +149,12 @@
                     { "data": "name", "name": "Name", "autoWidth": true },
                     { "data": "code", "name": "Code", "autoWidth": true },
                     { "data": "roleName", "name": "roleName", "autoWidth": true },
-                    { "data": "canadaPhoneNumber", "name": "CanadaPhoneNumber", "render": (data, type, full, meta) => `${full.canadaPhoneNumber} <button class='iconBtn' onclick='openSMS(${full.id}, "${full.name}", "${full.canadaPhoneNumber}")'><i class="fa fa-whatsapp fa-lg"></i></button>` },
+                    { "data": "canadaPhoneNumber", "name": "CanadaPhoneNumber", "render": (data, type, full, meta) => `${full.canadaPhoneNumber} <button style="display: none;" class='iconBtn' onclick='openSMS(${full.id}, "${full.name}", "${full.canadaPhoneNumber}")'><i class="fa fa-whatsapp fa-lg"></i></button>` },
                     { "data": "mailbox", "name": "Mailbox", "render": (data, type, full, meta) => `${full.mailbox ?? "<span style='color: #888'>未设定</span>"} ${GetSendEmailButtonHTML(full.id, full.name, full.mailbox)}` },
                     { "data": "weChat", "name": "weChat", "autoWidth": true },
-                    { "data": "belongsToName", "name": "BelongsToName", "autoWidth": true },
+                    //{ "data": "belongsToName", "name": "BelongsToName", "autoWidth": true },
                     { "data": "pickUpLocation", "name": "pickUpLocation", "autoWidth": true },
-                    { "render": (data, type, full, meta) => `<a href='@Url.Action("BalanceTransfer")?touserid=${full.id}'>${full.balance}</a>` },
+                    //{ "render": (data, type, full, meta) => `<a href='@Url.Action("BalanceTransfer")?touserid=${full.id}'>${full.balance}</a>` },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("Transactions")?userid=${full.id}'>账单</a>` },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("Edit")?id=${full.id}'><i class="fa fa-edit fa-lg"></i></a>` },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("ChangePassword")?id=${full.id}'><i class="fa fa-key fa-lg"></i></a>` },

@@ -28,10 +28,10 @@
             <div class="card-body">
                 <h4 class="card-title">@Model.GroupType.GetDescription()</h4>
                 <ul class="nav nav-tabs tab-solid tab-solid-danger" role="tablist">
-                    @foreach (var warehouse in Model.Warehouses)
+                    @for (var i =0; i < Model.Warehouses.Count(); i++)
                     {
                         <li class="nav-item">
-                            @Html.ActionLink(warehouse.Name, "LoadDeliveryInventory", new { warehouseId = warehouse.Id }, new { @class = "nav-link " + (warehouse.Id == Model.SelectedWarehouseId ? "active" : "") })
+                            @Html.ActionLink(Model.Warehouses.ToArray()[i].Name, "LoadDeliveryInventory", new { warehouseId = Model.Warehouses.ToArray()[i].Id }, new { @class = "nav-link " + (Model.Warehouses.ToArray()[i].Id == Model.SelectedWarehouseId || (!Model.SelectedWarehouseId.HasValue && i == 0) ? "active" : "") })
                         </li>
                     }
                 </ul>
@@ -118,7 +118,7 @@
                 "searchPanes": true,
                 "ajax": {
                     "url":
-                        '@Html.Raw(Url.Action("LoadData", new {groupType = Model.GroupType, routeId = Model.SelectedRouteId, recipientUserId=Model.SelectedRecipientUserId, belongsToUserId=Model.SelectedBelongsToUserId, warehouseId = Model.SelectedWarehouseId}))',
+                        '@Html.Raw(Url.Action("LoadData", new {groupType = Model.GroupType, warehouseId = Model.SelectedWarehouseId ?? Model.Warehouses.First().Id}))',
                     "type": "POST",
                     "datatype": "json"
                 },

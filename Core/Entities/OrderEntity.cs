@@ -42,6 +42,8 @@ namespace Domain.Entities
         public int? PickUpLocationId { get; set; }
         public OrderState State { get; set; }
         public int? CompanyId { get; set; }
+        public decimal? TotalVolume { get; set; }
+        public decimal? InsuranceCost { get; set; }
         public IEnumerable<OrderStatusEntity> Status { get; set; }
         public IEnumerable<OrderStatusEntity> InternalStatus { get; set; }
         public IEnumerable<OrderBaggageEntity> Baggages { get; set; }

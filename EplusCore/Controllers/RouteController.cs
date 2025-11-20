@@ -1,9 +1,10 @@
-﻿using System.Linq;
-using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using Domain.Entities;
 using Domain.Services;
+using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using WebUI.Models.ViewModels;
 
 namespace WebUI.Controllers
@@ -91,6 +92,10 @@ namespace WebUI.Controllers
         {
             await _routeService.DeleteAsync(id);
             return RedirectToAction(nameof(Inventory));
+        }
+        public async Task<IEnumerable<RouteEntity>> List()
+        {
+            return await _routeService.ListAsync();
         }
     }
 }

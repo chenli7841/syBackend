@@ -196,9 +196,17 @@ namespace Persistence.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task<OrderEntity> FindAsync(string number)
+        public async Task<OrderEntity> FindAsync(string number, bool currentCompany)
         {
-            var order = await FindAsync(o => (o.OrderNumber == number || o.DomesticNumber == number) && o.CompanyId == Config.COMPANY_ID);
+            OrderEntity order = null;
+            if (currentCompany)
+            {
+                order = await FindAsync(o => (o.OrderNumber == number || o.DomesticNumber == number) && o.CompanyId == Config.COMPANY_ID);
+            }
+            else
+            {
+                order = await FindAsync(o => (o.OrderNumber == number || o.DomesticNumber == number));
+            }
             if (order == null)
             {
                 return null;
@@ -384,7 +392,7 @@ namespace Persistence.Services
             var categoryMap = route.ItemPrices.ToDictionary(it => it.Item, it => it.Price);
             var mostValuablePrice = route.ItemPrices.Max(it => it.Price);
             var mostExpensiveItemPrice = order.Items.Select(it =>
-                categoryMap.ContainsKey(it.Category)
+                categoryMap.ContainsKey(it.Category ?? "")
                     ? categoryMap[it.Category]
                     : mostValuablePrice).Max();
 
@@ -476,6 +484,8 @@ namespace Persistence.Services
             order.SenderId = entity.Creator.CustomerId;
             order.ChinaItems = entity.Items.Select(it => _mapper.Map<ChinaItem>(it)).ToList();
             order.OrderBaggages = entity.Baggages.Select(b => _mapper.Map<OrderBaggage>(b)).ToList();
+            order.TotalVolume = entity.TotalVolume;
+            order.InsuranceCost = entity.InsuranceCost;
 
             var initialStatus = await GetInitialStatusAsync(entity);
             order.OrderStatuses.Add(_mapper.Map<OrderStatus>(initialStatus));
@@ -513,6 +523,8 @@ namespace Persistence.Services
             order.StorageCost = entity.StorageCost;
             order.HiddenNotes = entity.WarehouseNotes;
             order.RouteId = entity.RouteId;
+            order.TotalVolume = entity.TotalVolume;
+            order.InsuranceCost = entity.InsuranceCost;
             if (entity.DistrictAdditionalCost > 0)
             {
                 order.DistrictAdditionalCost = entity.DistrictAdditionalCost;

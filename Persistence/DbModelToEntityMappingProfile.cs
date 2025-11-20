@@ -128,7 +128,7 @@ namespace Persistence
                     boxes.Add(m.BatchBox);
                 }
             }
-            boxes.AddRange(batch.BatchBoxes);
+            boxes.AddRange(batch.BatchBoxes.Where(bb => !boxes.Any(box => box.Id == bb.Id)));
             return boxes;
         }
         

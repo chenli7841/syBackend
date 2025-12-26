@@ -1095,6 +1095,10 @@ namespace Persistence.Data
                     .HasColumnType("int(1)")
                     .HasColumnName("sort")
                     .HasComment("序号");
+
+                entity.Property(e => e.CompanyId)
+                    .HasColumnName("CompanyId")
+                    .HasComment("公司ID");
             });
 
             modelBuilder.Entity<BaseAlbum>(entity =>

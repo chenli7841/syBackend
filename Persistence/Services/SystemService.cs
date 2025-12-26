@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using Common;
+using Domain;
 using Domain.Entities;
 using Domain.Services;
 using Microsoft.EntityFrameworkCore;
@@ -39,17 +40,72 @@ namespace Persistence.Services
                 photo = await _context.SystemPhotos.FirstAsync(p => p.Id == id);
             }
             var urlList = await _context.SystemPhotos.Select(p => p.Url).ToListAsync();
-            var nextId = urlList.Select(u => Int32.Parse(u.Split("system/")[1].Split(".png")[0])).Max() + 1;
-            var photoUrl = await _storageService.UploadAsync(rawData, $"system/{nextId}.png");
+            var nextId = urlList.Select(u => Int32.Parse(u.Split("system/photos/pc")[1].Split(".png")[0])).Max() + 1;
+            var photoUrl = await _storageService.UploadToAzureAsync(rawData, "system/photos/pc", $"{nextId}.png");
             photo.Url = photoUrl;
             await _context.SaveChangesAsync();
 
             return _mapper.Map<SystemPhotoEntity>(photo);
         }
 
+        public async Task<SystemPhotoEntity> GetPhotoUploadUrl(int id)
+        {
+            SystemPhoto photo;
+            if (id == 0)
+            {
+                photo = new SystemPhoto() { Url = "" };
+                await _context.SystemPhotos.AddAsync(photo);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                photo = await _context.SystemPhotos.FirstAsync(p => p.Id == id);
+            }
+            var urlList = await _context.SystemPhotos.Select(p => p.Url).ToListAsync();
+            var nextId = urlList.Select(u => Int32.Parse(u.Split("system/photos/pc/")[1].Split(".png")[0])).Max() + 1;
+            var photoUrl = _storageService.GetAzureUploadUrl("system/photos/pc", $"{nextId}.png");
+            var fileUrl = _storageService.GetFileUrl("system/photos/pc", $"{nextId}.png");
+            photo.Url = fileUrl;
+            await _context.SaveChangesAsync();
+
+            var photoEntity = _mapper.Map<SystemPhotoEntity>(photo);
+            photo.Url = photoUrl;
+            return photoEntity;
+        }
+
+        public async Task<SystemPhotoEntity> GetMobilePhotoUploadUrl(int id)
+        {
+            BaseAdvert photo;
+            if (id == 0)
+            {
+                photo = new BaseAdvert() { AdPictureKey = "" };
+                await _context.BaseAdverts.AddAsync(photo);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                photo = await _context.BaseAdverts.FirstAsync(p => p.Id == id);
+            }
+            var urlList = await _context.BaseAdverts.Where(b => b.IsShow == true && b.IsDel == false && b.CompanyId == Config.COMPANY_ID && b.AdType == 26).Select(p => p.AdPictureKey).ToListAsync();
+            var nextId = urlList.Select(u => Int32.Parse(u.Split("system/photos/mobile/")[1].Split(".png")[0])).Max() + 1;
+            var uploadUrl = _storageService.GetAzureUploadUrl("system/photos/mobile", $"{nextId}.png");
+            var fileUrl = _storageService.GetFileUrl("system/photos/mobile", $"{nextId}.png");
+            photo.AdPictureKey = fileUrl;
+            await _context.SaveChangesAsync();
+
+            var photoEntity = _mapper.Map<SystemPhotoEntity>(photo);
+            photoEntity.Url = uploadUrl;
+            return photoEntity;
+        }
+
         public async Task<IEnumerable<SystemPhotoEntity>> ListPhotosAsync()
         {
             return await _context.SystemPhotos.Select(p => _mapper.Map<SystemPhotoEntity>(p)).ToListAsync();
+        }
+
+        public async Task<IEnumerable<SystemPhotoEntity>> ListMobilePhotosAsync()
+        {
+            return await _context.BaseAdverts.Where(a => a.AdType == 26 && a.IsDel == false && a.IsShow == true && a.CompanyId == Config.COMPANY_ID).Select(p => _mapper.Map<SystemPhotoEntity>(p)).ToListAsync();
         }
 
         public async Task<SystemSettingsEntity> GetSettingsAsync()

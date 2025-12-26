@@ -15,6 +15,19 @@ namespace Domain.Enums
         PendingDispatch = 10,
         [Description("已发货")]
         Dispatched = 20,
+
+        //21-25来自于装车发货的子状态，如今我们希望这些也显示在前端
+        [Description("集货中")]
+        Gathering = 21,
+        [Description("装车发货")]
+        LoadDelivery = 22,
+        [Description("已起航")]
+        Sailing = 23,
+        [Description("清关中")]
+        Clearing = 24,
+        [Description("分拣中")]
+        Sorting = 25,
+
         [Description("已到货")]
         Arrived = 26,
         [Description("待提货")]

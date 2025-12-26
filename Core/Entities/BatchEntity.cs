@@ -198,7 +198,11 @@ namespace Domain.Entities
         {
             if (Route == null)
             {
-                return new List<BatchActionType> { BatchActionType.None };
+                return new List<BatchActionType> {
+                    BatchActionType.None,
+                    BatchActionType.SplitByLocations,
+                    BatchActionType.SplitByRecipients
+                };
             }
 
             if (Route.Type == RouteType.Direct)

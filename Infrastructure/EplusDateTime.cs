@@ -11,7 +11,7 @@ namespace Infrastructure
             {
                 // China Standard Time is in Windows
                 // In Linux, search for /usr/share/zoneinfo/, we can use Asia/Shanghai
-                var chinaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Shanghai");
+                var chinaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("China Standard Time");
                 return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, chinaTimeZone);
             }
         }

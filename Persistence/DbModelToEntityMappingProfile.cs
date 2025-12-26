@@ -103,6 +103,8 @@ namespace Persistence
             CreateMap<BalanceHistory, TransactionEntity>();
 
             CreateMap<SystemPhoto, SystemPhotoEntity>();
+            CreateMap<BaseAdvert, SystemPhotoEntity>()
+                .ForMember(dest => dest.Url, opt => opt.MapFrom(src => src.AdPictureKey));
             CreateMap<SystemSetting, SystemSettingsEntity>();
             CreateMap<SupportUser, SupportUserEntity>();
             CreateMap<RingCentralCredential, RingCentralCredentialEntity>();

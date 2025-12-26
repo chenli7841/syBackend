@@ -420,6 +420,7 @@ WHERE bb.BatchId=@batchId
                 .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps)
                     .ThenInclude(m => m.Order).ThenInclude(o => o.PickUpLocation).ThenInclude(p => p.BelongsTo)
                 .Include(b => b.Route)
+                .Where(b => b.Id == id && b.CompanyId == Config.COMPANY_ID)
                 .Select(b => new Batch
                 {
                     Id = b.Id,
@@ -428,7 +429,7 @@ WHERE bb.BatchId=@batchId
                     MasterBatchId = b.MasterBatchId,
                     GroupType = b.GroupType,
                     Stage = b.Stage,
-                    Route = new Route
+                    Route = b.Route == null ? null : new Route
                     {
                         Type = b.Route.Type
                     },
@@ -447,7 +448,7 @@ WHERE bb.BatchId=@batchId
                         }).ToList() 
                     }).ToList()
                 });
-            var batch = await batchSQL.FirstAsync(b => b.Id == id && b.CompanyId == Config.COMPANY_ID);
+            var batch = await batchSQL.FirstAsync();
             var result = _mapper.Map<BatchEntity>(batch);
             return result;
         }
@@ -503,6 +504,7 @@ WHERE bb.BatchId=@batchId
                 .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps)
                     .ThenInclude(m => m.Order).ThenInclude(o => o.PickUpLocation).ThenInclude(p => p.BelongsTo)
                 .Include(b => b.Route)
+                .Where(b => b.Id == id && b.CompanyId == Config.COMPANY_ID)
                 .Select(b => new Batch
                 {
                     Id = b.Id,
@@ -511,7 +513,7 @@ WHERE bb.BatchId=@batchId
                     MasterBatchId = b.MasterBatchId,
                     GroupType = b.GroupType,
                     Stage = b.Stage,
-                    Route = new Route
+                    Route = b.Route == null ? null : new Route
                     {
                         Type = b.Route.Type
                     },
@@ -530,7 +532,7 @@ WHERE bb.BatchId=@batchId
                         }).ToList() 
                     }).ToList()
                 });
-            var batch = await batchSQL.FirstAsync(b => b.Id == id && b.CompanyId == Config.COMPANY_ID);
+            var batch = await batchSQL.FirstAsync();
             var result = _mapper.Map<BatchEntity>(batch);
             return result;
         }
@@ -1360,9 +1362,9 @@ WHERE bb.BatchId=@batchId
         public async Task SplitByLocationsAsync(int id)
         {
             var batch = await GetAsyncForSplitByLocations(id);
-            if (batch.GroupType != BatchGroupType.LoadDelivery)
+            if (batch.GroupType != BatchGroupType.LoadDelivery && batch.GroupType != BatchGroupType.WarehouseReceive)
             {
-                throw new Exception($"批次不是装车发货，不能拆分。");
+                throw new Exception($"批次不是装车发货或仓库收货，不能拆分。");
             }
             if (!batch.GetActionTypes().Contains(BatchActionType.SplitByLocations))
             {
@@ -1860,7 +1862,6 @@ WHERE bb.BatchId=@batchId
             {
                 orders = await _context.TransportOrders
                     .Where(o => o.BatchBoxOrderMaps.Any(box => box.BatchBox.BatchId == batch.Id)).ToListAsync();
-                
                 foreach (var order in orders)
                 {
                     if (isIntNumberChanged)
@@ -1884,7 +1885,8 @@ WHERE bb.BatchId=@batchId
                         Id = batch.Id,
                         FlightInfo = model.FlightInfo,
                         CargoNumber = model.CargoNumber,
-                        ArrivalTime = model.ArrivalTime
+                        ArrivalTime = model.ArrivalTime,
+                        WarehouseId = batch.LoadDeliveryBatches.First().WarehouseId,
                     }
                 };
             }
@@ -1900,6 +1902,17 @@ WHERE bb.BatchId=@batchId
                     {
                         orders = await _context.TransportOrders
                             .Where(o => o.BatchBoxOrderMaps.Any(box => box.BatchBox.BatchId == batch.Id)).ToListAsync();
+
+                        foreach (var order in orders)
+                        {
+                            if (model.Stage == BatchStageType.Gathering) order.State = (int)OrderState.Gathering;
+                            if (model.Stage == BatchStageType.LoadDelivery) order.State = (int)OrderState.LoadDelivery;
+                            if (model.Stage == BatchStageType.Sailing) order.State = (int)OrderState.Sailing;
+                            if (model.Stage == BatchStageType.Clearing) order.State = (int)OrderState.Clearing;
+                            if (model.Stage == BatchStageType.Sorting) order.State = (int)OrderState.Sorting;
+                        }
+
+
                         await _orderService.AddStatus(status, _session.CurrentUser.Id, orders.Select(o => new OrderEntity { Id = o.Id }).ToArray());
                     }
                 }
@@ -2135,15 +2148,15 @@ WHERE bb.BatchId=@batchId
                 if (model.RouteId.HasValue)
                 {
                     model.Route = await _routeService.GetAsync(model.RouteId.Value);
-                    var orderState = model.GetOrderState();
+                }
+                var orderState = model.GetOrderState();
 
-                    if (orderState != OrderState.None)
+                if (orderState != OrderState.None)
+                {
+                    var orders = await _context.TransportOrders.Where(o => orderIds.Contains(o.Id)).ToListAsync();
+                    foreach (var order in orders)
                     {
-                        var orders = await _context.TransportOrders.Where(o => orderIds.Contains(o.Id)).ToListAsync();
-                        foreach (var order in orders)
-                        {
-                            order.State = (int)orderState;
-                        }
+                        order.State = (int)orderState;
                     }
                 }
             }

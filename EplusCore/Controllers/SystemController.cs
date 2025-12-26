@@ -22,7 +22,8 @@ namespace WebUI.Controllers
         {
             var settings = await _systemService.GetSettingsAsync();
             var photos = (await _systemService.ListPhotosAsync()).ToList();
-            
+            var mobilePhotos = (await _systemService.ListMobilePhotosAsync()).ToList();
+
             while (photos.Count < 4)
             {
                 photos.Add(new SystemPhotoEntity());
@@ -31,7 +32,8 @@ namespace WebUI.Controllers
             var result = new SystemViewModel()
             {
                 Settings = settings,
-                Photos = photos
+                Photos = photos,
+                MobilePhotos = mobilePhotos,
             };
 
             return View(result);
@@ -44,6 +46,28 @@ namespace WebUI.Controllers
             {
                 var savedPhoto = await _systemService.AddPhotoSync(photoId, photoData);
                 return Json(new MethodResult<SystemPhotoEntity>(savedPhoto));
+            }
+            catch (Exception e)
+            {
+                return Json(new MethodResult<SystemPhotoEntity>(new Error() { Text = e.Message }));
+            }
+        }
+
+        [HttpPost]
+        public async Task<JsonResult> GetPhotoUploadUrl(int photoId, string platform)
+        {
+            try
+            {
+                if (platform == "pc")
+                {
+                    var savedPhoto = await _systemService.GetPhotoUploadUrl(photoId);
+                    return Json(new MethodResult<SystemPhotoEntity>(savedPhoto));
+                } else
+                {
+                    var savedPhoto = await _systemService.GetMobilePhotoUploadUrl(photoId);
+                    return Json(new MethodResult<SystemPhotoEntity>(savedPhoto));
+
+                }
             }
             catch (Exception e)
             {

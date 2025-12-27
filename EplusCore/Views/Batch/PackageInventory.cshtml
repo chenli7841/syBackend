@@ -77,6 +77,8 @@
                                         <th>总费用</th>
                                         <th>详情</th>
                                         <th>导出</th>
+                                        <th>删除</th>
+                                        <th>打印</th>
                                         <th>箱号批次状态</th><!--TODO: 开箱 / 封箱-->
                                         <th>运输状态</th><!--TODO: 等同于运单状态-->
                                     </tr>
@@ -151,6 +153,11 @@
                             }'><i class="fa fa-edit fa-lg"></i></a>`
                     },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("Export")?id=${full.id}' target="_blank"><i class="fa fa-table fa-lg"></i></a>` },
+                    {
+                        "render": (data, type, full, meta) => `<a href='@Url.Action("Delete")?id=${full.id
+                            }&groupType=${groupType}&routeId=${routeId}&warehouseId=${warehouseId}'><i class="fa fa-trash-o fa-lg" style="color: red"></i></a>`
+                    },
+                    { "render": (data, type, full, meta) => `<a href='@Url.Action("PrintBatch")?id=${full.id}' target="_blank"><i class="fa fa-print fa-lg"></i></a>` },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("Export")?id=${full.id}' target="_blank"><i class="fa fa-table fa-lg"></i></a>` },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("Export")?id=${full.id}' target="_blank"><i class="fa fa-table fa-lg"></i></a>` },
                 ],

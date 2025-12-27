@@ -56,6 +56,8 @@
                                         <th>总费用</th>
                                         <th>详情</th>
                                         <th>导出</th>
+                                        <th>删除</th>
+                                        <th>打印</th>
                                     </tr>
                                 </thead>
                             </table>
@@ -128,6 +130,11 @@
                             }'><i class="fa fa-edit fa-lg"></i></a>`
                     },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("Export")?id=${full.id}' target="_blank"><i class="fa fa-table fa-lg"></i></a>` },
+                    {
+                        "render": (data, type, full, meta) => `<a href='@Url.Action("Delete")?id=${full.id
+                            }&groupType=${groupType}&routeId=${routeId}&warehouseId=${warehouseId}'><i class="fa fa-trash-o fa-lg" style="color: red"></i></a>`
+                    },
+                    { "render": (data, type, full, meta) => `<a href='@Url.Action("PrintBatch")?id=${full.id}' target="_blank"><i class="fa fa-print fa-lg"></i></a>` },
                 ],
                 "language": {
                     // https://datatables.net/manual/i18n

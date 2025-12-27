@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker;Microsoft.NET.Sdk.Publish">
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <UserSecretsId>dotnet-BackgroundService-64D18828-2193-4FC5-BA41-1B57FD616495</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>

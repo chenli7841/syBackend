@@ -30,6 +30,10 @@ namespace Infrastructure
             {
                 exporter = (IExcelExporter<T>) new CouponExporter(couponBatch);
             }
+            else if (format == "batchorder")
+            {
+                exporter = (IExcelExporter<T>) new BatchOrderExcelExporter();
+            }
             else
             {
                 exporter = (IExcelExporter<T>) new HaiYunDetailExcelExporter();

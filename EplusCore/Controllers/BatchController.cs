@@ -932,7 +932,7 @@ WHERE BatchId={id}");
             var batch = await _batchService.GetAsync(id);
             var orders = batch.Boxes.SelectMany(bx => bx.Orders);
             
-            using var result = _fileExportService.Export(orders, "haiyun");
+            using var result = _fileExportService.Export(orders, "batchorder");
             var wb = result as XLWorkbook;
             Response.Headers.Add("Set-Cookie", "fileDownload=true; path=/");
             return wb.Deliver(batch.Name + ".xlsx");

@@ -607,6 +607,8 @@ WHERE bb.BatchId=@batchId
                     .ThenInclude(m => m.Order).ThenInclude(o => o.ChinaItems)
                     .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps)
                     .ThenInclude(m => m.Order).ThenInclude(o => o.OrderStatuses)
+                    .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps)
+                    .ThenInclude(m => m.Order).ThenInclude(o => o.OrderBaggages)
                     .Include(b => b.MasterBatch).ThenInclude(m => m.Progress).ThenInclude(p => p.Route)
                     .Include(b => b.Route)
                     .Include(b => b.User).ThenInclude(u => u.Customer)

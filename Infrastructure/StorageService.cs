@@ -1,4 +1,4 @@
-﻿using Amazon;
+using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
@@ -28,19 +28,13 @@ namespace Infrastructure
         {
             var data = Regex.Match(rawData, @"data:image/(?<type>.+?),(?<data>.+)").Groups["data"].Value;
             var bytes = Convert.FromBase64String(data);
-            using var client = new AmazonS3Client(AwsAccessKey, AwsSecretKey, RegionEndpoint.USEast1);
             await using var stream = new MemoryStream(bytes);
-            var uploadRequest = new TransferUtilityUploadRequest
-            {
-                InputStream = stream,
-                Key = filename,
-                BucketName = S3BucketName,
-                CannedACL = S3CannedACL.PublicRead
-            };
-
-            var fileTransferUtility = new TransferUtility(client);
-            await fileTransferUtility.UploadAsync(uploadRequest);
-            return @"https://s3.amazonaws.com/eplus-ex/" + filename;
+            BlobServiceClient client = new(
+                new Uri(AzureStorageAccountUrl),
+                new StorageSharedKeyCredential(AzureStorageAccountName, AzureStorageAccountAccessKey));
+            var containerClient = client.GetBlobContainerClient(ContainerName);
+            await containerClient.UploadBlobAsync(filename, stream);
+            return Path.Combine(AzureStorageAccountUrl, filename);
         }
 
         public async Task<string> UploadToAzureAsync(string rawData, string folderPath, string fileName)

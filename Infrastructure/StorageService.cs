@@ -34,7 +34,7 @@ namespace Infrastructure
                 new StorageSharedKeyCredential(AzureStorageAccountName, AzureStorageAccountAccessKey));
             var containerClient = client.GetBlobContainerClient(ContainerName);
             await containerClient.UploadBlobAsync(filename, stream);
-            return Path.Combine(AzureStorageAccountUrl, filename);
+            return Path.Combine(AzureStorageAccountUrl, ContainerName, filename);
         }
 
         public async Task<string> UploadToAzureAsync(string rawData, string folderPath, string fileName)
@@ -78,12 +78,17 @@ namespace Infrastructure
 
         public async Task DeleteAsync(string filename)
         {
-            using var client = new AmazonS3Client(AwsAccessKey, AwsSecretKey, RegionEndpoint.USEast1);
-            var reponse = await client.DeleteObjectAsync(new DeleteObjectRequest()
-            {
-                BucketName = S3BucketName,
-                Key = filename,
-            });
+            BlobServiceClient client = new(
+                new Uri(AzureStorageAccountUrl),
+                new StorageSharedKeyCredential(AzureStorageAccountName, AzureStorageAccountAccessKey));
+            var containerClient = client.GetBlobContainerClient(ContainerName);
+            await containerClient.DeleteBlobIfExistsAsync(filename);
+            //using var client = new AmazonS3Client(AwsAccessKey, AwsSecretKey, RegionEndpoint.USEast1);
+            //var reponse = await client.DeleteObjectAsync(new DeleteObjectRequest()
+            //{
+            //    BucketName = S3BucketName,
+            //    Key = filename,
+            //});
         }
     }
 }

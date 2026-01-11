@@ -969,6 +969,11 @@ namespace Persistence.Data
                     .HasColumnType("text")
                     .HasComment("交易ID");
 
+                entity.Property(e => e.ActualAmount)
+                    .HasPrecision(19, 4)
+                    .HasDefaultValueSql("'0.0000'")
+                    .HasComment("实际支付金额");
+
                 entity.HasOne(d => d.Batch)
                     .WithMany(p => p.BalanceHistories)
                     .HasForeignKey(d => d.BatchId)

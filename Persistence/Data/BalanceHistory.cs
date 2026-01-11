@@ -25,6 +25,7 @@ namespace Persistence.Data
         public decimal? Discount { get; set; }
         public int? BatchId { get; set; }
         public string TransactionGuid { get; set; }
+        public decimal? ActualAmount { get; set; }
 
         public virtual Batch Batch { get; set; }
         public virtual User FromUser { get; set; }

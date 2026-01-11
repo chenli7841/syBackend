@@ -17,6 +17,7 @@ namespace WebUI.Models.ViewModels
         public DateTime Date { get; set; }
         public int? OrderId => Order?.Id;
         public string OrderName => Order?.OrderNumber;
+        public decimal? ActualAmount { get; set; }
         public string DisplayDate => Date.ToString("yyyy-MM-dd HH:mm:ss");
         public int? BatchId => Batch?.Id;
         public string BatchName => Batch?.Name;

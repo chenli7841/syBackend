@@ -16,6 +16,7 @@ namespace Domain.Entities
         public decimal Amount { get; set; }
         public DateTime Date { get; set; }
         public OrderEntity Order { get; set; }
+        public decimal? ActualAmount { get; set; }
         public BatchEntity Batch { get; set; }
         public string Method { get; set; }
         public string Notes { get; set; }

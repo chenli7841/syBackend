@@ -1,18 +1,11 @@
-# EplusCore
+# Deployment
+1. On local machine:
 
-This repo is for Eplus International Inc. 
+`dotnet publish -c Release -r linux-x64 --self-contained true`
 
-It is only intended for Admin to use.
+2. Copy everything from syBackend\EplusCore\bin\Release\net6.0\linux-x64\ to /opt/record/newEplusCore/
 
-The architecture follows clean architecture pattern and is inspired by https://github.com/jasontaylordev/CleanArchitecture. 
+3. On remote server:
 
-## Useful info:
-1. DB-First approach is used.
-2. How to scaffold model from MySql db table: 
-    1. run the following in Persistence project (replace the CONNECTION_STRING_PLACE_HOLDER with actual connection string)
-    ```
-    Scaffold-DbContext "CONNECTION_STRING_PLACE_HOLDER;TreatTinyAsBoolean=true;" "Pomelo.EntityFrameworkCore.MySql" -OutputDir Data -f -Context EplusDbContext
-    ```
-    2. Inside Persistence project, replace `sbyte` as `bool`
-3. UI Template can be found in the UITemplate folder
-
+`cd /opt/record/newEplusCore/`
+`screen ./WebUI --urls=http://localhost:5002`

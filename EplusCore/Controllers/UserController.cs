@@ -95,16 +95,19 @@ namespace WebUI.Controllers
                 vm.CurrentBalance = it.ToUser.Id == userId ? it.ToUserCurrentBalance : it.FromUserCurrentBalance;
                 return vm;
             }).ToList();
-            viewModels[0].ColorIndex = 1;
-            for (var i = 1; i < viewModels.Count; i++)
+            if (viewModels.Count > 0)
             {
-                if (viewModels[i].Date == viewModels[i-1].Date)
+                viewModels[0].ColorIndex = 1;
+                for (var i = 1; i < viewModels.Count; i++)
                 {
-                    viewModels[i].ColorIndex = viewModels[i-1].ColorIndex;
-                }
-                else
-                {
-                    viewModels[i].ColorIndex = viewModels[i-1].ColorIndex + 1;
+                    if (viewModels[i].Date == viewModels[i - 1].Date)
+                    {
+                        viewModels[i].ColorIndex = viewModels[i - 1].ColorIndex;
+                    }
+                    else
+                    {
+                        viewModels[i].ColorIndex = viewModels[i - 1].ColorIndex + 1;
+                    }
                 }
             }
 

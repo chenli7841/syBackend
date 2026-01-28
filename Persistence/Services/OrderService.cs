@@ -55,8 +55,18 @@ namespace Persistence.Services
 
         public async Task<PagedResult<OrderEntity>> ListAsync(OrderListFilterOptions filterOptions)
         {
+            var companyIds = new List<int>();
+            if (filterOptions.CompanyIds.Length > 0)
+            {
+                companyIds = filterOptions.CompanyIds.ToList();
+            }
+            else
+            {
+                companyIds.Add(Config.COMPANY_ID);
+            }
             var orders = _context.TransportOrders
-                .Where(o => o.CompanyId == Config.COMPANY_ID && (o.IsFromChina)
+                .Where(o => companyIds.Contains(o.CompanyId.Value)
+                            && (o.IsFromChina)
                             && (!filterOptions.OrderState.HasValue || o.State == (int)filterOptions.OrderState.Value)
                             && (string.IsNullOrEmpty(filterOptions.OrderNumberToSearch) || o.OrderNumber.Contains(filterOptions.OrderNumberToSearch))
                             && (string.IsNullOrEmpty(filterOptions.DomesticNumberToSearch) || o.DomesticNumber.Contains(filterOptions.DomesticNumberToSearch))

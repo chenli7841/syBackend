@@ -118,6 +118,7 @@ namespace Persistence
             CreateMap<TodoItem, TodoItemEntity>()
                 .ForMember(dest => dest.Assignees, opt => opt.MapFrom(src => src.TodoItemAssignees.Select(a => a.Assignee)))
                 .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.CreatedBy));
+            CreateMap<Company, CompanyEntity>();
         }
 
         private ICollection<BatchBox> GetAllBatchBoxes(Batch batch)

@@ -79,13 +79,21 @@ namespace WebUI.Controllers
             return View(result);
         }
 
-        public IActionResult Search()
+        public async Task<IActionResult> Search()
         {
-            return View();
+            var companies = await _context.Companies.ToListAsync();
+            OrderSearchViewModel model = new OrderSearchViewModel();
+            model.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
+            return View(model);
         }
 
-        public async Task<IActionResult> LoadData(OrderState? orderState, DataTableRequestModel requestModel)
+        public async Task<IActionResult> LoadData(OrderState? orderState, string companyIds, DataTableRequestModel requestModel)
         {
+            int[] ids = new int[0];
+            if (companyIds != null)
+            {
+                ids = companyIds.Replace("[", "").Replace("]", "").Split(",").Where(c => c.Trim() != "").Select(c => int.Parse(c)).ToArray();
+            }
             var orderNumberToSearch = requestModel.GetColumnSearchValue("OrderNumber");
             var domesticNumberToSearch = requestModel.GetColumnSearchValue("DomesticNumber");
             var creatorToSearch = requestModel.GetColumnSearchValue("Creator");
@@ -97,7 +105,8 @@ namespace WebUI.Controllers
                 OrderState = orderState,
                 CreatorToSearch = creatorToSearch,
                 PageSize = requestModel.Length,
-                Skip = requestModel.Start
+                Skip = requestModel.Start,
+                CompanyIds = ids
             });
 
             var data = new PagedResult<OrderInventoryViewModel>()

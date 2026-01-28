@@ -11,6 +11,7 @@ namespace WebUI.Models.DataTableRequest
         public List<DataTableColumn> Columns { get; set; }
         public DataTableSearch Search { get; set; }
         public List<DataTableOrder> Order { get; set; }
+        public int[] CompanyIds { get; set; }
 
         public string GetColumnSearchValue(string columnName)
         {

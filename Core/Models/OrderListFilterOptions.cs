@@ -8,5 +8,6 @@ namespace Domain.Models
         public string DomesticNumberToSearch { get; set; }
         public string CreatorToSearch { get; set; }
         public OrderState? OrderState { get; set; }
+        public int[] CompanyIds { get; set; }
     }
 }

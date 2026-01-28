@@ -287,7 +287,8 @@ namespace WebUI.Controllers
             {
                 OrderNumberToSearch = orderToSearch,
                 PageSize = requestModel.Length,
-                Skip = requestModel.Start
+                Skip = requestModel.Start,
+                CompanyIds = Array.Empty<int>(),
             });
 
 

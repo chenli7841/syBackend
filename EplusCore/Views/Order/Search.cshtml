@@ -1,5 +1,5 @@
 ﻿@using Domain.Enums
-@model WebUI.Models.OrderInventoryResponse
+@model WebUI.Models.ViewModels.OrderSearchViewModel
 
 @{
     ViewData["Title"] = "运单管理";
@@ -28,8 +28,14 @@
         <div class="card">
             <div class="card-body order-card-body">
                 <div style="display: flex; align-items: center; gap: 40px;">
-                    <h4 class="card-title" style="margin: 0;">搜索</h4>
-                    @Html.ActionLink("创建运单", "Create", null, new { OrderState = OrderState.Created }, new { @class = "btn btn-primary" })
+                    <h4 class="card-title" style="margin: 0; flex: none;">搜索</h4>
+                    @Html.ActionLink("创建运单", "Create", null, new { OrderState = OrderState.Created }, new { @class = "btn btn-primary", @style = "flex: none;" })
+                    <select class="form-control" id="company-select">
+                        @foreach (var c in Model.Companies)
+                        {
+                            <option value="@c.Id">@c.Name</option>
+                        }
+                    </select>
                 </div>
                 <div class="table-responsive">
                     <table id='order-listing-search' class="table table-striped">
@@ -82,7 +88,7 @@
                     });
             });
 
-            var dataTableOptions = {
+            var getDataTableOptions = (companyIds) => ({
                 "processing": true, // for show progress bar
                 "serverSide": true, // for process server side
                 "filter": true, // this is for disable filter (search box)
@@ -91,9 +97,9 @@
                 "stateSave": false,
                 "lengthChange": false, // for show entries dropdown
                 "ajax": {
-                    "url": '@Url.Action("LoadData")',
+                    "url": `@Url.Action("LoadData")?companyIds=${companyIds}`,
                     "type": "POST",
-                    "datatype": "json"
+                    "datatype": "json",
                 },
                 "columnDefs": [
                     { "targets": [0], "visible": false, "searchable": false },
@@ -121,10 +127,15 @@
                         "next": "下一页"
                     },
                 },
-            };
+            });
 
-            const orderTable = $(`#${tableId}`).DataTable(dataTableOptions);
+            let orderTable = $(`#${tableId}`).DataTable(getDataTableOptions([]));
             $("input[type='search']").closest('div.row').hide();
+
+            $('#company-select').change(function () {
+                companyIds = [parseInt($('#company-select').val())];
+                $(`#${tableId}`).DataTable({destroy: true, ... getDataTableOptions(companyIds)});
+            });
         });
     </script>
 }

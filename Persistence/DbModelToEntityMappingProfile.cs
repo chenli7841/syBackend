@@ -10,6 +10,15 @@ namespace Persistence
 {
     public class DbModelToEntityMappingProfile : Profile
     {
+        private string GetCargoNumber(TransportOrder src)
+        {
+            var batch = src.BatchBoxOrderMaps.Select(bbom => bbom.BatchBox).Select(box => box.Batch).FirstOrDefault(b => b.LoadDeliveryBatches != null && b.LoadDeliveryBatches.Count > 0);
+            if (batch == null)
+            {
+                return "";
+            }
+            return batch.LoadDeliveryBatches.First().CargoNumber;
+        }
         public DbModelToEntityMappingProfile()
         {
             CreateMap<User, UserEntity>()
@@ -48,7 +57,8 @@ namespace Persistence
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.OrderStatuses))
                 .ForMember(dest => dest.InternalStatus, opt => opt.MapFrom(src => src.OrderInternalStatuses))
                 .ForMember(dest => dest.PickUpLocation, opt => opt.MapFrom(src => src.PickUpLocation))
-                .ForMember(dest => dest.CompanyId, opt => opt.MapFrom(src => src.CompanyId));
+                .ForMember(dest => dest.CompanyId, opt => opt.MapFrom(src => src.CompanyId))
+                .ForMember(dest => dest.CargoNumber, opt => opt.MapFrom(src => GetCargoNumber(src)));
 
             // TODO: use IDateTime
             CreateMap<OrderStatusInternal, OrderStatusEntity>()

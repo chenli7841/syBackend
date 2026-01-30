@@ -55,7 +55,7 @@
                                 <th data-searchable="true">单号</th>
                                 <th data-searchable="true">国内单号</th>
                                 <th>创建时间</th>
-                                <th>所属船号/航空号</th>
+                                <th data-searchable="true">所属船号/航空号</th>
                                 <th data-searchable="state">当前状态</th>
                                 <th data-searchable="true">用户</th>
                                 <th>详情</th>
@@ -96,8 +96,6 @@
                     $(this).html(`<select class="form-control" id="state-select">${allStateOption}</select>`);
                     $('#state-select').on('change',
                         function(event) {
-                            console.log("changinggggg", this.value);
-
                             if (orderTable.column(i).search() !== this.value) {
                                 orderTable.column(i).search(this.value).draw();
                             }
@@ -143,7 +141,7 @@
                     { "data": "orderNumber", "name": "OrderNumber", "autoWidth": true },
                     { "data": "domesticNumber", "name": "DomesticNumber", "autoWidth": true },
                     { "data": "dateCreatedDisplay", "name": "dateCreatedDisplay", "autoWidth": true },
-                    { "data": "deliveryBatch", "name": "DeliveryBatch", "autoWidth": true },
+                    { "data": "cargoNumber", "name": "CargoNumber", "autoWidth": true },
                     { "data": "stateText", "name": "stateText", "autoWidth": true },
                     { "data": "creator.name", "name": "Creator", "autoWidth": true },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("Edit")?id=${full.id}'><i class="fa fa-edit fa-lg"></i></a>` },
@@ -162,7 +160,6 @@
                     },
                 },
             });
-            console.log("ccccc ", companyIds);
             let orderTable = $(`#${tableId}`).DataTable(getDataTableOptions(companyIds));
             $("input[type='search']").closest('div.row').hide();
             $('#company-select').val(companyIds);

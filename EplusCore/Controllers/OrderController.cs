@@ -105,6 +105,7 @@ namespace WebUI.Controllers
             var domesticNumberToSearch = requestModel.GetColumnSearchValue("DomesticNumber");
             var creatorToSearch = requestModel.GetColumnSearchValue("Creator");
             var stateToSearch = requestModel.GetColumnSearchValue("stateText");
+            var cargoNumberToSearch = requestModel.GetColumnSearchValue("CargoNumber");
             OrderState orderStateFilter;
             PagedResult<OrderEntity> orders;
             if (Enum.TryParse<OrderState>(stateToSearch, out orderStateFilter))
@@ -115,6 +116,7 @@ namespace WebUI.Controllers
                     DomesticNumberToSearch = domesticNumberToSearch,
                     OrderState = orderStateFilter,
                     CreatorToSearch = creatorToSearch,
+                    CargoNumberToSearch = cargoNumberToSearch,
                     PageSize = requestModel.Length,
                     Skip = requestModel.Start,
                     CompanyIds = ids
@@ -128,6 +130,7 @@ namespace WebUI.Controllers
                     DomesticNumberToSearch = domesticNumberToSearch,
                     OrderState = orderState,
                     CreatorToSearch = creatorToSearch,
+                    CargoNumberToSearch = cargoNumberToSearch,
                     PageSize = requestModel.Length,
                     Skip = requestModel.Start,
                     CompanyIds = ids

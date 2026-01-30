@@ -22,6 +22,7 @@ namespace WebUI.Models.ViewModels
         public UserEntity Creator { get; set; }
         public IList<BatchViewModel> Batches { get; set; }
         public string StateText { get; set; }
+        public string CargoNumber { get; set; }
 
         public string DeliveryBatch
         {

@@ -6,6 +6,7 @@ namespace Domain.Models
     {
         public string OrderNumberToSearch { get; set; }
         public string DomesticNumberToSearch { get; set; }
+        public string CargoNumberToSearch { get; set; }
         public string CreatorToSearch { get; set; }
         public OrderState? OrderState { get; set; }
         public int[] CompanyIds { get; set; }

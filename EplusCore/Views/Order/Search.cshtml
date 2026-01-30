@@ -9,17 +9,17 @@
 {
     <style>
         div.card .order-card-body, #order-details {
-            padding-top: 1rem;
-            padding-bottom: 1rem;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
         }
 
         #order-listing_wrapper div#order-listing_filter {
-            display: none;
+        display: none;
         }
 
-            #order-listing_wrapper div#order-listing_filter input {
-                width: 600px;
-            }
+        #order-listing_wrapper div#order-listing_filter input {
+        width: 600px;
+        }
     </style>
 }
 
@@ -31,10 +31,20 @@
                     <h4 class="card-title" style="margin: 0; flex: none;">搜索</h4>
                     @Html.ActionLink("创建运单", "Create", null, new { OrderState = OrderState.Created }, new { @class = "btn btn-primary", @style = "flex: none;" })
                     <select class="form-control" id="company-select">
-                        @foreach (var c in Model.Companies)
-                        {
-                            <option value="@c.Id">@c.Name</option>
+                        @{
+                            var companies = Model.Companies.ToList();
+                            for (int i = 0; i < companies.Count; i++)
+                            {
+                                var c = companies[i];
+                                <option value="@c.Id">@c.Name</option>
+                                if (i == companies.Count - 1)
+                                {
+                                    var allCompanyIds = string.Join(",", companies.Select(c => c.Id));
+                                    <option value="@allCompanyIds">All</option>
+                                }
+                            }
                         }
+                        
                     </select>
                 </div>
                 <div class="table-responsive">
@@ -46,7 +56,7 @@
                                 <th data-searchable="true">国内单号</th>
                                 <th>创建时间</th>
                                 <th>所属船号/航空号</th>
-                                <th>当前状态</th>
+                                <th data-searchable="state">当前状态</th>
                                 <th data-searchable="true">用户</th>
                                 <th>详情</th>
                                 <th>删除</th>
@@ -64,6 +74,13 @@
 {
     <script>
         $(document).ready(() => {
+            let companyIds = '';
+            let search = document.location.search;
+            if (search.includes("?")) {
+                search = search.replace("?", "");
+                let part = search.split("&").find(p => p.split("=")[0].toLowerCase() === "companyids");
+                companyIds = part.split("=")[1];
+            }
             const tableId = 'order-listing-search';
             $(`#${tableId} thead tr`).clone(true).appendTo(`#${tableId} thead`);
             $(`#${tableId} thead tr:eq(1) th`).each(function(i) {
@@ -72,20 +89,37 @@
                     return;
                 }
 
-                const title = $(this).text();
-                $(this).css('padding-left', '0');
-                $(this).html('<input type="text" class="form-control form-control-sm" placeholder="搜索 ' + title + '" />');
+                if ($(this).data('searchable') === 'state')
+                {
+                    $(this).css('padding-left', '0');
+                    let allStateOption = "@Html.Raw(string.Join("", Model.AllOrderStates.Select(s => $"<option value='{s.Id}'>{s.Name}</option>")))";
+                    $(this).html(`<select class="form-control" id="state-select">${allStateOption}</select>`);
+                    $('#state-select').on('change',
+                        function(event) {
+                            console.log("changinggggg", this.value);
 
-                $('input', this).on('keyup change',
-                    function(event) {
-                        if (event.key !== 'Enter') {
-                            return;
-                        }
+                            if (orderTable.column(i).search() !== this.value) {
+                                orderTable.column(i).search(this.value).draw();
+                            }
+                        });
+                }
+                else
+                {
+                    const title = $(this).text();
+                    $(this).css('padding-left', '0');
+                    $(this).html('<input type="text" class="form-control form-control-sm" placeholder="搜索 ' + title + '" />');
 
-                        if (orderTable.column(i).search() !== this.value) {
-                            orderTable.column(i).search(this.value).draw();
-                        }
-                    });
+                    $('input', this).on('keyup change',
+                        function(event) {
+                            if (event.key !== 'Enter') {
+                                return;
+                            }
+
+                            if (orderTable.column(i).search() !== this.value) {
+                                orderTable.column(i).search(this.value).draw();
+                            }
+                        });
+                }
             });
 
             var getDataTableOptions = (companyIds) => ({
@@ -128,13 +162,12 @@
                     },
                 },
             });
-
-            let orderTable = $(`#${tableId}`).DataTable(getDataTableOptions([]));
+            console.log("ccccc ", companyIds);
+            let orderTable = $(`#${tableId}`).DataTable(getDataTableOptions(companyIds));
             $("input[type='search']").closest('div.row').hide();
-
+            $('#company-select').val(companyIds);
             $('#company-select').change(function () {
-                companyIds = [parseInt($('#company-select').val())];
-                $(`#${tableId}`).DataTable({destroy: true, ... getDataTableOptions(companyIds)});
+                document.location = `${document.location.origin}${document.location.pathname}?companyIds=${$('#company-select').val()}`;
             });
         });
     </script>

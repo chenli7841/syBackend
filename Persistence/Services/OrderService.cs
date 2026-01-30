@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Mail;
@@ -18,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using Persistence.Data;
 using Persistence.Utils;
 using Domain;
+using Domain.Models.Extensions;
 
 namespace Persistence.Services
 {
@@ -51,6 +51,47 @@ namespace Persistence.Services
             _smsService = smsService;
             _session = session;
             _couponService = couponService;
+        }
+
+        public async Task<IEnumerable<OrderStateEntity>> ListOrderStatesAsync(int[] companyIds)
+        {
+            var allStates =  Enum.GetValues(typeof(OrderState))
+            .Cast<OrderState>()
+            .Select(v => new OrderStateEntity
+            {
+                Id = (int)v,
+                Name = v.GetDescription()
+            })
+            .ToList();
+            List<OrderStateEntity> selectedStates = new List<OrderStateEntity>();
+            using (var conn = _context.Database.GetDbConnection())
+            {
+                conn.Open();
+                using (var command = conn.CreateCommand())
+                {
+                    if (companyIds.Length == 0)
+                        command.CommandText = $@"SELECT state FROM transport_order GROUP BY state";
+                    else
+                        command.CommandText = $@"SELECT state FROM transport_order WHERE companyId IN ({string.Join(",", companyIds)}) GROUP BY state";
+                    var result = await command.ExecuteReaderAsync();
+
+                    while (result.Read())
+                    {
+                        if (result[0] != DBNull.Value)
+                        {
+                            var stateId = result.GetInt32(0);
+                            var state = allStates.FirstOrDefault(s => s.Id == stateId);
+                            if (state != null)
+                            {
+                                selectedStates.Add(state);
+                            }
+                        }
+                    }
+                    await result.CloseAsync();
+                }
+                conn.Close();
+            }
+            return selectedStates;
         }
 
         public async Task<PagedResult<OrderEntity>> ListAsync(OrderListFilterOptions filterOptions)

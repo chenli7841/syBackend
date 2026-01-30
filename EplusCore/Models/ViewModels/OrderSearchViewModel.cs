@@ -7,6 +7,7 @@ namespace WebUI.Models.ViewModels
     public class OrderSearchViewModel
     {
         public IEnumerable<CompanyEntity> Companies { get; set; }
+        public IEnumerable<OrderStateEntity> AllOrderStates { get; set; }
 
     }
 }

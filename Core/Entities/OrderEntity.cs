@@ -67,6 +67,12 @@ namespace Domain.Entities
         public decimal WeightKg { get; set; }
     }
 
+    public class OrderStateEntity
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+
     public class OrderStatusEntity
     {
         public OrderStatusType Status { get; set; }

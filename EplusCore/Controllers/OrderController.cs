@@ -79,11 +79,18 @@ namespace WebUI.Controllers
             return View(result);
         }
 
-        public async Task<IActionResult> Search()
+        public async Task<IActionResult> Search(string companyIds)
         {
             var companies = await _context.Companies.ToListAsync();
             OrderSearchViewModel model = new OrderSearchViewModel();
             model.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
+
+            int parsed;
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
+            var orderStateList = await _orderService.ListOrderStatesAsync(parsedCompanyIds);
+            model.AllOrderStates = orderStateList;
+
+
             return View(model);
         }
 
@@ -97,17 +104,36 @@ namespace WebUI.Controllers
             var orderNumberToSearch = requestModel.GetColumnSearchValue("OrderNumber");
             var domesticNumberToSearch = requestModel.GetColumnSearchValue("DomesticNumber");
             var creatorToSearch = requestModel.GetColumnSearchValue("Creator");
-
-            var orders = await _orderService.ListAsync(new OrderListFilterOptions()
+            var stateToSearch = requestModel.GetColumnSearchValue("stateText");
+            OrderState orderStateFilter;
+            PagedResult<OrderEntity> orders;
+            if (Enum.TryParse<OrderState>(stateToSearch, out orderStateFilter))
             {
-                OrderNumberToSearch = orderNumberToSearch,
-                DomesticNumberToSearch = domesticNumberToSearch,
-                OrderState = orderState,
-                CreatorToSearch = creatorToSearch,
-                PageSize = requestModel.Length,
-                Skip = requestModel.Start,
-                CompanyIds = ids
-            });
+                orders = await _orderService.ListAsync(new OrderListFilterOptions()
+                {
+                    OrderNumberToSearch = orderNumberToSearch,
+                    DomesticNumberToSearch = domesticNumberToSearch,
+                    OrderState = orderStateFilter,
+                    CreatorToSearch = creatorToSearch,
+                    PageSize = requestModel.Length,
+                    Skip = requestModel.Start,
+                    CompanyIds = ids
+                });
+            }
+            else
+            {
+                orders = await _orderService.ListAsync(new OrderListFilterOptions()
+                {
+                    OrderNumberToSearch = orderNumberToSearch,
+                    DomesticNumberToSearch = domesticNumberToSearch,
+                    OrderState = orderState,
+                    CreatorToSearch = creatorToSearch,
+                    PageSize = requestModel.Length,
+                    Skip = requestModel.Start,
+                    CompanyIds = ids
+                });
+            }
+
 
             var data = new PagedResult<OrderInventoryViewModel>()
             {

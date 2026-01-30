@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Domain.Entities;
 using Domain.Enums;
 using Domain.Models;
@@ -23,5 +24,6 @@ namespace Domain.Services
         Task ReturnCompleteAsync(int id);
         Task<OrderPhotoEntity> AddPhotoAsync(int orderId, string rawData);
         Task DeletePhotoAsync(int photoId);
+        Task<IEnumerable<OrderStateEntity>> ListOrderStatesAsync(int[] companyIds);
     }
 }

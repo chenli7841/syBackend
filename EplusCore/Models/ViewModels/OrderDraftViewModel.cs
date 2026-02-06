@@ -13,6 +13,7 @@ namespace WebUI.Models.ViewModels
 
         public string DomesticCarrier { get; set; }
         public string DomesticNumber { get; set; }
+        public int CompanyId { get; set; }
         public int RecipientId { get; set; }
         public IEnumerable<UserEntity> Users { get; set; }
         public int RouteId { get; set; }
@@ -20,5 +21,6 @@ namespace WebUI.Models.ViewModels
         public OrderState OrderState { get; set; }
         public int PickupLocationId { get; set; }
         public IEnumerable<PickUpLocationEntity> PickupLocations { get; set; }
+        public IEnumerable<CompanyEntity> Companies { get; set; }
     }
 }

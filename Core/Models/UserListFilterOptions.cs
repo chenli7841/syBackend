@@ -7,5 +7,6 @@ namespace Domain.Models
         public string CodeToSearch { get; set; }
         public string PhoneToSearch { get; set; }
         public RoleType? RoleToSearch { get; set; }
+        public int[] CompanyIds { get; set; }
     }
 }

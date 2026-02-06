@@ -90,7 +90,9 @@ namespace Persistence.Services
                              u.OrderStartNumber == filterOptions.CodeToSearch) &&
                             (string.IsNullOrWhiteSpace(filterOptions.PhoneToSearch) ||
                              u.CanadaPhoneNumber.Contains(filterOptions.PhoneToSearch)) &&
-                            (filterOptions.RoleToSearch == null || u.Role == (int)filterOptions.RoleToSearch.Value) && u.CompanyId == Config.COMPANY_ID)
+                            (filterOptions.RoleToSearch == null || u.Role == (int)filterOptions.RoleToSearch.Value) && 
+                            (filterOptions.CompanyIds == null && u.CompanyId == Config.COMPANY_ID) || (filterOptions.CompanyIds != null && filterOptions.CompanyIds.Contains(u.CompanyId.Value))
+                )
                 .Include(u => u.Customer)
                 .Include(u => u.UserRole)
                 .Include(u => u.BelongsToNavigation)
@@ -146,9 +148,11 @@ namespace Persistence.Services
             return result;
         }
 
-        public async Task<IEnumerable<PickUpLocationEntity>> ListPickUpLocationsAsync(int version = 1)
+        public async Task<IEnumerable<PickUpLocationEntity>> ListPickUpLocationsAsync(int version = 1, int[] companyIds = null)
         {
-            var result = await _context.PickUpLocations.Where(l => l.Version == version && l.CompanyId == Config.COMPANY_ID).Select(u => _mapper.Map<PickUpLocationEntity>(u)).ToListAsync();
+            var result = await _context.PickUpLocations.Where(l => l.Version == version && 
+                (companyIds == null && l.CompanyId == Config.COMPANY_ID) || (companyIds != null && companyIds.Contains(l.CompanyId.Value))
+            ).Select(u => _mapper.Map<PickUpLocationEntity>(u)).ToListAsync();
             return result;
         }
 

@@ -522,9 +522,11 @@ namespace WebUI.Controllers
                 Skip = 0,
                 PageSize = int.MaxValue
             });
+            var companies = await _context.Companies.ToListAsync();
             ViewBag.Recipients = recipients.Items;
             ViewBag.Agents = await _userService.ListAgentsAsync();
             ViewBag.PickUpLocations = await _userService.ListPickUpLocationsAsync(2);
+            ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
             ViewBag.ActionTypes = batch.GetActionTypes();
             ViewBag.ActionType = ViewBag.ActionTypes[0];
             if (batch.GroupType == BatchGroupType.LoadDelivery || !batch.RouteId.HasValue)
@@ -542,7 +544,15 @@ namespace WebUI.Controllers
         public async Task<IActionResult> Save(BatchEntity model)
         {
             var result = await _batchService.SaveAsync(model);
-            return RedirectToAction(nameof(Edit), new {id = result.Id });
+            if (model.GroupType == BatchGroupType.DailyScan)
+            {
+                return RedirectToAction(nameof(DailyScanEdit), new { id = result.Id });
+
+            }
+            else
+            {
+                return RedirectToAction(nameof(Edit), new { id = result.Id });
+            }
         }
 
         [ValidateAntiForgeryToken]

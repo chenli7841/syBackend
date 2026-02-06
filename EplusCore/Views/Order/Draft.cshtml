@@ -3,7 +3,7 @@
 @using Domain.Models.Extensions
 
 @{
-    ViewData["Title"] = "@(Model.OrderState.GetDescription())运单";
+    ViewData["Title"] = Model.OrderState.GetDescription() + "运单";
 }
 
 @section Styles
@@ -25,6 +25,25 @@
                     @Html.TextBoxFor(r => r.OrderState, new { hidden = "hidden" })
                                 
                     <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.CompanyId, "公司", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.CompanyId, new { hidden = "hidden" })
+                                    <select class="form-control" id="company-select">
+                                        @{
+                                            var companies = Model.Companies.ToList();
+                                            for (int i = 0; i < companies.Count; i++)
+                                            {
+                                                var c = companies[i];
+                                                <option value="@c.Id">@c.Name</option>
+                                            }
+                                        }
+
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                         <div class="col-md-4">
                             <div class="form-group row">
                                 @Html.LabelFor(r => r.RecipientId, "客户", new { @class = "col-sm-3 col-form-label" })
@@ -140,6 +159,21 @@
             $('#pickuplocation-select').val($('#PickupLocationId').val());
             $('#pickuplocation-select').change(function () {
                 $('#PickupLocationId').val(this.value);
+            });
+
+            let companyIds = '';
+            let search = document.location.search;
+            if (search.includes("?")) {
+                search = search.replace("?", "");
+                let part = search.split("&").find(p => p.split("=")[0].toLowerCase() === "companyids");
+                if (part) {
+                    companyIds = part.split("=")[1];
+                }
+            }
+            $('#CompanyId').val(companyIds);
+            $('#company-select').val(companyIds);
+            $('#company-select').change(function () {
+                document.location = `${document.location.origin}${document.location.pathname}?OrderState=Created&companyIds=${$('#company-select').val()}`;
             });
         });
     </script>

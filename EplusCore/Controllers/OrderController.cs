@@ -1,29 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Mail;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using Common;
 using Domain.Entities;
 using Domain.Enums;
 using Domain.Models;
 using Domain.Services;
+using IronBarCode;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Persistence.Data;
+using Persistence.Utils;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Mail;
+using System.Net.Mime;
+using System.Text;
+using System.Threading.Tasks;
+using Twilio.TwiML.Voice;
 using WebUI.Models;
+using WebUI.Models.ApiRequest;
 using WebUI.Models.DataTableRequest;
 using WebUI.Models.ViewModels;
-using Persistence.Utils;
-using System.IO;
-using System.Net.Mime;
-using IronBarCode;
-using System.Text;
-using WebUI.Models.ApiRequest;
-using System.Drawing;
 
 namespace WebUI.Controllers
 {
@@ -166,7 +167,7 @@ namespace WebUI.Controllers
             return RedirectToAction(nameof(Search), new {orderState});
         }
 
-        public async Task<IActionResult> Edit(int id)
+        public async Task<IActionResult> Edit(int id, string companyIds)
         {
             var orderEntity = await _orderService.GetAsync(id);
             var model = _mapper.Map<OrderDetailEditModel>(orderEntity);
@@ -193,7 +194,7 @@ namespace WebUI.Controllers
                 model.BaggageEditModels.Add(new OrderBaggageEditModel() { Action = ActionType.Add });
             }
             
-            model.Routes = await _routeService.ListAsync();
+            model.Routes = await _routeService.ListAsync(orderEntity.CompanyId.HasValue ? new int[] { orderEntity.CompanyId.Value } : null);
             model.ItemCategories = RouteEntity.Items;
             
             var batches = await _batchService.GetByOrderAsync(id);
@@ -228,18 +229,24 @@ namespace WebUI.Controllers
             return Json(new MethodResult<bool>(true));
         }
 
-        public async Task<IActionResult> Create(OrderState orderState)
+        public async Task<IActionResult> Create(OrderState orderState, string companyIds)
         {
-            var routes = await _routeService.ListAsync();
+            int parsed;
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
+            var routes = await _routeService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
             var users = await _userService.ListAsync(new UserListFilterOptions()
             {
-                PageSize = int.MaxValue
+                PageSize = int.MaxValue,
+                CompanyIds = parsedCompanyIds.Length == 0 ? null : parsedCompanyIds
             });
-            var locations = await _userService.ListPickUpLocationsAsync(2);
+            var locations = await _userService.ListPickUpLocationsAsync(2, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
+
+            var companies = await _context.Companies.ToListAsync();
             return View("Draft", new OrderDraftViewModel() {
                 Users = users.Items, Routes = routes,
                 OrderState = orderState,
-                PickupLocations = locations
+                PickupLocations = locations,
+                Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c))
             });
         }
 
@@ -299,10 +306,11 @@ namespace WebUI.Controllers
                 DraftById = _systemSession.CurrentUser.Id,
                 RouteId = model.RouteId,
                 State = model.OrderState,
-                PickUpLocationId = model.PickupLocationId
+                PickUpLocationId = model.PickupLocationId,
+                CompanyId = model.CompanyId,
             };
             var result = await _orderService.SaveDraftAsync(entity);
-            return RedirectToAction(nameof(Edit), new { id = result.Id });
+            return RedirectToAction(nameof(Edit), new { id = result.Id, companyIds = model.CompanyId });
         }
 
         [HttpPost]

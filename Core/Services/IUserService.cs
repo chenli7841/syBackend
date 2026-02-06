@@ -14,7 +14,7 @@ namespace Domain.Services
         Task<PagedResult<UserEntity>> ListAsync(UserListFilterOptions filterOptions, bool isOrderByCode = true);
         Task<List<UserEntity>> ListByBatchesAsync(BatchGroupType groupType, int? routeId, int? warehouseId);
         Task<IEnumerable<UserEntity>> ListAgentsAsync();
-        Task<IEnumerable<PickUpLocationEntity>> ListPickUpLocationsAsync(int version = 1);
+        Task<IEnumerable<PickUpLocationEntity>> ListPickUpLocationsAsync(int version = 1, int[] companyIds = null);
         Task TogglePickUpLocationVisibilityAsync(int id);
         Task UpdatePickupLocation(int id, string name, string address, decimal districtAdditionalRate, int sequence, string note);
         Task TransferUser(int fromPickupLocationId, int toPickupLocationId);

@@ -395,7 +395,7 @@ namespace Persistence.Services
                 throw new ArgumentNullException("Route Id is null");
             }
 
-            var route = await _routeService.GetAsync(entity.RouteId.Value);
+            var route = await _routeService.GetAsync(entity.RouteId.Value, true, entity.CompanyId);
 
             var order = new TransportOrder();
             order.CreatedById = entity.Creator.Id;
@@ -410,10 +410,10 @@ namespace Persistence.Services
             order.SenderId = entity.Creator.CustomerId;
             order.RouteId = entity.RouteId;
             order.PickUpLocationId = entity.PickUpLocationId;
-            order.CompanyId = Config.COMPANY_ID;
+            order.CompanyId = entity.CompanyId ?? Config.COMPANY_ID;
 
-            // 在 “运单管理” -> “未匹配” 中添加运单时，运单要一个初始的 “预创建运单” 状态。
-            if (entity.State == OrderState.Draft)
+            // 在 “运单管理” -> “未匹配/未入库” 中添加运单时，运单要一个初始的 “预创建运单” 状态。
+            if (entity.State == OrderState.Draft || entity.State == OrderState.Created)
             {
                 order.OrderStatuses.Add(new OrderStatus
                 {
@@ -423,8 +423,8 @@ namespace Persistence.Services
                 });
             }
 
-            var initialStatus = await GetInitialStatusAsync(entity);
-            order.OrderStatuses.Add(_mapper.Map<OrderStatus>(initialStatus));
+            //var initialStatus = await GetInitialStatusAsync(entity);
+            //order.OrderStatuses.Add(_mapper.Map<OrderStatus>(initialStatus));
 
             await _context.TransportOrders.AddAsync(order);
             await _context.SaveChangesAsync();
@@ -657,7 +657,7 @@ namespace Persistence.Services
                 .Include(o => o.OrderInternalStatuses).ThenInclude(os => os.User).ThenInclude(u => u.Customer)
                 .Include(o => o.OrderPhotos)
                 .Include(o => o.PickUpLocation)
-                .Where(o => o.CompanyId == Config.COMPANY_ID)
+                //.Where(o => o.CompanyId == Config.COMPANY_ID)
                 .FirstOrDefaultAsync(searchCriteria);
 
             if (order == null)

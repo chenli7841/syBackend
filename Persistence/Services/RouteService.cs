@@ -27,17 +27,20 @@ namespace Persistence.Services
             _storageService = storageService;
         }
 
-        public async Task<IEnumerable<RouteEntity>> ListAsync()
+        public async Task<IEnumerable<RouteEntity>> ListAsync(int[] companyId = null)
         {
-            var routes = await _context.Routes.Include(r => r.Warehouse).Where(r => r.IsFromChina && r.CompanyId == Config.COMPANY_ID)
+            var routes = await _context.Routes.Include(r => r.Warehouse).Where(r => r.IsFromChina && 
+                ((companyId == null && Config.COMPANY_IDS.Contains(r.CompanyId)) || (companyId != null && companyId.Contains(r.CompanyId))))
                 .Select(r => _mapper.Map<RouteEntity>(r))
                 .ToListAsync();
             return routes;
         }
 
-        public async Task<RouteEntity> GetAsync(int id, bool checkCompany = true)
+        public async Task<RouteEntity> GetAsync(int id, bool checkCompany = true, int? companyId = null)
         {
-            var route = await _context.Routes.FirstAsync(r => r.Id == id && (!checkCompany || r.CompanyId == Config.COMPANY_ID));
+            var route = await _context.Routes.FirstAsync(r => r.Id == id && (!checkCompany ||
+                (companyId == null && r.CompanyId == Config.COMPANY_ID) || (companyId != null && r.CompanyId == companyId)
+            ));
             var result = _mapper.Map<RouteEntity>(route);
             
             if (string.IsNullOrEmpty(route.Price))

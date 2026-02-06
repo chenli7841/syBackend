@@ -1306,9 +1306,9 @@ WHERE bb.BatchId=@batchId
         public async Task SplitByRecipientsAsync(int id)
         {
             var batch = await GetAsyncForSplitByRecipients(id);
-            if (batch.GroupType != BatchGroupType.WarehouseReceive && batch.GroupType != BatchGroupType.PickUpLocation)
+            if (batch.GroupType != BatchGroupType.LoadDelivery && batch.GroupType != BatchGroupType.WarehouseReceive && batch.GroupType != BatchGroupType.PickUpLocation)
             {
-                throw new Exception($"批次不是仓库收货或取货点，不能拆分。");
+                throw new Exception($"批次不是装车发货、仓库收货或取货点，不能拆分。");
             }
             if (!batch.GetActionTypes().Contains(BatchActionType.SplitByRecipients))
             {

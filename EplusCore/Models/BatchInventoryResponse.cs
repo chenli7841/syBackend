@@ -20,5 +20,7 @@ namespace WebUI.Models
         public IEnumerable<RouteEntity> Routes { get; set; }
         public IEnumerable<WarehouseEntity> Warehouses { get; internal set; }
         public IEnumerable<UserEntity> Users { get; set; }
+        public IEnumerable<CompanyEntity> Companies { get; set; }
+        public string CompanyIds { get; set; }
     }
 }

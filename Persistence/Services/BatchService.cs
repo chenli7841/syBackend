@@ -162,7 +162,7 @@ namespace Persistence.Services
             return result;
         }
 
-        public async Task<PagedResult<BatchEntity>> ListAsync(BatchListFilterOptions filterOptions)
+        public async Task<PagedResult<BatchEntity>> ListAsync(BatchListFilterOptions filterOptions, int[] companyIds)
         {
             var batchesFiltered = _context.Batches
                 .Where(b => b.IsFromChina
@@ -209,7 +209,7 @@ namespace Persistence.Services
             {
                 foreach (var box in b.BatchBoxes)
                 {
-                    box.BatchBoxOrderMaps = box.BatchBoxOrderMaps.Where(bbom => bbom.Order.CompanyId == Config.COMPANY_ID).ToList();
+                    box.BatchBoxOrderMaps = box.BatchBoxOrderMaps.Where(bbom => companyIds == null ? (bbom.Order.CompanyId == Config.COMPANY_ID) : companyIds.Contains(bbom.Order.CompanyId.Value)).ToList();
                 }
             }
 
@@ -696,7 +696,7 @@ WHERE bb.BatchId=@batchId
             return result;
         }
 
-        public async Task<BatchEntity> GetForEditAsync(int id)
+        public async Task<BatchEntity> GetForEditAsync(int id, int[] companyIds = null)
         {
             // Need batchId, batch.GroupType, batch.RouteId, otherOrders, box.Number, count box.order, total box.order.WeightKg
             // batch.Route.Type, batch.Stage
@@ -709,7 +709,7 @@ WHERE bb.BatchId=@batchId
                 .FirstAsync(b => b.Id == id);
             foreach(var b in batch.BatchBoxes)
             {
-                b.BatchBoxOrderMaps = b.BatchBoxOrderMaps.Where(bbom => bbom.Order.CompanyId == Config.COMPANY_ID).ToList();
+                b.BatchBoxOrderMaps = b.BatchBoxOrderMaps.Where(bbom => companyIds == null ? bbom.Order.CompanyId == Config.COMPANY_ID : companyIds.Contains(bbom.Order.CompanyId.Value)).ToList();
             }
             var result = _mapper.Map<BatchEntity>(batch);
             return result;

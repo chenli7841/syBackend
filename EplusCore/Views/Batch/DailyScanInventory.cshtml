@@ -32,7 +32,23 @@
                         <div style="display: flex; gap: 4px; height: 32px;">
                             @if (Model.GroupType == BatchGroupType.DailyScan || Model.GroupType == BatchGroupType.DailyReturn)
                             {
-                                @Html.ActionLink($"添加{Model.GroupType.GetDescription()}", "CreateDailyBatchPerWarehouse", null, new { groupType = Model.GroupType }, new { @class = "btn btn-primary" })
+                                @Html.ActionLink($"添加{Model.GroupType.GetDescription()}", "CreateDailyBatchPerWarehouse", null, new { groupType = Model.GroupType }, new { @class = "btn btn-primary", @style = "flex: none;" })
+                                <select class="form-control" id="company-select">
+                                    @{
+                                        var companies = Model.Companies.ToList();
+                                        for (int i = 0; i < companies.Count; i++)
+                                        {
+                                            var c = companies[i];
+                                            <option value="@c.Id">@c.Name</option>
+                                            if (i == companies.Count - 1)
+                                            {
+                                                var allCompanyIds = string.Join(",", companies.Select(c => c.Id));
+                                                <option value="@allCompanyIds">All</option>
+                                            }
+                                        }
+                                    }
+
+                                </select>
                             }
                         </div>
                         <div class="table-responsive">
@@ -95,7 +111,7 @@
                 "searchPanes": true,
                 "ajax": {
                     "url":
-                        '@Html.Raw(Url.Action("LoadData", new {groupType = Model.GroupType, routeId = Model.SelectedRouteId, recipientUserId=Model.SelectedRecipientUserId, belongsToUserId=Model.SelectedBelongsToUserId}))',
+                        '@Html.Raw(Url.Action("LoadData", new {groupType = Model.GroupType, companyIds = Model.CompanyIds, routeId = Model.SelectedRouteId, recipientUserId=Model.SelectedRecipientUserId, belongsToUserId=Model.SelectedBelongsToUserId}))',
                     "type": "POST",
                     "datatype": "json"
                 },
@@ -184,6 +200,18 @@
                     location = location + `&belongsToUserId=${belongsToUserId}`;
                 }
                 window.location.href = location;
+            });
+            let companyIds = '';
+            let search = document.location.search;
+            if (search.includes("?")) {
+                search = search.replace("?", "");
+                let part = search.split("&").find(p => p.split("=")[0].toLowerCase() === "companyids");
+                if (!part) companyIds = "";
+                else companyIds = part.split("=")[1];
+            }
+            $('#company-select').val(companyIds);
+            $('#company-select').change(function () {
+                document.location = `${document.location.origin}${document.location.pathname}?groupType=DailyScan&companyIds=${$('#company-select').val()}`;
             });
         });
 

@@ -64,24 +64,20 @@
                         </div>
                         <div class="col-md-9">
                             <div class="form-group row">
-                                <label class="col-sm-3 col-form-label" for="company-select">公司</label>
-                                <div class="col-sm-9">
-                                    <select class="form-control" id="company-select">
-                                        @{
-                                            for (int i = 0; i < companies.Count; i++)
+                                <select class="form-control" id="company-select">
+                                    @{
+                                        for (int i = 0; i < companies.Count; i++)
+                                        {
+                                            var c = companies[i];
+                                            <option value="@c.Id">@c.Name</option>
+                                            if (i == companies.Count - 1)
                                             {
-                                                var c = companies[i];
-                                                <option value="@c.Id">@c.Name</option>
-                                                if (i == companies.Count - 1)
-                                                {
-                                                    var allCompanyIds = string.Join(",", companies.Select(c => c.Id));
-                                                    <option value="@allCompanyIds">All</option>
-                                                }
+                                                var allCompanyIds = string.Join(",", companies.Select(c => c.Id));
+                                                <option value="@allCompanyIds">All</option>
                                             }
                                         }
-
-                                    </select>
-                                </div>
+                                    }
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -527,6 +523,20 @@
                         setTimeout(() => { window.location.reload(); }, 2 * 1000);
                     }
                 });
+        });
+
+
+        let companyIds = '';
+        let search = document.location.search;
+        if (search.includes("?")) {
+            search = search.replace("?", "");
+            let part = search.split("&").find(p => p.split("=")[0].toLowerCase() === "companyids");
+            if (!part) companyIds = "";
+            else companyIds = part.split("=")[1];
+        }
+        $('#company-select').val(companyIds);
+        $('#company-select').change(function () {
+            document.location = `${document.location.origin}${document.location.pathname}?id=@Model.Id&companyIds=${$('#company-select').val()}`;
         });
 
         $(document).ready(() => {

@@ -1,23 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using ClosedXML.Excel;
 using ClosedXML.Extensions;
 using Common;
+using DocumentFormat.OpenXml.Drawing.Charts;
+using Domain;
 using Domain.Entities;
 using Domain.Enums;
 using Domain.Models;
 using Domain.Services;
-using Persistence.Utils;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Persistence.Data;
+using Persistence.Utils;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using WebUI.Models;
 using WebUI.Models.DataTableRequest;
 using WebUI.Models.ViewModels;
-using Domain;
 
 namespace WebUI.Controllers
 {
@@ -127,12 +128,13 @@ namespace WebUI.Controllers
             return View(result);
         }
 
-        public async Task<IActionResult> Inventory(BatchGroupType groupType, int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId)
+        public async Task<IActionResult> Inventory(BatchGroupType groupType, string companyIds, int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId)
         {
             var warehouses = (await _warehouseService.ListAsync()).ToList();
             var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
             var isDisplayByWarehouse = groupType == BatchGroupType.DailyScan || groupType == BatchGroupType.DailyReturn;
             var users = await _userService.ListByBatchesAsync(groupType, routeId, warehouseId);
+            var companies = await _context.Companies.ToListAsync();
             var result = new BatchInventoryResponse()
             {
                 GroupType = groupType,
@@ -142,7 +144,9 @@ namespace WebUI.Controllers
                 Warehouses = warehouses.OrderBy(w => w.DisplaySequence),
                 Users = users,
                 SelectedRecipientUserId = recipientUserId,
-                SelectedBelongsToUserId = belongsToUserId
+                SelectedBelongsToUserId = belongsToUserId,
+                Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c)),
+                CompanyIds = companyIds
             };
             if (groupType == BatchGroupType.DailyScan)
             {
@@ -317,7 +321,7 @@ namespace WebUI.Controllers
             }
         }
 
-        public async Task<IActionResult> LoadData(BatchGroupType groupType, int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, DataTableRequestModel requestModel)
+        public async Task<IActionResult> LoadData(BatchGroupType groupType, string companyIds, int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, DataTableRequestModel requestModel)
         {
             try
             {
@@ -351,9 +355,15 @@ namespace WebUI.Controllers
                 {
                     data = await _batchService.ListWarehouseReceiveBatchAsync(filter);
                 }
+                else if (groupType == BatchGroupType.DailyScan)
+                {
+                    int parsed;
+                    var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
+                    data = await _batchService.ListAsync(filter, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
+                }
                 else
                 {
-                    data = await _batchService.ListAsync(filter);
+                    data = await _batchService.ListAsync(filter, null);
                 }
 
                 var viewModels = data.Items.Select(it => _mapper.Map<BatchViewModel>(it)).ToList();
@@ -376,9 +386,11 @@ namespace WebUI.Controllers
             return ViewComponent("BatchInfo", new {batch});
         }
 
-        public async Task<IActionResult> DailyScanEdit(int id)
+        public async Task<IActionResult> DailyScanEdit(int id, string companyIds)
         {
-            var batchEntity = await _batchService.GetForEditAsync(id);
+            int parsed;
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
+            var batchEntity = await _batchService.GetForEditAsync(id, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
             await SetEditDropdownOptions(batchEntity);
             return View(batchEntity);
         }

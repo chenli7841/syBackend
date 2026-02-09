@@ -27,12 +27,33 @@
             <div class="card-body order-card-body">
                 <h4>@Html.ActionLink(Model.Name, "DailyScanEdit", new {id = Model.Id}) - @Model.Boxes.First(b => b.Id == (int)ViewData["BoxId"]).Number</h4>
                 <div class="row">
-                    <label for="add-order-input" class="col-3">请输入待添加运单号或国内单号:</label>
-                    <input id="add-order-input" class="form-control col-3" type="text" autofocus />
-                    <button type="button" id="add-order-button" class="btn btn-warning col-1 offset-1">添加</button>
-                    <div class="">
-                        @Html.ActionLink("刷新", "DailyScanEditBoxRefresh", "Batch", new { id = Model.Id, boxId = (int)ViewData["BoxId"] }, new { @id = "batch-editbox-refresh", @class = "btn btn-primary", @style = "margin-left: 10px;" })
+                    <div class="col-3">
+                        <select class="form-control" id="company-select">
+                            @{
+                                var companies = Model.Companies.ToList();
+                                for (int i = 0; i < companies.Count; i++)
+                                {
+                                    var c = companies[i];
+                                    <option value="@c.Id">@c.Name</option>
+                                    if (i == companies.Count - 1)
+                                    {
+                                        var allCompanyIds = string.Join(",", companies.Select(c => c.Id));
+                                        <option value="@allCompanyIds">All</option>
+                                    }
+                                }
+                            }
+
+                        </select>
                     </div>
+                    <div class="col-9">
+                        <label for="add-order-input" class="col-3">请输入待添加运单号或国内单号:</label>
+                        <input id="add-order-input" class="form-control col-3" type="text" autofocus />
+                        <button type="button" id="add-order-button" class="btn btn-warning col-1 offset-1">添加</button>
+                        <div class="">
+                            @Html.ActionLink("刷新", "DailyScanEditBoxRefresh", "Batch", new { id = Model.Id, boxId = (int)ViewData["BoxId"] }, new { @id = "batch-editbox-refresh", @class = "btn btn-primary", @style = "margin-left: 10px;" })
+                        </div>
+                    </div>
+
                 </div>
                 <div class="table-responsive">
                     <table id="box-order-listing" class="table table-striped">
@@ -201,6 +222,20 @@
             if (e.keyCode === 13) {
                 submitThirdScan();
             }
+        });
+
+
+        let companyIds = '';
+        let search = document.location.search;
+        if (search.includes("?")) {
+            search = search.replace("?", "");
+            let part = search.split("&").find(p => p.split("=")[0].toLowerCase() === "companyids");
+            if (!part) companyIds = "";
+            else companyIds = part.split("=")[1];
+        }
+        $('#company-select').val(companyIds);
+        $('#company-select').change(function () {
+            document.location = `${document.location.origin}${document.location.pathname}?boxId=@(ViewData["BoxId"])&companyIds=${$('#company-select').val()}`;
         });
 
         var successSoundUrl = "https://i.cloudup.com/baNnhH1I7M.ogg";

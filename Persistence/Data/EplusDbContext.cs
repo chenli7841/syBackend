@@ -1997,6 +1997,11 @@ namespace Persistence.Data
 
                 entity.Property(e => e.BatchId).HasColumnType("int(11)");
 
+                entity.Property(e => e.UserId).HasColumnType("int(11)");
+
+                entity.Property(e => e.DateCreated).HasColumnType("datetime")
+                    .HasComment("日期");
+
                 entity.Property(e => e.OtherOrder).HasMaxLength(200);
 
                 entity.HasOne(d => d.Batch)
@@ -2004,6 +2009,12 @@ namespace Persistence.Data
                     .HasForeignKey(d => d.BatchId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_dbo.BatchOtherOrder_dbo.Batch_BatchId");
+
+                entity.HasOne(d => d.Creator)
+                    .WithMany(c => c.BatchOtherOrders)
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_dbo.BatchOtherOrder_dbo.User_UserId");
             });
 
             modelBuilder.Entity<Category>(entity =>

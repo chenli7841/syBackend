@@ -24,7 +24,7 @@ namespace Domain.Services
         Task<BatchEntity> GetForAddOrderAsync(int boxId);
         Task<BatchEntity> GetForEditBoxAsync(int boxId);
         Task<BatchEntity> AddOrderAsync(int boxId, int orderId, OrderEntity order = null);
-        Task AddOtherOrderAsync(int boxId, string number);
+        Task AddOtherOrderAsync(int boxId, string number, int userId);
         Task RemoveOrderAsync(int boxId, int orderId);
         Task<BatchEntity> SaveAsync(BatchEntity model);
         Task<PalletBatchEntity> SavePalletAsync(PalletBatchEntity model);

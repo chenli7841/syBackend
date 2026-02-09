@@ -9,3 +9,14 @@ END
 
 ALTER TABLE route
 ADD CONSTRAINT FK_Route_CompanyId FOREIGN KEY (CompanyId) REFERENCES company(Id);
+
+IF COL_LENGTH('dbo.batch_other_order', 'UserId') IS NULL
+BEGIN
+	ALTER TABLE `batch_other_order` ADD UserId INT(11) NULL
+	ALTER TABLE `batch_other_order` ADD CONSTRAINT `FK_dbo.BatchOtherOrder_dbo.User_UserId` FOREIGN KEY (`UserId`) REFERENCES `user` (`Id`) ON DELETE NO ACTION ON UPDATE NO ACTION;
+END
+
+IF COL_LENGTH('dbo.batch_other_order', 'DateCreated') IS NULL
+BEGIN
+    ALTER TABLE `batch_other_order` ADD DateCreated DATETIME NULL
+END

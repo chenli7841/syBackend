@@ -26,7 +26,27 @@
     <div class="col-md-12 grid-margin">
         <div class="card">
             <div class="card-body order-card-body">
-                <h4 class="card-title">搜索</h4>
+                <div class="row">
+                    <h4 class="card-title col-3">搜索</h4>
+                    <div class="col-9">
+                        <select class="form-control" id="company-select">
+                            @{
+                                var companies = Model.Companies.ToList();
+                                for (int i = 0; i < companies.Count; i++)
+                                {
+                                    var c = companies[i];
+                                    <option value="@c.Id">@c.Name</option>
+                                    if (i == companies.Count - 1)
+                                    {
+                                        var allCompanyIds = string.Join(",", companies.Select(c => c.Id));
+                                        <option value="@allCompanyIds">All</option>
+                                    }
+                                }
+                            }
+
+                        </select>
+                    </div>
+                </div>
                 <div class="table-responsive">
                     <table id='otherorder-listing-search' class="table table-striped">
                         <thead>
@@ -79,7 +99,7 @@
                 "stateSave": false,
                 "lengthChange": false, // for show entries dropdown
                 "ajax": {
-                    "url": '@Url.Action("LoadOtherOrder")',
+                    "url": '@Html.Raw(Url.Action("LoadOtherOrder", new {companyIds = Model.CompanyIds}))',
                     "type": "POST",
                     "datatype": "json"
                 },
@@ -102,6 +122,19 @@
 
             const orderTable = $(`#${tableId}`).DataTable(dataTableOptions);
             $("input[type='search']").closest('div.row').hide();
+
+            let companyIds = '';
+            let search = document.location.search;
+            if (search.includes("?")) {
+                search = search.replace("?", "");
+                let part = search.split("&").find(p => p.split("=")[0].toLowerCase() === "companyids");
+                if (!part) companyIds = "";
+                else companyIds = part.split("=")[1];
+            }
+            $('#company-select').val(companyIds);
+            $('#company-select').change(function () {
+                document.location = `${document.location.origin}${document.location.pathname}?companyIds=${$('#company-select').val()}`;
+            });
         });
     </script>
 }

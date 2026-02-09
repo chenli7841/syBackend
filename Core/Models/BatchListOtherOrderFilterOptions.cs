@@ -3,5 +3,6 @@
     public class BatchListOtherOrderFilterOptions : FilterOptions
     {
         public string Number { get; set; }
+        public int[] CompanyIds { get; set; }
     }
 }

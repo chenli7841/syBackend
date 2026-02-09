@@ -3,6 +3,8 @@ using ClosedXML.Excel;
 using ClosedXML.Extensions;
 using Common;
 using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Spreadsheet;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Domain;
 using Domain.Entities;
 using Domain.Enums;
@@ -261,9 +263,13 @@ namespace WebUI.Controllers
             }
         }
 
-        public IActionResult OtherOrder()
+        public async Task<IActionResult> OtherOrder(string companyIds)
         {
-            return View();
+            OrderInventoryResponse model = new OrderInventoryResponse();
+            var companies = await _context.Companies.ToListAsync();
+            model.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
+            model.CompanyIds = companyIds;
+            return View(model);
         }
 
         public IActionResult CouponInventory()
@@ -277,24 +283,18 @@ namespace WebUI.Controllers
             return RedirectToAction(nameof(Inventory), new {groupType});
         }
 
-        public async Task<IActionResult> LoadOtherOrder(DataTableRequestModel requestModel)
+        public async Task<IActionResult> LoadOtherOrder(DataTableRequestModel requestModel, string companyIds)
         {
             var orderToSearch = requestModel.GetColumnSearchValue("OtherOrder");
+            int parsed;
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
             var data = await _batchService.ListOtherOrderAsync(new BatchListOtherOrderFilterOptions()
             {
                 Number = orderToSearch,
                 PageSize = requestModel.Length,
-                Skip = requestModel.Start
-            });
-
-            var orders = await _orderService.ListAsync(new OrderListFilterOptions()
-            {
-                OrderNumberToSearch = orderToSearch,
-                PageSize = requestModel.Length,
                 Skip = requestModel.Start,
-                CompanyIds = Array.Empty<int>(),
+                CompanyIds = parsedCompanyIds.Length == 0 ? null : parsedCompanyIds,
             });
-
 
             return Json(new { requestModel.Draw, recordsFiltered = data.Total, recordsTotal = data.Total, data = data.Items });
         }
@@ -610,13 +610,15 @@ namespace WebUI.Controllers
             }
         }
 
-        public async Task<IActionResult> DailyScanEditBox(int boxId, int? highlightOrderId = null)
+        public async Task<IActionResult> DailyScanEditBox(int boxId, string companyIds, int? highlightOrderId = null)
         {
             var batchEntity = await _batchService.GetForEditBoxAsync(boxId);
             var box = batchEntity.Boxes.FirstOrDefault(b => b.Id == boxId);
             if (box != null && box.Orders != null && box.Orders.Any())
             {
-                box.Orders = box.Orders.Where(o => o.CompanyId == Config.COMPANY_ID).OrderByDescending(o => o.Status.Max(o => o.Date)).ToList();
+                int parsed;
+                var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
+                box.Orders = box.Orders.Where(o => parsedCompanyIds.Length == 0 ? o.CompanyId == Config.COMPANY_ID : parsedCompanyIds.Contains(o.CompanyId.Value)).OrderByDescending(o => o.Status.Max(o => o.Date)).ToList();
                 var scanStatusEntities = _batchService.GetOrderScanStatusEntities(box.Orders.Select(o => o.Id));
                 foreach (var order in box.Orders)
                 {
@@ -627,6 +629,8 @@ namespace WebUI.Controllers
                     }
                 }
             }
+            var companies = await _context.Companies.ToListAsync();
+            batchEntity.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
             ViewData["BoxId"] = boxId;
             return View(batchEntity);
         }
@@ -663,7 +667,7 @@ namespace WebUI.Controllers
 
                 if (order == null)
                 {
-                    await _batchService.AddOtherOrderAsync(boxId, orderNumber);
+                    await _batchService.AddOtherOrderAsync(boxId, orderNumber, _session.CurrentUser.Id);
                 }
                 else
                 {

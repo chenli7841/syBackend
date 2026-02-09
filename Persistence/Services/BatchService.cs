@@ -242,9 +242,11 @@ namespace Persistence.Services
         public async Task<PagedResult<BatchOtherOrderEntity>> ListOtherOrderAsync(
             BatchListOtherOrderFilterOptions filterOptions)
         {
-            var batches = _context.BatchOtherOrders.Include(b => b.Batch)
-                .Where(o => string.IsNullOrWhiteSpace(filterOptions.Number) ||
-                            o.OtherOrder.Contains(filterOptions.Number)).OrderByDescending(b => b.Batch.DateCreated);
+            var batches = _context.BatchOtherOrders.Include(b => b.Batch).Include(b => b.Creator)
+                .Where(o => (string.IsNullOrWhiteSpace(filterOptions.Number) ||
+                            o.OtherOrder.Contains(filterOptions.Number)) &&
+                            (filterOptions.CompanyIds == null || o.UserId == null || filterOptions.CompanyIds.Contains(o.Creator.CompanyId.Value))
+                ).OrderByDescending(b => b.Batch.DateCreated);
 
             var total = await batches.CountAsync();
             var pagedBatches = batches.Skip(filterOptions.Skip);
@@ -258,7 +260,9 @@ namespace Persistence.Services
             {
                 BatchId = o.BatchId,
                 BatchName = o.Batch.Name,
-                OtherOrder = o.OtherOrder
+                OtherOrder = o.OtherOrder,
+                DateCreated = o.DateCreated,
+                Creator = _mapper.Map<UserEntity>(o.Creator)
 
             });
             var items = await itemsQuery.ToListAsync();
@@ -937,21 +941,24 @@ WHERE bb.BatchId=@batchId
             var destBox = await _context.BatchBoxes.FirstAsync(bx => bx.Id == boxId);
             destBox.BatchBoxOrderMaps.Add(new BatchBoxOrderMap() {OrderId = orderId});
 
-            OrderState orderState;
+            OrderState orderState; 
             if (batch.GetNextGroupType(order.Route) == BatchGroupType.PendingDispatch)
             {
+                //var userPendingDispatch = await _context.Batches.Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps)
+                //    .FirstOrDefaultAsync(b => b.RouteId == order.RouteId && b.GroupType == (int) BatchGroupType.PendingDispatch && b.RecipientUserId == order.Creator.Id);
                 var userPendingDispatch = await _context.Batches.Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps)
-                    .FirstOrDefaultAsync(b => b.RouteId == order.RouteId && b.GroupType == (int) BatchGroupType.PendingDispatch && b.RecipientUserId == order.Creator.Id);
-                
+                    .FirstOrDefaultAsync(b => b.RouteId == null && b.GroupType == (int) BatchGroupType.PendingDispatch && b.RecipientUserId == order.Creator.Id);
+
                 if (userPendingDispatch == null)
                 {
                     userPendingDispatch = await CreateAsync(new BatchEntity()
                     {
-                        Name = $"{order.Creator.Code} {order.Route.Name}",
+                        Name = $"{order.Creator.Code} 待发货",
                         GroupType = BatchGroupType.PendingDispatch,
-                        RouteId = order.RouteId,
+                        RouteId = null,
                         RecipientId = order.Creator.Id,
-                        AgentId = order.Creator.BelongsTo.Id
+                        AgentId = order.Creator.BelongsTo.Id,
+                        CompanyId = order.CompanyId,
                     }, false, orderId);
                 }
                 else if (userPendingDispatch.BatchBoxes.All(b => b.BatchBoxOrderMaps.All(m => m.OrderId != orderId)))
@@ -1025,7 +1032,7 @@ WHERE bb.BatchId=@batchId
             return batch;
         }
 
-        public async Task AddOtherOrderAsync(int boxId, string number)
+        public async Task AddOtherOrderAsync(int boxId, string number, int userId)
         {
             var batchBox = await _context.BatchBoxes.Include(bx => bx.Batch).ThenInclude(b => b.BatchOtherOrders).FirstOrDefaultAsync(bx => bx.Id == boxId);
             if (batchBox != null && !batchBox.Batch.BatchOtherOrders.Select(b => b.OtherOrder).Contains(number))
@@ -1033,7 +1040,9 @@ WHERE bb.BatchId=@batchId
                 batchBox.Batch.BatchOtherOrders.Add(new BatchOtherOrder()
                 {
                     BatchId = batchBox.Batch.Id,
-                    OtherOrder = number
+                    OtherOrder = number,
+                    DateCreated = DateTime.Now,
+                    UserId = userId,
                 });
 
                 // TODO: add hard refresh
@@ -2136,7 +2145,7 @@ WHERE bb.BatchId=@batchId
                 DateEntered = model.DateEntered,
                 UserId = _session.CurrentUser.Id,
                 Note = model.Note,
-                CompanyId = model.GroupType == BatchGroupType.DailyScan ? null : Config.COMPANY_ID,
+                CompanyId = model.GroupType == BatchGroupType.DailyScan ? null : (model.CompanyId ?? Config.COMPANY_ID),
             };
 
             var batchBox = new BatchBox() { Number = 1 };

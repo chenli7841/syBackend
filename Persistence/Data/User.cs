@@ -32,6 +32,7 @@ namespace Persistence.Data
             CouponAssignedUsers = new HashSet<Coupon>();
             CouponConsumedUsers = new HashSet<Coupon>();
             TodoItemAssignees = new HashSet<TodoItemAssignee>();
+            BatchOtherOrders = new HashSet<BatchOtherOrder>();
         }
 
         public int Id { get; set; }
@@ -106,6 +107,7 @@ namespace Persistence.Data
         public virtual ICollection<TodoItemAssignee> TodoItemAssignees { get; set; }
         public virtual ICollection<TodoItemCustomer> TodoItemCustomers { get; set; }
         public virtual ICollection<TodoItem> TodoItems { get; set; }
+        public virtual ICollection<BatchOtherOrder> BatchOtherOrders { get; set; }
         public virtual Company Company { get; set; }
         public virtual Role UserRole { get; set; }
     }

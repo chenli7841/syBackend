@@ -54,6 +54,8 @@ namespace Domain.Entities
         public DateTime? ArrivalTime { get; set; }
         public string Note { get; set; }
         public IEnumerable<WarehouseEntity> Warehouses { get; set; }
+        public IEnumerable<CompanyEntity> Companies { get; set; }
+        public int? CompanyId { get; set; }
 
         public OrderState GetOrderState(BatchGroupType? groupTypeToUse = null)
         {
@@ -296,6 +298,8 @@ namespace Domain.Entities
         public string OtherOrder { get; set; }
         public int BatchId { get; set; }
         public string BatchName { get; set; }
+        public UserEntity Creator { get; set; }
+        public DateTime? DateCreated { get; set; }
     }
 
     public class OrderScanStatusEntity

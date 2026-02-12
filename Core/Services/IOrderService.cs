@@ -9,6 +9,7 @@ namespace Domain.Services
     public interface IOrderService
     {
         Task<PagedResult<OrderEntity>> ListAsync(OrderListFilterOptions filterOptions);
+        Task<PagedResult<OrderEntity>> ListSummaryAsync(OrderListFilterOptions filterOptions);
         void ClearCache(int id);
         Task<OrderEntity> GetAsync(int id);
         Task AddStatus(OrderStatusType status, int operatorId, params OrderEntity[] orders);

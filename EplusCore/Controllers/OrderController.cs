@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Common;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using Domain.Entities;
 using Domain.Enums;
 using Domain.Models;
@@ -146,6 +147,21 @@ namespace WebUI.Controllers
             };
 
             return Json(new { draw = requestModel.Draw, recordsFiltered = data.Total, recordsTotal = data.Total, data = data.Items});
+        }
+
+        public async Task<IActionResult> SearchOrderToAddByDomesticNumber(string companyIds, string searchText, int pageSize)
+        {
+            int parsed;
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
+            var orders = await _orderService.ListSummaryAsync(new OrderListFilterOptions()
+            {
+                DomesticNumberToSearch = searchText,
+                OrderState = OrderState.Created,
+                PageSize = pageSize,
+                CompanyIds = parsedCompanyIds
+            });
+
+            return Json(new { data = orders.Items.Select(it => _mapper.Map<OrderInventoryViewModel>(it)) });
         }
 
         public async Task<IActionResult> SetOrderState(int id, OrderState state, string reason)

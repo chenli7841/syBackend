@@ -134,6 +134,40 @@ namespace Persistence.Services
             return result;
         }
 
+
+        public async Task<PagedResult<OrderEntity>> ListSummaryAsync(OrderListFilterOptions filterOptions)
+        {
+            var companyIds = new List<int>();
+            if (filterOptions.CompanyIds.Length > 0)
+            {
+                companyIds = filterOptions.CompanyIds.ToList();
+            }
+            else
+            {
+                companyIds.Add(Config.COMPANY_ID);
+            }
+            var orders = _context.TransportOrders
+                .Where(o => companyIds.Contains(o.CompanyId.Value)
+                            && (o.IsFromChina)
+                            && (!filterOptions.OrderState.HasValue || o.State == (int)filterOptions.OrderState.Value)
+                            && (string.IsNullOrEmpty(filterOptions.DomesticNumberToSearch) || o.DomesticNumber.Contains(filterOptions.DomesticNumberToSearch))
+                )
+                .Include(o => o.OrderBaggages)
+                .OrderByDescending(o => o.DateCreated);
+
+            var total = await orders.CountAsync();
+            var pagedOrders = orders.Skip(filterOptions.Skip).Take(filterOptions.PageSize);
+            var items = await pagedOrders.Select(
+                o => _mapper.Map<OrderEntity>(o)).ToListAsync();
+
+            var result = new PagedResult<OrderEntity>()
+            {
+                Total = total,
+                Items = items
+            };
+
+            return result;
+        }
         public void ClearCache(int id)
         {
             _memoryCache.Remove($"order-{id}");

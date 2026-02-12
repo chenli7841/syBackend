@@ -23,6 +23,7 @@ namespace WebUI.Models.ViewModels
         public IList<BatchViewModel> Batches { get; set; }
         public string StateText { get; set; }
         public string CargoNumber { get; set; }
+        public int? BaggageCount { get; set; }
 
         public string DeliveryBatch
         {

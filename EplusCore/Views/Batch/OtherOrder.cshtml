@@ -53,6 +53,8 @@
                             <tr>
                                 <th data-searchable="true">单号</th>
                                 <th>所属批次</th>
+                                <th>创建时间</th>
+                                <th>操作员</th>
                             </tr>
                         </thead>
                     </table>
@@ -106,6 +108,14 @@
                 "columns": [
                     { "data": "otherOrder", "name": "OtherOrder", "autoWidth": true },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("Edit")?id=${full.batchId}'>${full.batchName}</a>` },
+                    { "data": "dateCreated", "name": "DateCreated", "autoWidth": true },
+                    { "render": (data, type, full, meta) => {
+                        if (full.creator) {
+                            return full.creator.userName;
+                        } else {
+                            return '';
+                        }
+                    } },
                 ],
                 "language": {
                     // https://datatables.net/manual/i18n

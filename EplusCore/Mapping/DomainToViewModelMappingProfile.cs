@@ -1,7 +1,8 @@
-﻿using System.Linq;
-using AutoMapper;
+﻿using AutoMapper;
 using Domain.Entities;
 using Domain.Models.Extensions;
+using System.Collections.Generic;
+using System.Linq;
 using WebUI.Models.ViewModels;
 
 namespace WebUI.Mapping
@@ -31,11 +32,16 @@ namespace WebUI.Mapping
                 .ForMember(dest => dest.BelongsToName, opt => opt.MapFrom(src => src.BelongsTo == null ? "" : src.BelongsTo.Name));
         }
 
+        private int? GetBaggageCount(IEnumerable<OrderBaggageEntity> baggages)
+        {
+            return baggages == null ? null : baggages.ToList().Count;
+        }
         private void CreateMapForOrder()
         {
             CreateMap<OrderEntity, OrderInventoryViewModel>()
                 .ForMember(dest => dest.StateText, opt => opt.MapFrom(src => src.State.GetDescription()))
-                .ForMember(dest => dest.LatestStatus, opt => opt.MapFrom(src => src.Status.OrderByDescending(os => os.Date).FirstOrDefault() ?? new OrderStatusEntity()));
+                .ForMember(dest => dest.LatestStatus, opt => opt.MapFrom(src => src.Status.OrderByDescending(os => os.Date).FirstOrDefault() ?? new OrderStatusEntity()))
+                .ForMember(dest => dest.BaggageCount, opt => opt.MapFrom(src => GetBaggageCount(src.Baggages)));
 
             CreateMap<OrderEntity, OrderDetailViewModel>()
                 .ForMember(dest => dest.InsuranceClaim, opt => opt.MapFrom(src => src.Insurance * 10));

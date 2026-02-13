@@ -86,8 +86,8 @@
     </div>
 </div>
 
-<div class="modal fade" style="width: 800px;" id="orderSearchModal" tabindex="-1" role="dialog" aria-labelledby="orderSearchModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+<div class="modal fade" id="orderSearchModal" tabindex="-1" role="dialog" aria-labelledby="orderSearchModalLabel" aria-hidden="true">
+    <div class="modal-dialog" style="max-width: 800px;" role="document">
         <div class="modal-content">
             <div class="modal-body">
                 <p id="orderSearchText"></p>
@@ -129,85 +129,88 @@
             }
         });
 
-        $('#add-order-button').click(() => {
+        function addOrder(orderNumber) {
             const self = $('#add-order-button');
-            const orderNumber = $('#add-order-input').val();
-
             self.text('添加中');
             self.attr('disabled', true);
 
-            $.post(addOrderUrl,
-                {
-                    boxId,
-                    orderNumber,
-                },
-                function (result) {
-                    if (result.error && result.error.text) {
+            $.post(addOrderUrl, {
+                boxId,
+                orderNumber,
+            },
+            function (result) {
+                if (result.error && result.error.text) {
+                    $.toast({
+                        heading: 'Danger',
+                        text: result.error.text,
+                        showHideTransition: 'slide',
+                        icon: 'error',
+                        loaderBg: '#f2a654',
+                        position: 'mid-center',
+                        hideAfter: 2000,
+                    });
+                } else {
+                    if (result.data) {
+                        const { orderNumber, creator, domesticNumber, pickUpLocation, weightKg, baggages } = result.data;
+                        const creatorFull = $.extend({ name: '', belongsTo: { name: '' } }, creator);
+                        const row = $('<tr>')
+                            .append(`<td>${orderNumber}</td>`)
+                            .append(`<td>${domesticNumber}</td>`)
+                            .append(`<td>${weightKg}</td>`)
+                            .append(`<td>${baggages.length}</td>`)
+                            .append(`<td></td>`);
+
+                        ordersTable.row.add(row);
+                        $('#box-order-listing tbody').prepend(row);
+
+                        $('#add-order-input').val("");
                         $.toast({
-                            heading: 'Danger',
-                            text: result.error.text,
+                            heading: 'Success',
+                            text: `添加成功。运单线路:${result.data.route.name}`,
                             showHideTransition: 'slide',
-                            icon: 'error',
+                            icon: 'success',
                             loaderBg: '#f2a654',
                             position: 'mid-center',
                             hideAfter: 2000,
                         });
                     } else {
-                        if (result.data) {
-                            const { orderNumber, creator, domesticNumber, pickUpLocation, weightKg, baggages } = result.data;
-                            const creatorFull = $.extend({ name: '', belongsTo: { name: '' } }, creator);
-                            const row = $('<tr>')
-                                .append(`<td>${orderNumber}</td>`)
-                                .append(`<td>${domesticNumber}</td>`)
-                                .append(`<td>${weightKg}</td>`)
-                                .append(`<td>${baggages.length}</td>`)
-                                .append(`<td></td>`);
 
-                            ordersTable.row.add(row);
-                            $('#box-order-listing tbody').prepend(row);
-
-                            $('#add-order-input').val("");
-                            $.toast({
-                                heading: 'Success',
-                                text: `添加成功。运单线路:${result.data.route.name}`,
-                                showHideTransition: 'slide',
-                                icon: 'success',
-                                loaderBg: '#f2a654',
-                                position: 'mid-center',
-                                hideAfter: 2000,
-                            });
-                        } else {
-                            
-                            let companyIds = '';
-                            let search = document.location.search;
-                            if (search.includes("?")) {
-                                search = search.replace("?", "");
-                                let part = search.split("&").find(p => p.split("=")[0].toLowerCase() === "companyids");
-                                if (!part) companyIds = "";
-                                else companyIds = part.split("=")[1];
-                            }
-                            fetch(`${searchOrderToAddUrl}?companyids=${companyIds}&searchText=${orderNumber}&pageSize=10`).then(res => res.json()).then(result => {
-                                let orderRowHTML = '';
-                                for (const o of result.data) {
-                                    orderRowHTML += `<tr><td>${o.orderNumber}</td><td>${o.domesticNumber}</td><td>${o.dateCreated.split('T')[0]}</td><td></td><td><button class="btn btn-action btn-secondary">入库</button></td></tr>`;
-                                }
-                                document.getElementById('searchedOrderList').innerHTML = orderRowHTML;
-                                $('#orderSearchModalBtn').click();
-                            });
-                            $.toast({
-                                heading: 'Warning',
-                                text: `单号不存在。已加入其他单。`,
-                                showHideTransition: 'slide',
-                                icon: 'warning',
-                                loaderBg: '#f2a654',
-                                position: 'mid-center'
-                            });
+                        let companyIds = '';
+                        let search = document.location.search;
+                        if (search.includes("?")) {
+                            search = search.replace("?", "");
+                            let part = search.split("&").find(p => p.split("=")[0].toLowerCase() === "companyids");
+                            if (!part) companyIds = "";
+                            else companyIds = part.split("=")[1];
                         }
+                        fetch(`${searchOrderToAddUrl}?companyids=${companyIds}&searchText=${orderNumber}&pageSize=10`).then(res => res.json()).then(result => {
+                            let orderRowHTML = '';
+                            for (const o of result.data) {
+                                orderRowHTML += `<tr><td>${o.orderNumber}</td><td>${o.domesticNumber}</td><td>${o.dateCreated.split('T')[0]}</td><td>${o.baggageCount}</td><td><button class="btn btn-action btn-secondary" onclick="addOrder('${o.orderNumber}')">入库</button></td></tr>`;
+                            }
+                            document.getElementById('searchedOrderList').innerHTML = orderRowHTML;
+                            $('#orderSearchModalBtn').click();
+                        });
+                        $.toast({
+                            heading: 'Warning',
+                            text: `单号不存在。已加入其他单。`,
+                            showHideTransition: 'slide',
+                            icon: 'warning',
+                            loaderBg: '#f2a654',
+                            position: 'mid-center'
+                        });
                     }
+                }
 
-                    self.text('添加');
-                    self.attr('disabled', false);
-                });
+                self.text('添加');
+                self.attr('disabled', false);
+            });
+        }
+
+        $('#add-order-button').click(() => {
+            const orderNumber = $('#add-order-input').val();
+            addOrder(orderNumber);
+
         });
 
         $('#merge').click(function () {

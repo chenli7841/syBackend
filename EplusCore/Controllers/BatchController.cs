@@ -712,7 +712,7 @@ namespace WebUI.Controllers
         public async Task<ActionResult> RemoveOrder(int boxId, int orderId)
         {
             await _batchService.RemoveOrderAsync(boxId, orderId);
-            return RedirectToAction(nameof(EditBox), new {boxId});
+            return RedirectToAction(nameof(DailyScanEditBox), new {boxId});
         }
 
         public async Task<IActionResult> AddBox(int id, int boxNumber)

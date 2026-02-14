@@ -274,6 +274,24 @@ namespace Domain.Entities
         }
     }
 
+    public class PendingDispatchBatchEntity
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public DateTime? LastOrderAddedDate { get; set; }
+        public int TotalBatchOrderCount { get; set; }
+        public int CreatedOrderCount { get; set; }
+        public decimal TotalWeightKg { get; set; }
+        public decimal TotalOrderShippingCost { get; set; }
+
+        public decimal Duty { get; set; }
+
+        public decimal StorageCost { get; set; }
+
+        public decimal Discount { get; set; }
+        public decimal TotalShippingCost => TotalOrderShippingCost + Duty + StorageCost - Discount;
+    }
+
     public class BatchBoxEntity
     {
         public int Id { get; set; }

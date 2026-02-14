@@ -49,4 +49,13 @@ namespace WebUI.Models.ViewModels
         public DateTime? ArrivalTime { get; set; }
         public string ArrivalTimeDisplay => ArrivalTime?.ToString("yy/MM/dd HH:mm");
     }
+
+    public class PendingDispatchBatchViewModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public DateTime? LastOrderAddedDate { get; set; }
+        public int TotalBatchOrderCount { get; set; }
+        public int CreatedOrderCount { get; set; }
+    }
 }

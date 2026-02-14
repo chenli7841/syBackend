@@ -1,22 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using Common;
+using Domain;
 using Domain.Entities;
 using Domain.Enums;
 using Domain.Models;
 using Domain.Models.Extensions;
 using Domain.Services;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Persistence.Data;
 using Persistence.Utils;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
+using System.Linq;
 using System.Net;
 using System.Net.Mail;
-using Domain;
+using System.Reflection.PortableExecutable;
+using System.Text;
+using System.Threading.Tasks;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Persistence.Services
 {
@@ -172,7 +177,7 @@ namespace Persistence.Services
                 && (!filterOptions.Ids.Any() || filterOptions.Ids.Contains(b.Id))
                 && (!filterOptions.RecipientIds.Any() || (b.RecipientUserId != null && filterOptions.RecipientIds.Contains(b.RecipientUserId.Value)))
                 && (!filterOptions.BelongsToUserIds.Any() || (b.BelongsToUserId != null && filterOptions.BelongsToUserIds.Contains(b.BelongsToUserId.Value)))
-                && (filterOptions.GroupType == BatchGroupType.DailyScan || b.CompanyId == Config.COMPANY_ID)
+                && (filterOptions.GroupType == BatchGroupType.DailyScan || (companyIds == null ? (b.CompanyId == Config.COMPANY_ID) : companyIds.Contains(b.CompanyId.Value)))
                 )
                 .Include(b => b.BatchBoxes)
                     .ThenInclude(bx => bx.BatchBoxOrderMaps)
@@ -223,6 +228,105 @@ namespace Persistence.Services
             };
 
             return result;
+        }
+
+        private void AddParameter(DbCommand command, string name, DbType type, object value)
+        {
+            var param1 = command.CreateParameter();
+            param1.ParameterName = name;
+            param1.Value = value;
+            param1.DbType = type;
+            command.Parameters.Add(param1);
+        }
+        public async Task<PagedResult<PendingDispatchBatchEntity>> ListPendingDispatchAsync(BatchListFilterOptions filterOptions, int[] companyIds)
+        {
+            var batches = new List<PendingDispatchBatchEntity>();
+            var companyIdsPlaceholders = new List<string>();
+            companyIds ??= new int[1] { Config.COMPANY_ID };
+            for (int i = 0; i < companyIds.Length; i++)
+            {
+                companyIdsPlaceholders.Add($"@companyId{i}");
+            }
+            var getQuery = (List<string>placeholders, bool countTotal) => @$"
+SELECT user_created_order.Id, Name, totalOrderShippingCost, Duty, Discount, StorageCost, totalOrdersInBatch, lastAddedToBatchDate, totalWeightKg, userCreatedOrderCount FROM
+(
+    SELECT b.Id, 
+    COUNT(DISTINCT CASE WHEN r.Type=@routeType THEN created_order.Id END) userCreatedOrderCount
+    FROM batch b
+    LEFT JOIN transport_order created_order ON b.RecipientUserId = created_order.CreatedById AND created_order.State=@orderState
+    LEFT JOIN route r ON created_order.RouteId=r.Id
+    WHERE b.GroupType=@groupType AND b.CompanyId IN ({string.Join(",", placeholders)})
+    GROUP BY b.Id, b.Name, b.Duty, b.Discount, b.StorageCost
+) user_created_order
+LEFT JOIN
+(
+    select b.Id, b.Name, b.Duty, b.Discount, b.StorageCost, COUNT(DISTINCT bbom.OrderId) totalOrdersInBatch, MAX(os.DateCreated) lastAddedToBatchDate,  SUM(batch_order.WeightKg) totalWeightKg, SUM(batch_order.ShippingCost) totalOrderShippingCost
+    FROM batch b
+    LEFT JOIN batch_box bb ON b.Id=bb.BatchId
+    LEFT JOIN batch_box_order_map bbom ON bb.Id=bbom.BatchBoxId
+    LEFT JOIN transport_order batch_order ON bbom.OrderId=batch_order.Id
+    LEFT JOIN order_status os ON os.OrderId=bbom.OrderId AND os.Status=@orderStatus
+    WHERE b.GroupType=@groupType AND b.CompanyId IN ({string.Join(",", placeholders)})
+    GROUP BY b.Id, b.Duty, b.Discount, b.StorageCost
+) batch_order ON user_created_order.Id=batch_order.Id
+ORDER BY totalOrdersInBatch DESC
+{(countTotal ? "" : "LIMIT @pageSize OFFSET @skip")}";
+            var addParameters = (DbCommand command) =>
+            {
+                for (int i = 0; i < companyIds.Length; i++)
+                {
+                    var paramName = $"@companyId{i}";
+                    AddParameter(command, paramName, DbType.Int32, companyIds[i]);
+                }
+                AddParameter(command, "@orderStatus", DbType.Int32, (int)OrderStatusType.EnterWarehouseAndScan);
+                AddParameter(command, "@groupType", DbType.Int32, (int)BatchGroupType.PendingDispatch);
+                AddParameter(command, "@routeType", DbType.Int32, (int)RouteType.Direct);
+                AddParameter(command, "@orderState", DbType.Int32, (int)OrderState.Created);
+                AddParameter(command, "@skip", DbType.Int32, filterOptions.Skip);
+                AddParameter(command, "@pageSize", DbType.Int32, filterOptions.PageSize);
+            };
+            using (var conn = _context.Database.GetDbConnection())
+            {
+                conn.Open();
+                using (var command = conn.CreateCommand())
+                {
+                    command.CommandText = $"SELECT COUNT(1) FROM ({getQuery(companyIdsPlaceholders, true)}) t; {getQuery(companyIdsPlaceholders, false)}";
+                    addParameters(command);
+                    var itemResult = await command.ExecuteReaderAsync();
+                    await itemResult.ReadAsync();
+                    var totalCount = itemResult.GetInt32(0);
+                    await itemResult.NextResultAsync();
+                    while (itemResult.Read())
+                    {
+                        if (itemResult[0] != DBNull.Value)
+                        {
+                            var batch = new PendingDispatchBatchEntity
+                            {
+                                //user_created_order.Id, Name, totalOrderShippingCost, Duty, Discount, StorageCost, totalOrdersInBatch, lastAddedToBatchDate, totalWeightKg, userCreatedOrderCount
+                                Id = itemResult.GetInt32(0),
+                                Name = itemResult.GetString(1),
+                                TotalOrderShippingCost = itemResult.GetDecimal(2),
+                                Duty = itemResult.GetDecimal(3),
+                                Discount = itemResult.GetDecimal(4),
+                                StorageCost = itemResult.GetDecimal(5),
+                                TotalBatchOrderCount = itemResult.GetInt32(6),
+                                LastOrderAddedDate = itemResult.GetDateTime(7),
+                                TotalWeightKg = itemResult.GetDecimal(8),
+                                CreatedOrderCount = itemResult.GetInt32(9)
+                            };
+                            batches.Add(batch);
+                        }
+                    }
+                    var result = new PagedResult<PendingDispatchBatchEntity>()
+                    {
+                        Total = totalCount,
+                        Items = batches
+                    };
+
+                    return result;
+                }
+            }
+
         }
 
         public async Task<IEnumerable<BatchEntity>> ListMasterBatchesAsync(BatchGroupType groupType, int? routeId)

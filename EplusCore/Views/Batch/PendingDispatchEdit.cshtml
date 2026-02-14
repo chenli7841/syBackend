@@ -1,0 +1,97 @@
+﻿@using Domain.Entities
+@using Domain.Enums
+@using Domain.Models.Extensions
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model Domain.Entities.BatchEntity
+
+@{
+    ViewData["Title"] = "批次详情";
+}
+
+@section Styles
+{
+    <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
+    <style>
+        #totalShippingCostBtn {
+            border: none;
+            background: transparent;
+            color: #6200EE;
+            padding-left: 0;
+            cursor: pointer;
+        }
+
+    </style>
+}
+
+@{
+    var recipients = (IEnumerable<UserEntity>)ViewBag.Recipients;
+    var agents = (IEnumerable<UserEntity>)ViewBag.Agents;
+    var pickuplocations = (IEnumerable<PickUpLocationEntity>)ViewBag.PickUpLocations;
+    var masterBatches = (IEnumerable<BatchEntity>)ViewBag.MasterBatches;
+}
+
+<div class="row">
+    <div class="col-md-12 grid-margin">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">@(Model.Id > 0 ? "修改批次" : "创建批次") @(Model.GroupType.GetDescription())</h4>
+
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Name, "名称", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.Name, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                @if (Model.Id > 0)
+                {
+                    <div class="table-responsive">
+                        <table id="box-listing" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>箱号</th>
+                                    <th>总单数</th>
+                                    <th>总重量</th>
+                                    <th>编号</th>
+                                    <th>打印</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var box in Model.Boxes.OrderBy(b => b.Number))
+                                {
+                                    <tr>
+                                        <td>@Html.ActionLink(box.Number.ToString(), "EditBox", new { boxId = box.Id })</td>
+                                        <td>@box.Orders.Count()</td>
+                                        <td>@box.Orders.Sum(o => o.WeightKg)</td>
+                                        <td>@Model.Id - @box.Number</td>
+                                        <td><a href='@Url.Action("PrintBatchBox")?id=@box.Id' target="_blank"><i class="fa fa-print fa-lg"></i></a></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
+    <script>
+        $('#box-listing').DataTable({
+            paging: false,
+            searching: false,
+            info: false,
+            order: [],
+            language: {
+                search: "搜索:",
+            },
+        });
+    </script>
+}

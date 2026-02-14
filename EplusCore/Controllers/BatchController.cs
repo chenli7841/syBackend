@@ -163,6 +163,24 @@ namespace WebUI.Controllers
                 return View(result);
             }
         }
+        public async Task<IActionResult> PendingDispatchInventory(string companyIds, int? recipientUserId, int? belongsToUserId)
+        {
+            var companies = await _context.Companies.ToListAsync();
+            var result = new BatchInventoryResponse()
+            {
+                GroupType = BatchGroupType.PendingDispatch,
+                SelectedRouteId = null,
+                Routes = new RouteEntity[0],
+                SelectedWarehouseId = null,
+                Warehouses = new WarehouseEntity[0],
+                Users = new UserEntity[0],
+                SelectedRecipientUserId = recipientUserId,
+                SelectedBelongsToUserId = belongsToUserId,
+                Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c)),
+                CompanyIds = companyIds
+            };
+            return View(result);
+        }
         public async Task<IActionResult> WarehouseReceiveInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId)
         {
             var warehouses = (await _warehouseService.ListAsync()).ToList();
@@ -355,7 +373,7 @@ namespace WebUI.Controllers
                 {
                     data = await _batchService.ListWarehouseReceiveBatchAsync(filter);
                 }
-                else if (groupType == BatchGroupType.DailyScan)
+                else if (groupType == BatchGroupType.DailyScan || groupType == BatchGroupType.PendingDispatch)
                 {
                     int parsed;
                     var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
@@ -379,6 +397,33 @@ namespace WebUI.Controllers
             }
         }
 
+        public async Task<IActionResult> LoadPendingDispatchData(string companyIds, DataTableRequestModel requestModel)
+        {
+            try
+            {
+                var filter = new BatchListFilterOptions()
+                {
+                    GroupType = BatchGroupType.PendingDispatch,
+                    PageSize = requestModel.Length,
+                    Skip = requestModel.Start
+                };
+
+                PagedResult<PendingDispatchBatchEntity> data = null;
+                int parsed;
+                var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
+                data = await _batchService.ListPendingDispatchAsync(filter, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
+                return Json(new { requestModel.Draw, recordsFiltered = data.Total, recordsTotal = data.Total, data = data.Items });
+            }
+            catch (Exception e)
+            {
+                return Json(new MethodResult<object>(new Error
+                {
+                    Name = "LoadPendingDispatchDataError",
+                    Text = e.Message
+                }));
+            }
+        }
+
         public async Task<IActionResult> QuickView(int id)
         {
             var batchEntity = await _batchService.GetAsync(id);
@@ -387,6 +432,15 @@ namespace WebUI.Controllers
         }
 
         public async Task<IActionResult> DailyScanEdit(int id, string companyIds)
+        {
+            int parsed;
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
+            var batchEntity = await _batchService.GetForEditAsync(id, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
+            await SetEditDropdownOptions(batchEntity);
+            return View(batchEntity);
+        }
+
+        public async Task<IActionResult> PendingDispatchEdit(int id, string companyIds)
         {
             int parsed;
             var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();

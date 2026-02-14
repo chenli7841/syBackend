@@ -7,7 +7,7 @@
 }
 
 @section Styles
-    {
+{
     <link rel="stylesheet" href="~/vendors/select2/select2.min.css">
     <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
 }
@@ -26,43 +26,41 @@
     <div class="col-md-12 grid-margin">
         <div class="card">
             <div class="card-body">
-                <h4 class="card-title">@Model.GroupType.GetDescription()</h4>
+                <div class="row" style="margin: 0; gap: 20px; align-items: center;">
+                    <h4 class="card-title" style="margin-bottom: 0">@Model.GroupType.GetDescription()</h4>
+                    <div style="display: flex; gap: 4px; height: 32px; flex: 1;">
+                        <select class="form-control" id="company-select">
+                            @{
+                                var companies = Model.Companies.ToList();
+                                for (int i = 0; i < companies.Count; i++)
+                                {
+                                    var c = companies[i];
+                                    <option value="@c.Id">@c.Name</option>
+                                    if (i == companies.Count - 1)
+                                    {
+                                        var allCompanyIds = string.Join(",", companies.Select(c => c.Id));
+                                        <option value="@allCompanyIds">All</option>
+                                    }
+                                }
+                            }
+
+                        </select>
+                    </div>
+                </div>
                 <div class="tab-content tab-content-solid">
                     <div class="tab-pane fade show active" id="home-5-1" role="tabpanel" aria-labelledby="tab-5-1">
-                        <div style="display: flex; gap: 4px; height: 32px;">
-                            @if (Model.GroupType == BatchGroupType.DailyScan || Model.GroupType == BatchGroupType.DailyReturn)
-                            {
-                                @Html.ActionLink($"添加{Model.GroupType.GetDescription()}", "CreateDailyBatchPerWarehouse", null, new { groupType = Model.GroupType }, new { @class = "btn btn-primary", @style = "flex: none;" })
-                                <select class="form-control" id="company-select">
-                                    @{
-                                        var companies = Model.Companies.ToList();
-                                        for (int i = 0; i < companies.Count; i++)
-                                        {
-                                            var c = companies[i];
-                                            <option value="@c.Id">@c.Name</option>
-                                            if (i == companies.Count - 1)
-                                            {
-                                                var allCompanyIds = string.Join(",", companies.Select(c => c.Id));
-                                                <option value="@allCompanyIds">All</option>
-                                            }
-                                        }
-                                    }
-
-                                </select>
-                            }
-                        </div>
                         <div class="table-responsive">
                             <table id="batch-listing" class="table table-striped">
                                 <thead>
                                     <tr>
                                         <th>ID</th>
                                         <th>名称</th>
-                                        <th>创建日期</th>
+                                        <th>用户直邮未入库单数</th>
                                         <th>总单数</th>
+                                        <th>最近入库时间</th>
                                         <th>总重量</th>
                                         <th>总费用</th>
                                         <th>详情</th>
-                                        <th>导出</th>
                                     </tr>
                                 </thead>
                             </table>
@@ -77,7 +75,7 @@
 </div>
 
 @section Scripts
-    {
+{
     <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
     <script src="~/vendors/select2/select2.min.js"></script>
     <script>
@@ -98,7 +96,6 @@
                         hideAfter: 20000,
                     });
                 }
-                console.log(a.jqXHR.responseJSON);
             }
 
             const batchTable = $('#batch-listing').DataTable({
@@ -111,7 +108,7 @@
                 "searchPanes": true,
                 "ajax": {
                     "url":
-                        '@Html.Raw(Url.Action("LoadData", new {groupType = Model.GroupType, companyIds = Model.CompanyIds, routeId = Model.SelectedRouteId, recipientUserId=Model.SelectedRecipientUserId, belongsToUserId=Model.SelectedBelongsToUserId}))',
+                        '@Html.Raw(Url.Action("LoadPendingDispatchData", new { companyIds = Model.CompanyIds }))',
                     "type": "POST",
                     "datatype": "json"
                 },
@@ -126,15 +123,15 @@
                         "render": (data, type, row) => `<a href='#' onclick=loadBatchDetails(${row.id}); >${row.name
                             }</a>`
                     },
-                    { "data": "dateCreatedDisplay", "autoWidth": true },
-                    { "data": "totalOrders", "autoWidth": true },
+                    { "data": "createdOrderCount", "autoWidth": true },
+                    { "data": "totalBatchOrderCount", "autoWidth": true },
+                    { "data": "lastOrderAddedDate", "autoWidth": true },
                     { "data": "totalWeightKg", "autoWidth": true },
                     { "data": "totalShippingCost", "autoWidth": true },
                     {
-                        "render": (data, type, full, meta) => `<a href='@Url.Action("DailyScanEdit")?id=${full.id
+                        "render": (data, type, full, meta) => `<a href='@Url.Action("PendingDispatchEdit")?id=${full.id
                             }'><i class="fa fa-edit fa-lg"></i></a>`
                     },
-                    { "render": (data, type, full, meta) => `<a href='@Url.Action("Export")?id=${full.id}' target="_blank"><i class="fa fa-table fa-lg"></i></a>` },
                 ],
                 "language": {
                     // https://datatables.net/manual/i18n
@@ -155,7 +152,7 @@
                     pickUpLocationId: u.selectedPickUpLocationId
                 }
             });
-            $('#recipient-select').select2({ data: users });
+            $('#recipient-select').select2({data: users});
             $('.select2-selection').css('height', '32px');
             $('#select2-recipient-select-container').css('height', '32px');
             $('.select2-container--default .select2-selection--single .select2-selection__arrow').css('top', '4px');
@@ -167,40 +164,47 @@
                     pickUpLocationId: u.selectedPickUpLocationId
                 }
             });
-            $('#agent-select').select2({ data: agents });
+            $('#agent-select').select2({data: agents});
             $('.select2-selection').css('height', '32px');
             $('#select2-agent-select-container').css('height', '32px');
             $('.select2-container--default .select2-selection--single .select2-selection__arrow').css('top', '4px');
 
             let params = window.location.search.split('recipientUserId=');
-            if (params.length === 2) {
+            if (params.length === 2)
+            {
                 let currentRecipientUserId = params[1].split('&')[0];
                 $('#recipient-select').val(currentRecipientUserId).trigger('change');
             }
             params = window.location.search.split('belongsToUserId=');
-            if (params.length === 2) {
+            if (params.length === 2)
+            {
                 let currentBelongsToUserId = params[1].split('&')[0];
                 $('#agent-select').val(currentBelongsToUserId).trigger('change');
             }
 
             $('#batch_inventory_search_btn').click(() => {
                 let location = `/Batch/Inventory?groupType=${groupType}`
-                if (routeId && routeId.trim() !== '') {
+                if (routeId && routeId.trim() !== '')
+                {
                     location = location + `&routeId=${routeId}`;
                 }
-                if (warehouseId && warehouseId.trim() !== '') {
+                if (warehouseId && warehouseId.trim() !== '')
+                {
                     location = location + `&warehouseId=${warehouseId}`;
                 }
                 const recipientUserId = $('#recipient-select').val();
-                if (recipientUserId && recipientUserId.trim() !== '') {
+                if (recipientUserId && recipientUserId.trim() !== '')
+                {
                     location = location + `&recipientUserId=${recipientUserId}`;
                 }
                 const belongsToUserId = $('#agent-select').val();
-                if (belongsToUserId && belongsToUserId.trim() !== '') {
+                if (belongsToUserId && belongsToUserId.trim() !== '')
+                {
                     location = location + `&belongsToUserId=${belongsToUserId}`;
                 }
-                window.location.href = location;
+                window.location.href=location;
             });
+
             let companyIds = '';
             let search = document.location.search;
             if (search.includes("?")) {
@@ -211,7 +215,7 @@
             }
             $('#company-select').val(companyIds);
             $('#company-select').change(function () {
-                document.location = `${document.location.origin}${document.location.pathname}?groupType=DailyScan&companyIds=${$('#company-select').val()}`;
+                document.location = `${document.location.origin}${document.location.pathname}?groupType=PendingDispatch&companyIds=${$('#company-select').val()}`;
             });
         });
 
@@ -226,7 +230,7 @@
         (function displayBatchCount() {
             const needToDisplayCount =
                 '@(Model.GroupType != BatchGroupType.DailyScan && Model.GroupType != BatchGroupType.DailyReturn)' ===
-                'True';
+                    'True';
 
             if (!needToDisplayCount) {
                 return;
@@ -235,7 +239,7 @@
             $.ajax({
                 url: '@Url.Action("GetBatchCountByRoute", "Batch")',
                 data: { groupType: '@Model.GroupType' },
-                success: function (result) {
+                success: function(result) {
                     if (result.data) {
                         result.data.forEach(element => {
                             const routeHeader = $(`#route${element.routeId}`);

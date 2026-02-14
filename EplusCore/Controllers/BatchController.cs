@@ -236,11 +236,13 @@ namespace WebUI.Controllers
             return View(result);
         }
         
-        public async Task<IActionResult> PackageInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId)
+        public async Task<IActionResult> PackageInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, string companyIds)
         {
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
             var warehouses = (await _warehouseService.ListAsync()).ToList();
-            var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
+            var routes = (await _routeService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).Where(r => !r.IsDeleted).ToList();
             var users = await _userService.ListByBatchesAsync(BatchGroupType.Package, routeId, warehouseId);
+            var companies = await _context.Companies.ToListAsync();
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.Package,
@@ -250,7 +252,9 @@ namespace WebUI.Controllers
                 Warehouses = warehouses.OrderBy(w => w.DisplaySequence),
                 Users = users,
                 SelectedRecipientUserId = recipientUserId,
-                SelectedBelongsToUserId = belongsToUserId
+                SelectedBelongsToUserId = belongsToUserId,
+                Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c)),
+                CompanyIds = companyIds
             };
             return View(result);
         }
@@ -304,8 +308,7 @@ namespace WebUI.Controllers
         public async Task<IActionResult> LoadOtherOrder(DataTableRequestModel requestModel, string companyIds)
         {
             var orderToSearch = requestModel.GetColumnSearchValue("OtherOrder");
-            int parsed;
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
             var data = await _batchService.ListOtherOrderAsync(new BatchListOtherOrderFilterOptions()
             {
                 Number = orderToSearch,
@@ -343,6 +346,7 @@ namespace WebUI.Controllers
         {
             try
             {
+                var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
                 var filter = new BatchListFilterOptions()
                 {
                     GroupType = groupType,
@@ -375,13 +379,11 @@ namespace WebUI.Controllers
                 }
                 else if (groupType == BatchGroupType.DailyScan || groupType == BatchGroupType.PendingDispatch)
                 {
-                    int parsed;
-                    var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
                     data = await _batchService.ListAsync(filter, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
                 }
                 else
                 {
-                    data = await _batchService.ListAsync(filter, null);
+                    data = await _batchService.ListAsync(filter, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
                 }
 
                 var viewModels = data.Items.Select(it => _mapper.Map<BatchViewModel>(it)).ToList();
@@ -744,9 +746,10 @@ namespace WebUI.Controllers
             }
         }
 
-        public async Task<JsonResult> GetBatchCountByRoute(BatchGroupType groupType)
+        public async Task<JsonResult> GetBatchCountByRoute(BatchGroupType groupType, string companyIds)
         {
-            var result = await _batchService.GetBatchCountByRouteAsync(groupType);
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            var result = await _batchService.GetBatchCountByRouteAsync(groupType, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
             return Json(new MethodResult<IEnumerable<RouteBatchCount>>(result));
         }
 

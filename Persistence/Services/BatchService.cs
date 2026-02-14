@@ -380,10 +380,10 @@ ORDER BY totalOrdersInBatch DESC
             return result;
         }
 
-        public async Task<IEnumerable<RouteBatchCount>> GetBatchCountByRouteAsync(BatchGroupType groupType)
+        public async Task<IEnumerable<RouteBatchCount>> GetBatchCountByRouteAsync(BatchGroupType groupType, int[] companyIds)
         {
             // TODO: cache
-            var routes = await _routeService.ListAsync();
+            var routes = await _routeService.ListAsync(companyIds);
             var result = routes.Select(r => new RouteBatchCount()
             {
                 RouteId = r.Id,
@@ -392,7 +392,7 @@ ORDER BY totalOrdersInBatch DESC
             var threeMonthAgoFromToday = DateTime.Now.AddMonths(-3);
             var counts = await _context.Batches.Include(b => b.Route)
                 .Where(b => b.IsFromChina && b.DateCreated >= threeMonthAgoFromToday &&
-                            b.GroupType == (int)groupType && b.RouteId.HasValue && b.Route.CompanyId == Config.COMPANY_ID).GroupBy(b => b.RouteId).Select(pair =>
+                            b.GroupType == (int)groupType && b.RouteId.HasValue && (companyIds == null ? b.Route.CompanyId == Config.COMPANY_ID : companyIds.Contains(b.Route.CompanyId))).GroupBy(b => b.RouteId).Select(pair =>
                     new RouteBatchCount()
                     {
                         RouteId = pair.Key.Value,

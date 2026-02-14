@@ -46,36 +46,29 @@
 
                         </select>
                     </div>
+                    <div style="display: flex; gap: 4px; height: 32px; flex: 1;">
+                        <select class="form-control" id="route-select">
+                            @{
+                                var routes = Model.Routes.ToList();
+                                for (int i = 0; i < routes.Count; i++)
+                                {
+                                    var c = routes[i];
+                                    <option value="@c.Id">@c.Name</option>
+                                    if (i == routes.Count - 1)
+                                    {
+                                        var allCompanyIds = string.Join(",", routes.Select(c => c.Id));
+                                        <option value="@allCompanyIds">All</option>
+                                    }
+                                }
+                            }
+
+                        </select>
+                    </div>
                 </div>
-                <ul class="nav nav-tabs tab-solid tab-solid-danger" role="tablist">
-                    @if (Model.GroupType == BatchGroupType.DailyScan || Model.GroupType == BatchGroupType.DailyReturn)
-                    {
-                        foreach (var warehouse in Model.Warehouses)
-                        {
-                            <li class="nav-item">
-                                @Html.ActionLink(warehouse.Name, "Inventory", new { groupType = Model.GroupType, warehouseId = warehouse.Id }, new { @class = "nav-link " + (warehouse.Id == Model.SelectedWarehouseId ? "active" : "") })
-                            </li>
-                        }
-                    }
-                    else
-                    {
-                        foreach (var route in Model.Routes)
-                        {
-                            <li class="nav-item">
-                                <a href="@Url.Action("PackageInventory", new {routeId = route.Id, companyIds = Model.CompanyIds})" class="nav-link @(route.Id == Model.SelectedRouteId ? "active" : "")" id='@($"route{route.Id}")'>@route.Name (<i class='fa fa-spinner fa-spin'></i>)</a>
-                                @*@Html.ActionLink(route.Name + "(<i class='fas fa - cog fa - spin'></i>)", "Inventory", new {groupType = Model.GroupType, routeId = route.Id}, new {@class = "nav-link " + (route.Id == Model.SelectedRouteId ? "active" : ""), @id = $"route{route.Id}"})*@
-                            </li>
-                        }
-                    }
-                </ul>
                 <div class="tab-content tab-content-solid">
                     <div class="tab-pane fade show active" id="home-5-1" role="tabpanel" aria-labelledby="tab-5-1">
                         <div style="display: flex; gap: 4px; height: 32px;">
                             @Html.ActionLink("添加", "CreatePackageBatch", null, new { groupType = Model.GroupType, routeId = Model.SelectedRouteId }, new { @class = "btn btn-primary" })
-                            @if (Model.GroupType == BatchGroupType.DailyScan || Model.GroupType == BatchGroupType.DailyReturn)
-                            {
-                                @Html.ActionLink($"添加{Model.GroupType.GetDescription()}", "CreateDailyBatchPerWarehouse", null, new { groupType = Model.GroupType }, new { @class = "btn btn-primary" })
-                            }
                             <div style="width: 1px; height: 100%; background-color: #ccc; margin-left:5px; margin-right: 5px;"></div>
                             <button id='batch_inventory_search_btn' class='btn btn-primary'>搜索</button>
                             <select class="form-control" id="recipient-select" style="width: 225px;">
@@ -253,17 +246,24 @@
                 window.location.href=location;
             });
 
-            let companyIds = '';
+            let companyIds = '', routeIds = '';
             let search = document.location.search;
             if (search.includes("?")) {
                 search = search.replace("?", "");
-                let part = search.split("&").find(p => p.split("=")[0].toLowerCase() === "companyids");
-                if (!part) companyIds = "";
-                else companyIds = part.split("=")[1];
+                let companyPart = search.split("&").find(p => p.split("=")[0].toLowerCase() === "companyids");
+                if (!companyPart) companyIds = "";
+                else companyIds = companyPart.split("=")[1];
+                let routePart = search.split("&").find(p => p.split("=")[0].toLowerCase() === "routeid");
+                if (!routePart) routeIds = "";
+                else routeIds = routePart.split("=")[1];
             }
             $('#company-select').val(companyIds);
             $('#company-select').change(function () {
                 document.location = `${document.location.origin}${document.location.pathname}?groupType=Package&companyIds=${$('#company-select').val()}`;
+            });
+            $('#route-select').val(routeIds);
+            $('#route-select').change(function () {
+                document.location = `${document.location.origin}${document.location.pathname}?groupType=Package&companyIds=${$('#company-select').val()}&routeId=${$('#route-select').val()}`;
             });
         });
 
@@ -283,20 +283,6 @@
             if (!needToDisplayCount) {
                 return;
             }
-
-            $.ajax({
-                url: '@Url.Action("GetBatchCountByRoute", "Batch", new { companyIds = Model.CompanyIds })',
-                data: { groupType: '@Model.GroupType' },
-                success: function(result) {
-                    if (result.data) {
-                        result.data.forEach(element => {
-                            const routeHeader = $(`#route${element.routeId}`);
-                            routeHeader.find('i').remove();
-                            routeHeader.text(routeHeader.text().replace('()', `(${element.batchCount})`));
-                        });
-                    }
-                }
-            });
         })();
     </script>
 }

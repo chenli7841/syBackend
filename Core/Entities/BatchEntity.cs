@@ -274,6 +274,31 @@ namespace Domain.Entities
         }
     }
 
+    public class PackageBatchEntity : BatchEntity
+    {
+        public string CustomName { get; set; }
+        public string TransportStatus { get; set; }
+        public string PaymentStatus { get; set; }
+        public string FinishStatus { get; set; }
+        public string Destination { get; set; }
+        public string ShipFlightNumber { get; set; }
+        public string LoadDeliveryStage { get; set; }
+        public int TotalOrders { get; set; }
+        public decimal TotalWeightKg { get; set; }
+        public decimal TotalVolume { get; set; }
+        public int TotalBoxes { get; set; }
+        public decimal TotalChargedWeightKg { get; set; }
+        public decimal BaseShippingCost { get; set; }
+        public decimal OperationCost {  get; set; }
+        public decimal DeliveryCost { get; set; }
+        public decimal RecipientCredit { get; set; }
+        public decimal RecipientBalance { get; set; }
+        public string CostNote { get; set; }
+        public string RecipientCodeName {  get; set; }
+        public string RecipientCode { get; set; }
+        public string PickUpLocationName { get; set; }
+        public string CompanyCode { get; set; }
+    }
     public class PendingDispatchBatchEntity
     {
         public int Id { get; set; }
@@ -421,5 +446,11 @@ namespace Domain.Entities
         public IEnumerable<WarehouseEntity> Warehouses { get; set; }
         public string ShipFlightNumber { get; set; }
         public string State { get; set; }
+    }
+
+    public class PackageBatchStatus
+    {
+        public static string TransportStatusDispatched = "dispatched";
+        public static string PaymentStatusPaid = "paid";
     }
 }

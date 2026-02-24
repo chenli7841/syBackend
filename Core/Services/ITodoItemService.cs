@@ -12,7 +12,7 @@ namespace Domain.Services
     public interface ITodoItemService
     {
         Task<PagedResult<TodoItemEntity>> ListAsync(TodoItemListFilterOptions filterOptions);
-        Task CreateAsync(int createdByUserId, string customerInfo, string message, string comment, string orderInfo, int[] assigneeUserIds);
+        Task CreateAsync(int createdByUserId, string customerInfo, string message, string comment, string orderInfo, int[] assigneeUserIds, int? batchId);
         Task UpdateAsync(int id, string resolution, bool notifyCustomer, DateTime dateResolved);
         Task UpdateStatusAsync(int id, TodoItemStatusType status);
         Task DeteteAsync(int id);

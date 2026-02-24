@@ -241,7 +241,7 @@ namespace WebUI.Controllers
             var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
             var warehouses = (await _warehouseService.ListAsync()).ToList();
             var routes = (await _routeService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).Where(r => !r.IsDeleted).ToList();
-            var users = await _userService.ListByBatchesAsync(BatchGroupType.Package, routeId, warehouseId);
+            var users = await _userService.ListByBatchesAsync(BatchGroupType.Package, routeId, warehouseId, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
             var companies = await _context.Companies.ToListAsync();
             var result = new BatchInventoryResponse()
             {
@@ -476,14 +476,22 @@ namespace WebUI.Controllers
             }
         }
 
-        public async Task<IActionResult> CreatePackageBatch(int? routeId)
+        public async Task<IActionResult> CreatePackageBatch(int? routeId, string companyIds)
         {
-            var batch = new BatchEntity()
+            var batch = new PackageBatchEntity()
             {
                 GroupType = BatchGroupType.Package,
                 RouteId = routeId
             };
-            await SetEditDropdownOptions(batch);
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            if (parsedCompanyIds.Length == 0) parsedCompanyIds = null;
+            var companies = await _context.Companies.ToListAsync();
+            ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
+            ViewBag.Routes = (await _routeService.ListAsync(parsedCompanyIds)).Where(r => !r.IsDeleted);
+            ViewBag.MasterBatches = (await _batchService.ListMasterBatchesAsync(BatchGroupType.LoadDelivery, batch.RouteId, parsedCompanyIds, BatchStageType.Gathering));
+            ViewBag.PickUpLocations = await _userService.ListPickUpLocationsAsync(2, parsedCompanyIds);
+            ViewBag.ActionTypes = batch.GetActionTypes();
+            ViewBag.ActionType = ViewBag.ActionTypes[0];
             return View("CreatePackageBatch", batch);
         }
         public async Task<IActionResult> CreateLoadDeliveryBatch()
@@ -524,8 +532,10 @@ namespace WebUI.Controllers
 
         public async Task<IActionResult> EditPackageBatch(int id)
         {
-            var batchEntity = await _batchService.GetForEditAsync(id);
-            await SetEditDropdownOptions(batchEntity);
+            var batchEntity = await _batchService.GetForEditPackageAsync(id);
+            ViewBag.Routes = await _routeService.ListAsync(new int[] { batchEntity.CompanyId.Value });
+            ViewBag.MasterBatches = (await _batchService.ListMasterBatchesAsync(BatchGroupType.LoadDelivery, batchEntity.RouteId, new int[] { batchEntity.CompanyId.Value }, BatchStageType.Gathering));
+            //await SetEditDropdownOptions(batchEntity);
             return View("EditPackageBatch", batchEntity);
         }
         public async Task<IActionResult> EditWarehouseReceiveBatch(int id)
@@ -609,6 +619,14 @@ namespace WebUI.Controllers
 
         [ValidateAntiForgeryToken]
         [HttpPost]
+        public async Task<IActionResult> SavePackageBatch(PackageBatchEntity model)
+        {
+            var result = await _batchService.SavePackageBatchAsync(model);
+            return RedirectToAction(nameof(EditPackageBatch), new { id = result.Id });
+        }
+
+        [ValidateAntiForgeryToken]
+        [HttpPost]
         public async Task<IActionResult> Save(BatchEntity model)
         {
             var result = await _batchService.SaveAsync(model);
@@ -672,8 +690,7 @@ namespace WebUI.Controllers
             var box = batchEntity.Boxes.FirstOrDefault(b => b.Id == boxId);
             if (box != null && box.Orders != null && box.Orders.Any())
             {
-                int parsed;
-                var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
+                var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
                 box.Orders = box.Orders.Where(o => parsedCompanyIds.Length == 0 ? o.CompanyId == Config.COMPANY_ID : parsedCompanyIds.Contains(o.CompanyId.Value)).OrderByDescending(o => o.Status.Max(o => o.Date)).ToList();
                 var scanStatusEntities = _batchService.GetOrderScanStatusEntities(box.Orders.Select(o => o.Id));
                 foreach (var order in box.Orders)
@@ -970,7 +987,6 @@ WHERE BatchId={id}");
             await _batchService.PayAndMoveNextAsync(id, PayType.Balance);
             return RedirectToAction(nameof(Edit), new { id });
         }
-
         public async Task<IActionResult> Commission(int id)
         {
             await _batchService.CommissionAsync(id);
@@ -1037,6 +1053,20 @@ WHERE BatchId={id}");
         
         [HttpPost]
         public async Task<JsonResult> AcceptBox(int targetBatchId, int sourceBatchId, int? sourceBoxNumber)
+        {
+            try
+            {
+                await _batchService.AcceptBoxAsync(targetBatchId, sourceBatchId, sourceBoxNumber);
+                return Json(new MethodResult<bool>(true));
+            }
+            catch (Exception e)
+            {
+                return Json(new MethodResult<bool>(new Error() { Text = e.Message }));
+            }
+        }
+
+        [HttpPost]
+        public async Task<JsonResult> AcceptOrder(int targetBatchId, string orderOrDomesticNumber)
         {
             try
             {

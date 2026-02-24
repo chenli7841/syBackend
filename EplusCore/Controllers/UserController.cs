@@ -20,6 +20,7 @@ using Persistence.Utils;
 using Domain.Enums;
 using Persistence.Data;
 using Microsoft.EntityFrameworkCore;
+using DocumentFormat.OpenXml.Vml;
 
 namespace WebUI.Controllers
 {
@@ -345,6 +346,24 @@ namespace WebUI.Controllers
                 return Json(new MethodResult<object>(new Error
                 {
                     Name = "ExportBill",
+                    Text = e.Message
+                }));
+            }
+        }
+
+        public async Task<IActionResult> SearchByUserCode(string code, int pageSize, string companyIds)
+        {
+            try
+            {
+                var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+                var users = await _userService.SearchByUserCodeAsync(code, pageSize, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
+                return Json(new { recordsTotal = users.Total, data = users.Items });
+            }
+            catch (Exception e)
+            {
+                return Json(new MethodResult<object>(new Error
+                {
+                    Name = nameof(SearchByUserCode),
                     Text = e.Message
                 }));
             }

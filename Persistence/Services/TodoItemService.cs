@@ -87,7 +87,7 @@ namespace Persistence.Services
             return result;
         }
 
-        public async Task CreateAsync(int createdByUserId, string customerInfo, string message, string comment, string orderInfo, int[] assigneeUserIds)
+        public async Task CreateAsync(int createdByUserId, string customerInfo, string message, string comment, string orderInfo, int[] assigneeUserIds, int? batchId)
         {
             var item = new TodoItem
             {
@@ -98,6 +98,7 @@ namespace Persistence.Services
                 CustomerInfo = customerInfo,
                 OrderInfo = orderInfo,
                 Status = (int)TodoItemStatusType.PendingProcess,
+                BatchId = batchId,
             };
             foreach (int id in assigneeUserIds)
             {

@@ -340,3 +340,24 @@ CREATE TABLE session(
   CONSTRAINT `fk_todo_item_order_item_id_item_id` FOREIGN KEY (ItemId) REFERENCES todo_item(Id) ON DELETE CASCADE,
   CONSTRAINT `fk_todo_item_order_order_id_order_id` FOREIGN KEY (OrderId) REFERENCES transport_order(Id) ON DELETE NO ACTION
 )
+
+CREATE TABLE batch_package (
+  Id int NOT NULL AUTO_INCREMENT,
+  CustomName varchar(64) NULL,
+  BatchId int NOT NULL,
+  TransportStatus varchar(32) NULL,
+  PaymentStatus varchar(32) NULL,
+  FinishStatus varchar(32) NULL,
+  CONSTRAINT `pk_batch_package_id` PRIMARY KEY (Id),
+  CONSTRAINT `fk_batch_package_id` FOREIGN KEY (BatchId) REFERENCES batch(Id)
+)
+
+
+ALTER TABLE todo_item ADD COLUMN BatchId INT NULL;
+
+ALTER TABLE todo_item
+ADD CONSTRAINT `fk_todo_item_BatchId`
+  FOREIGN KEY (`BatchId`)
+  REFERENCES `batch` (`Id`)
+  ON DELETE CASCADE
+  ON UPDATE NO ACTION;

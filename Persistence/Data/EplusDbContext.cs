@@ -35,6 +35,7 @@ namespace Persistence.Data
         public virtual DbSet<BaseRechargeSet> BaseRechargeSets { get; set; }
         public virtual DbSet<BaseSeting> BaseSetings { get; set; }
         public virtual DbSet<Batch> Batches { get; set; }
+        public virtual DbSet<BatchPackage> BatchPackages { get; set; }
         public virtual DbSet<BatchPallet> BatchPallets { get; set; }
         public virtual DbSet<BatchWarehouseReceive> BatchWarehouseReceives { get; set; }
         public virtual DbSet<BatchBox> BatchBoxes { get; set; }
@@ -1751,13 +1752,54 @@ namespace Persistence.Data
                     .HasConstraintName("FK_Batch_CompanyId");
             });
 
+            modelBuilder.Entity<BatchPackage>(entity =>
+            {
+                entity.Property(e => e.Id).HasColumnType("int(11)");
+
+                entity.ToTable("batch_package");
+
+                entity.HasComment("装箱打包批次二级表");
+
+                entity.HasIndex(e => e.BatchId, "IX_dbo.Batch_BatchId");
+
+                entity.Property(e => e.BatchId)
+                    .HasColumnType("int(11)")
+                    .HasComment("批次id");
+
+                entity.Property(e => e.CustomName)
+                    .HasColumnType("varchar(64)")
+                    .HasColumnName("CustomName")
+                    .HasComment("手动输入的名称");
+
+                entity.Property(e => e.TransportStatus)
+                    .HasColumnType("varchar(32)")
+                    .HasColumnName("TransportStatus")
+                    .HasComment("运输状态");
+
+                entity.Property(e => e.PaymentStatus)
+                    .HasColumnType("varchar(32)")
+                    .HasColumnName("PaymentStatus")
+                    .HasComment("扣款状态");
+
+                entity.Property(e => e.FinishStatus)
+                    .HasColumnType("varchar(32)")
+                    .HasColumnName("FinishStatus")
+                    .HasComment("完成状态");
+
+                entity.HasOne(d => d.Batch)
+                    .WithMany(p => p.BatchPackages)
+                    .HasForeignKey(d => d.BatchId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_dbo.BatchPackage_dbo.Batch_BatchId");
+            });
+
             modelBuilder.Entity<BatchPallet>(entity =>
             {
                 entity.Property(e => e.Id).HasColumnType("int(11)");
 
                 entity.ToTable("batch_pallet");
 
-                entity.HasComment("托盘订单二级表");
+                entity.HasComment("托盘批次二级表");
 
                 entity.HasIndex(e => e.BatchId, "IX_dbo.Batch_BatchId");
 
@@ -9301,11 +9343,22 @@ namespace Persistence.Data
                     .HasColumnName("Status")
                     .HasComment("状态");
 
+                entity.Property(e => e.BatchId)
+                    .HasColumnType("int")
+                    .HasColumnName("BatchId")
+                    .HasComment("批次ID");
+
                 entity
                     .HasOne(e => e.CreatedBy)
                     .WithMany(c => c.TodoItems)
                     .HasForeignKey(c => c.CreatedByUserId)
                     .HasConstraintName("fk_todo_item_created_by_user_id_user_id");
+
+                entity
+                    .HasOne(e => e.Batch)
+                    .WithMany(c => c.TodoItems)
+                    .HasForeignKey(c => c.BatchId)
+                    .HasConstraintName("fk_todo_item_BatchId");
             });
 
             modelBuilder.Entity<TodoItemAssignee>(entity =>

@@ -91,6 +91,7 @@ namespace Domain.Enums
         Packaged = 64,
         PackageSent = 65,
         PackageInTrt = 66,
+        [Description("已付款")]
         Paid = 67,
         OutOfWarehouse = 68,
         OutOfWarehouseTwice = 69,

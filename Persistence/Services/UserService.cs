@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -82,6 +83,26 @@ namespace Persistence.Services
 
             return result;
         }
+        public async Task<PagedResult<UserEntity>> SearchByUserCodeAsync(string code, int pageSize, int[] companyIds)
+        {
+            var users = _context.Users
+                .Where(u => 
+                    u.OrderStartNumber.ToLower().Contains(code.ToLower()) && 
+                    (companyIds == null ? u.CompanyId == Config.COMPANY_ID : companyIds.Contains(u.CompanyId.Value))
+                )
+                .OrderBy(u => u.OrderStartNumber);
+            var total = await users.CountAsync();
+            var pagedUsers = users.Take(pageSize);
+            var items = await pagedUsers.Select(u => _mapper.Map<UserEntity>(u)).ToListAsync();
+
+            var result = new PagedResult<UserEntity>()
+            {
+                Total = total,
+                Items = items
+            };
+
+            return result;
+        }
 
         public async Task<PagedResult<UserEntity>> ListAsync(UserListFilterOptions filterOptions, bool isOrderByCode)
         {
@@ -113,7 +134,7 @@ namespace Persistence.Services
             return result;
         }
 
-        public async Task<List<UserEntity>> ListByBatchesAsync(BatchGroupType groupType, int? routeId, int? warehouseId)
+        public async Task<List<UserEntity>> ListByBatchesAsync(BatchGroupType groupType, int? routeId, int? warehouseId, int[] companyIds = null)
         {
             var sql = @$"
                 SELECT DISTINCT u.Id, c.Name UserName, u.OrderStartNumber, u.Role 
@@ -128,6 +149,14 @@ namespace Persistence.Services
             if (warehouseId.HasValue)
             {
                 sql = sql + $" AND WarehouseId = {warehouseId.Value}";
+            }
+            if (companyIds == null || companyIds.Length == 0)
+            {
+                sql = sql + $" AND u.CompanyId = {Config.COMPANY_ID}";
+            }
+            else
+            {
+                sql = sql + $" AND u.CompanyId IN ({string.Join(",", companyIds)})";
             }
             sql = sql + " ORDER BY u.Id";
             return await _context.Users.FromSqlRaw(sql).Select(s => new UserEntity
@@ -190,14 +219,8 @@ namespace Persistence.Services
             await _context.Database.ExecuteSqlRawAsync($"UPDATE user SET pick_up_location_id={toPickupLocationId} WHERE pick_up_location_id={fromPickupLocationId}");
         }
 
-        public void Transfer(int fromUserId, int toUserId, decimal amount, PayType payType,
-            TransactionType transactionType, int? batchId)
+        public void Transfer(int fromUserId, int toUserId, decimal amount, TransactionType transactionType, int? batchId)
         {
-            if (payType != PayType.Balance)
-            {
-                throw new NotSupportedException($"{payType} is not supported in Transfer");
-            }
-
             lock (Lock)
             {
                 var fromUser = _context.Users.First(u => u.Id == fromUserId);

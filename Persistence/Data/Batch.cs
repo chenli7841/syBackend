@@ -79,8 +79,10 @@ namespace Persistence.Data
         public virtual ICollection<EmailData> EmailDatas { get; set; }
         public virtual ICollection<BatchBoxMap> BatchBoxMaps { get; set; }
         public virtual ICollection<BatchPallet> BatchPallets { get; set; }
+        public virtual ICollection<BatchPackage> BatchPackages { get; set; }
         public virtual ICollection<BatchWarehouseReceive> BatchWarehouseReceives { get; set; }
         public virtual Company Company { get; set; }
+        public virtual ICollection<TodoItem> TodoItems { get; set; }
 
     }
 }

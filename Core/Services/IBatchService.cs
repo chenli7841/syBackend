@@ -13,13 +13,14 @@ namespace Domain.Services
         Task<PagedResult<BatchEntity>> ListPalletBatchAsync(BatchListFilterOptions filterOptions);
         Task<PagedResult<BatchEntity>> ListAsync(BatchListFilterOptions filterOptions, int[] companyIds);
         Task<PagedResult<PendingDispatchBatchEntity>> ListPendingDispatchAsync(BatchListFilterOptions filterOptions, int[] companyIds);
-        Task<IEnumerable<BatchEntity>> ListMasterBatchesAsync(BatchGroupType groupType, int? routeId);
+        Task<IEnumerable<BatchEntity>> ListMasterBatchesAsync(BatchGroupType groupType, int? routeId, int[] companyIds = null, BatchStageType? stage = null);
         Task<PagedResult<BatchOtherOrderEntity>> ListOtherOrderAsync(BatchListOtherOrderFilterOptions filterOptions);
         Task<IEnumerable<RouteBatchCount>> GetBatchCountByRouteAsync(BatchGroupType groupType, int[] companyIds);
         Task<IEnumerable<BatchEntity>> GetByOrderAsync(int orderId);
         Task<BatchEntity> GetAsync(int id);
         Task<BatchEntity> GetForPrintAsync(int id);
         Task<BatchEntity> GetForEditAsync(int id, int[] companyIds = null);
+        Task<PackageBatchEntity> GetForEditPackageAsync(int id);
         Task<PalletBatchEntity> GetForEditPalletAsync(int id);
         Task<BatchEntity> GetByBoxIdAsync(int id);
         Task<BatchEntity> GetForAddOrderAsync(int boxId);
@@ -28,12 +29,14 @@ namespace Domain.Services
         Task AddOtherOrderAsync(int boxId, string number, int userId);
         Task RemoveOrderAsync(int boxId, int orderId);
         Task<BatchEntity> SaveAsync(BatchEntity model);
+        Task<BatchEntity> SavePackageBatchAsync(PackageBatchEntity model);
         Task<PalletBatchEntity> SavePalletAsync(PalletBatchEntity model);
         Task<LoadDeliveryBatchEntity> SaveLoadDeliveryAsync(LoadDeliveryBatchEntity model);
         Task<WarehouseReceiveBatchEntity> SaveWarehouseReceiveAsync(WarehouseReceiveBatchEntity model);
         Task AddBoxAsync(int id, int boxNumber);
         Task CreateDailyBatchPerWarehouseAsync(BatchGroupType groupType);
         Task MoveNextAsync(int id);
+        Task Pay(int batchId, decimal totalExpense);
         Task PayAndMoveNextAsync(int id, PayType payType);
         Task UpdateOrdersLoadDeliveryProperties(int batchId);
         Task SplitAsync(int id);
@@ -45,6 +48,7 @@ namespace Domain.Services
         Task DeleteAsync(int id);
         Task MergeAsync(int targetBatchId, int sourceBatchId, int? sourceBoxNumber);
         Task AcceptBoxAsync(int targetBatchId, int sourceBatchId, int? sourceBoxNumber);
+        Task AcceptOrderAsync(int targetBatchId, string orderOrDomesticNumber);
         Task CommissionAsync(int id);
         void RemoveCache(int id);
         Task<OrderScanStatusEntity> SaveOrderScanStatus(OrderScanStatusEntity model, int userId);

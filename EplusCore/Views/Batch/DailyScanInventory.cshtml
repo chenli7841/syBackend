@@ -147,7 +147,7 @@
                 },
             });
 
-            let users = @Html.Raw(Json.Serialize(Model.Users));
+            let users = @Html.Raw(Json.Serialize(Model.Users))
             users = users.map(u => {
                 return {
                     id: u.id,

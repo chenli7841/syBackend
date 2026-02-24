@@ -11,8 +11,9 @@ namespace Domain.Services
         Task<UserEntity> GetAsync(string userName, string password);
         Task<UserEntity> GetAsync(string phoneNumber);
         Task<UserEntity> GetAsync(int id);
+        Task<PagedResult<UserEntity>> SearchByUserCodeAsync(string code, int pageSize, int[] companyIds);
         Task<PagedResult<UserEntity>> ListAsync(UserListFilterOptions filterOptions, bool isOrderByCode = true);
-        Task<List<UserEntity>> ListByBatchesAsync(BatchGroupType groupType, int? routeId, int? warehouseId);
+        Task<List<UserEntity>> ListByBatchesAsync(BatchGroupType groupType, int? routeId, int? warehouseId, int[] companyIds = null);
         Task<IEnumerable<UserEntity>> ListAgentsAsync();
         Task<IEnumerable<PickUpLocationEntity>> ListPickUpLocationsAsync(int version = 1, int[] companyIds = null);
         Task TogglePickUpLocationVisibilityAsync(int id);
@@ -25,8 +26,7 @@ namespace Domain.Services
         Task SetUserRoleAsync(int userId, string roleCode, bool enabled);
         Task<string> GetShippingAddressAsync(int id);
         Task ChangePassword(int userId, string password);
-        void Transfer(int fromUserId, int toUserId, decimal amount, PayType payType, TransactionType transactionType,
-            int? batchId);
+        void Transfer(int fromUserId, int toUserId, decimal amount, TransactionType transactionType, int? batchId);
 
         decimal Deposit(BalanceTransferInfo info);
         Task<decimal> GetBalanceSummaryAsync();

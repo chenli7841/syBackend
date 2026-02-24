@@ -82,7 +82,7 @@ namespace WebUI.Controllers
         {
             try
             {
-                await _todoItemService.CreateAsync(_systemSession.CurrentUser.Id, customerInfo, message, comment, orderInfo, assigneeUserIds);
+                await _todoItemService.CreateAsync(_systemSession.CurrentUser.Id, customerInfo, message, comment, orderInfo, assigneeUserIds, null);
 
                 return new JsonResult(new MethodResult<bool>(true));
             }

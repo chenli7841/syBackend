@@ -27,10 +27,12 @@ namespace Persistence.Data
         public DateTime? DateResolved { get; set; }
         public bool NotifyCustomer { get; set; }
         public int Status { get; set; }
+        public int? BatchId { get; set; }
 
         public virtual ICollection<TodoItemAssignee> TodoItemAssignees { get; set; }
         public virtual ICollection<TodoItemCustomer> TodoItemCustomers { get; set; }
         public virtual ICollection<TodoItemOrder> TodoItemOrders { get; set; }
         public virtual User CreatedBy { get; set; }
+        public virtual Batch Batch { get; set; }
     }
 }

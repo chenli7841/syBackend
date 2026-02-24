@@ -222,26 +222,58 @@
                 let currentBelongsToUserId = params[1].split('&')[0];
                 $('#agent-select').val(currentBelongsToUserId).trigger('change');
             }
-
-            $('#batch_inventory_search_btn').click(() => {
-                let location = `/Batch/PackageInventory`
+            $('#agent-select').change(() => onSearch());
+            
+            function onSearch() {
+                let location = `/Batch/PackageInventory`;
+                let urlQuery = [];
                 if (routeId && routeId.trim() !== '')
                 {
-                    location = location + `&routeId=${routeId}`;
+                    urlQuery.push(`routeId=${routeId}`);
                 }
                 if (warehouseId && warehouseId.trim() !== '')
                 {
-                    location = location + `&warehouseId=${warehouseId}`;
+                    urlQuery.push(`warehouseId=${warehouseId}`);
                 }
                 const recipientUserId = $('#recipient-select').val();
                 if (recipientUserId && recipientUserId.trim() !== '')
                 {
-                    location = location + `&recipientUserId=${recipientUserId}`;
+                    urlQuery.push(`recipientUserId=${recipientUserId}`);
                 }
                 const belongsToUserId = $('#agent-select').val();
                 if (belongsToUserId && belongsToUserId.trim() !== '')
                 {
-                    location = location + `&belongsToUserId=${belongsToUserId}`;
+                    urlQuery.push(`belongsToUserId=${belongsToUserId}`);
+                }
+                if (urlQuery.length > 0) {
+                    location += `?${urlQuery.join('&')}`;
+                }
+                window.location.href=location;
+            }
+
+            $('#batch_inventory_search_btn').click(() => {
+                let location = `/Batch/PackageInventory`;
+                let urlQuery = [];
+                if (routeId && routeId.trim() !== '')
+                {
+                    urlQuery.push(`routeId=${routeId}`);
+                }
+                if (warehouseId && warehouseId.trim() !== '')
+                {
+                    urlQuery.push(`warehouseId=${warehouseId}`);
+                }
+                const recipientUserId = $('#recipient-select').val();
+                if (recipientUserId && recipientUserId.trim() !== '')
+                {
+                    urlQuery.push(`recipientUserId=${recipientUserId}`);
+                }
+                const belongsToUserId = $('#agent-select').val();
+                if (belongsToUserId && belongsToUserId.trim() !== '')
+                {
+                    urlQuery.push(`belongsToUserId=${belongsToUserId}`);
+                }
+                if (urlQuery.length > 0) {
+                    location += `?${urlQuery.join('&')}`;
                 }
                 window.location.href=location;
             });
@@ -265,6 +297,7 @@
             $('#route-select').change(function () {
                 document.location = `${document.location.origin}${document.location.pathname}?groupType=Package&companyIds=${$('#company-select').val()}&routeId=${$('#route-select').val()}`;
             });
+            $('#recipient-select').change(() => onSearch());
         });
 
         function loadBatchDetails(id) {

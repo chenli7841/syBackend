@@ -408,6 +408,14 @@ namespace Domain.Entities
         public double? WeightKg { get; set; }
         public string ShipFlightNumber { get; set; }
         public string State { get; set; }
+        public string CustomName { get; set; }
+        public int? CompanyId { get; set; }
+        public int? RouteId { get; set; }
+        public int? RecipientId { get; set; }
+        public int? PickUpLocationId { get; set; }
+        public int? MasterBatchId { get; set; }
+        public decimal? TargetWeightKg { get; set; }
+        public IList<string> OtherOrders { get; set; }
     }
 
     public class LoadDeliveryBatchEntity

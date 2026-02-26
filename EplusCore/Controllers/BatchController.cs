@@ -218,11 +218,12 @@ namespace WebUI.Controllers
             };
             return View(result);
         }
-        public async Task<IActionResult> PalletInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId)
+        public async Task<IActionResult> PalletInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, string companyIds)
         {
             var warehouses = (await _warehouseService.ListAsync()).ToList();
             var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
             var users = await _userService.ListByBatchesAsync(BatchGroupType.Pallet, routeId, warehouseId);
+            var companies = await _context.Companies.ToListAsync();
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.Pallet,
@@ -231,7 +232,9 @@ namespace WebUI.Controllers
                 Warehouses = warehouses.OrderBy(w => w.DisplaySequence),
                 Users = users,
                 SelectedRecipientUserId = recipientUserId,
-                SelectedBelongsToUserId = belongsToUserId
+                SelectedBelongsToUserId = belongsToUserId,
+                Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c)),
+                CompanyIds = companyIds
             };
             return View(result);
         }
@@ -367,7 +370,7 @@ namespace WebUI.Controllers
                 PagedResult<BatchEntity> data = null;
                 if (groupType == BatchGroupType.Pallet)
                 {
-                    data = await _batchService.ListPalletBatchAsync(filter);
+                    data = await _batchService.ListPalletBatchAsync(filter, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
                 }
                 else if (groupType == BatchGroupType.LoadDelivery)
                 {
@@ -731,6 +734,58 @@ namespace WebUI.Controllers
             return View(batchEntity);
         }
 
+        public async Task<IActionResult> PackageEditBox(int boxId, int? highlightOrderId = null)
+        {
+            var batchEntity = await _batchService.GetForEditBoxAsync(boxId);
+            var box = batchEntity.Boxes.FirstOrDefault(b => b.Id == boxId);
+            if (box != null && box.Orders != null && box.Orders.Any())
+            {
+                box.Orders = box.Orders.OrderByDescending(o => o.Status.Max(o => o.Date)).ToList();
+                var scanStatusEntities = _batchService.GetOrderScanStatusEntities(box.Orders.Select(o => o.Id));
+                foreach (var order in box.Orders)
+                {
+                    var scanStatus = scanStatusEntities.Where(s => s.OrderId == order.Id);
+                    if (scanStatus.Any())
+                    {
+                        order.ScanStatusType = (OrderScanStatusType)scanStatus.Max(s => s.Status);
+                    }
+                }
+            }
+            ViewData["BoxId"] = boxId;
+            return View(batchEntity);
+        }
+
+        public async Task<JsonResult> AddOrderToPackageBatch(int boxId, string orderNumber)
+        {
+            try
+            {
+                var order = await _orderService.FindAsync(orderNumber, false);
+
+                if (order == null)
+                {
+                    await _batchService.AddOtherOrderAsync(boxId, orderNumber, _session.CurrentUser.Id);
+                }
+                else
+                {
+                    await _batchService.AddOrderToPackageBatchAsync(boxId, order.Id, order);
+                    await _emailService.QueueEmailDataInWarehouseAsync(order.Id, _session.CurrentUser.Id, order.Creator.Id);
+                }
+
+                return Json(new MethodResult<OrderEntity>(order));
+            }
+            catch (Exception e)
+            {
+                if (e.InnerException != null)
+                {
+                    return Json(new MethodResult<OrderEntity>(new Error() { Text = e.InnerException.Message }));
+                }
+                else
+                {
+                    return Json(new MethodResult<OrderEntity>(new Error() { Text = e.Message }));
+                }
+            }
+
+        }
         [HttpPost]
         public async Task<JsonResult> AddOrder(int boxId, string orderNumber)
         {
@@ -1070,7 +1125,7 @@ WHERE BatchId={id}");
         {
             try
             {
-                await _batchService.AcceptBoxAsync(targetBatchId, sourceBatchId, sourceBoxNumber);
+                await _batchService.AcceptOrderAsync(targetBatchId, orderOrDomesticNumber);
                 return Json(new MethodResult<bool>(true));
             }
             catch (Exception e)

@@ -134,13 +134,13 @@ namespace Persistence.Services
         }
 
 
-        public async Task<PagedResult<BatchEntity>> ListPalletBatchAsync(BatchListFilterOptions filterOptions)
+        public async Task<PagedResult<BatchEntity>> ListPalletBatchAsync(BatchListFilterOptions filterOptions, int[] companyIds)
         {
             var batchesFiltered = _context.Batches
                 .Include(b => b.BatchPallets)
-                .Where(b => b.BatchPallets.Count > 0 && b.BatchPallets.First().WarehouseId == filterOptions.WarehouseId
+                .Where(b => b.BatchPallets.Count > 0 
                     && (filterOptions.GroupType == BatchGroupType.Pallet)
-                    && (!filterOptions.Ids.Any() || filterOptions.Ids.Contains(b.Id)) && b.CompanyId == Config.COMPANY_ID)
+                    && (!filterOptions.Ids.Any() || filterOptions.Ids.Contains(b.Id)) && (companyIds == null ? (b.CompanyId == Config.COMPANY_ID) : companyIds.Contains(b.CompanyId.Value)))
                 .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order).ThenInclude(o => o.CreatedBy).ThenInclude(o => o.BelongsToNavigation)
                 .Include(b => b.BatchBoxMaps).ThenInclude(m => m.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order);
 
@@ -236,6 +236,51 @@ namespace Persistence.Services
             param1.Value = value;
             param1.DbType = type;
             command.Parameters.Add(param1);
+        }
+
+        public async Task<PagedResult<BatchEntity>> ListPalletAsync(BatchListFilterOptions filterOptions, int[] companyIds)
+        {
+            var batchesFiltered = _context.Batches
+                .Where(b => b.IsFromChina
+                && ((int)BatchGroupType.Pallet == b.GroupType)
+                && (!filterOptions.RouteId.HasValue || filterOptions.RouteId == b.RouteId)
+                && (!filterOptions.Ids.Any() || filterOptions.Ids.Contains(b.Id))
+                && (!filterOptions.RecipientIds.Any() || (b.RecipientUserId != null && filterOptions.RecipientIds.Contains(b.RecipientUserId.Value)))
+                && (!filterOptions.BelongsToUserIds.Any() || (b.BelongsToUserId != null && filterOptions.BelongsToUserIds.Contains(b.BelongsToUserId.Value)))
+                && companyIds == null ? (b.CompanyId == Config.COMPANY_ID) : companyIds.Contains(b.CompanyId.Value))
+                .Include(b => b.BatchBoxes)
+                    .ThenInclude(bx => bx.BatchBoxOrderMaps)
+                        .ThenInclude(m => m.Order)
+                            .ThenInclude(o => o.CreatedBy)
+                                .ThenInclude(o => o.BelongsToNavigation);
+
+            IOrderedQueryable<Batch> batches = batchesFiltered.OrderByDescending(b => b.DateCreated);
+
+            var total = await batches.CountAsync();
+            var pagedBatches = batches.Skip(filterOptions.Skip);
+
+            if (filterOptions.PageSize > 0)
+            {
+                pagedBatches = pagedBatches.Take(filterOptions.PageSize);
+            }
+            foreach (var b in pagedBatches)
+            {
+                foreach (var box in b.BatchBoxes)
+                {
+                    box.BatchBoxOrderMaps = box.BatchBoxOrderMaps.Where(bbom => companyIds == null ? (bbom.Order.CompanyId == Config.COMPANY_ID) : companyIds.Contains(bbom.Order.CompanyId.Value)).ToList();
+                }
+            }
+
+            var itemsQuery = pagedBatches.Select(o => _mapper.Map<BatchEntity>(o));
+            var items = await itemsQuery.ToListAsync();
+
+            var result = new PagedResult<BatchEntity>()
+            {
+                Total = total,
+                Items = items
+            };
+
+            return result;
         }
         public async Task<PagedResult<PendingDispatchBatchEntity>> ListPendingDispatchAsync(BatchListFilterOptions filterOptions, int[] companyIds)
         {
@@ -1047,6 +1092,69 @@ WHERE bb.BatchId=@batchId
             {
                 throw new Exception("向每日退运添加的单缺少申请退运状态");
             }
+        }
+
+        public async Task<BatchEntity> AddOrderToPackageBatchAsync(int boxId, int orderId, OrderEntity order)
+        {
+            var existingPackageBatch = await _context.Batches.Include(b => b.BatchBoxes).ThenInclude(bb => bb.BatchBoxOrderMaps)
+                .Include(b => b.BatchBoxMaps).ThenInclude(bbm => bbm.BatchBox).ThenInclude(bb => bb.BatchBoxOrderMaps)
+                .Where(b => b.GroupType == (int)BatchGroupType.Package &&
+                    b.BatchBoxes.Any(bb => bb.BatchBoxOrderMaps.Any(bbom => bbom.OrderId == order.Id)) || b.BatchBoxMaps.Any(bbm => bbm.BatchBox.BatchBoxOrderMaps.Any(bbom => bbom.OrderId == order.Id)))
+                .FirstOrDefaultAsync();
+            if (existingPackageBatch != null)
+            {
+                throw new Exception($"运单 {orderId} 已存在于装箱打包批次: {existingPackageBatch.Name}。无法再添加。");
+            }
+
+            var batch = await GetForAddOrderAsync(boxId);
+            _validateAddOrder(batch, order);
+
+            var destBox = await _context.BatchBoxes.FirstAsync(bx => bx.Id == boxId);
+            destBox.BatchBoxOrderMaps.Add(new BatchBoxOrderMap() { OrderId = orderId });
+
+            OrderState orderState = batch.GetOrderState();
+
+            var dbOrder = await _context.TransportOrders.FirstAsync(o => o.Id == order.Id);
+            if (orderState != OrderState.None)
+            {
+                dbOrder.State = (int)orderState;
+            }
+
+            var route = await _context.Routes.FirstOrDefaultAsync(r => r.Id == order.RouteId);
+
+            // 1. 对于直邮线路，把单从待发货批次移除
+            if (route.Type == (int)RouteType.Direct)
+            {
+                var existingPendingDispatchBatch = await _context.Batches.Include(b => b.BatchBoxes).ThenInclude(bb => bb.BatchBoxOrderMaps)
+                    .Include(b => b.BatchBoxMaps).ThenInclude(bbm => bbm.BatchBox).ThenInclude(bb => bb.BatchBoxOrderMaps)
+                    .Where(b => b.GroupType == (int)BatchGroupType.PendingDispatch &&
+                        b.BatchBoxes.Any(bb => bb.BatchBoxOrderMaps.Any(bbom => bbom.OrderId == order.Id)) || b.BatchBoxMaps.Any(bbm => bbm.BatchBox.BatchBoxOrderMaps.Any(bbom => bbom.OrderId == order.Id)))
+                    .ToListAsync();
+                foreach (var b in existingPendingDispatchBatch)
+                {
+                    foreach (var bb in b.BatchBoxes)
+                    {
+                        foreach (var toDelete in bb.BatchBoxOrderMaps.Where(bbom => bbom.OrderId == order.Id))
+                        {
+                            _context.BatchBoxOrderMaps.Remove(toDelete);
+                        }
+                    }
+                    foreach (var bbm in b.BatchBoxMaps)
+                    {
+                        foreach (var toDelete in bbm.BatchBox.BatchBoxOrderMaps.Where(bbom => bbom.OrderId == order.Id))
+                        {
+                            _context.BatchBoxOrderMaps.Remove(toDelete);
+                        }
+                    }
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            // 2. 装箱打包批次里的扫描，加 “装箱打包扫描” 的后台操作记录
+            await _orderService.AddInternalStatus(OrderStatusType.PackagingScan, _session.CurrentUser.Id, order.Id);
+
+            return batch;
+
         }
 
         public async Task<BatchEntity> AddOrderAsync(int boxId, int orderId, OrderEntity order = null)
@@ -1969,8 +2077,7 @@ WHERE bb.BatchId=@batchId
 
         public async Task AcceptOrderAsync(int targetBatchId, string orderOrDomesticNumber)
         {
-            var targetBatch = await GetAsyncForMerge(targetBatchId);
-            var order = await _orderService.FindAsync(orderOrDomesticNumber, false) ?? throw new Exception($"单号或国内单号不存在: {orderOrDomesticNumber}");
+            var order = await _context.TransportOrders.Include(o => o.RouteNavigation).FirstOrDefaultAsync(o => o.OrderNumber == orderOrDomesticNumber || o.DomesticNumber == orderOrDomesticNumber) ?? throw new Exception($"单号或国内单号不存在: {orderOrDomesticNumber}");
             var existingPackageBatch = await _context.Batches.Include(b => b.BatchBoxes).ThenInclude(bb => bb.BatchBoxOrderMaps)
                 .Include(b => b.BatchBoxMaps).ThenInclude(bbm => bbm.BatchBox).ThenInclude(bb => bb.BatchBoxOrderMaps)
                 .Where(b => b.GroupType == (int)BatchGroupType.Package &&
@@ -1980,18 +2087,63 @@ WHERE bb.BatchId=@batchId
             {
                 throw new Exception($"运单 {orderOrDomesticNumber} 已存在于装箱打包批次: {existingPackageBatch.Name}。无法再添加。");
             }
-            var box = sourceBatch.Boxes.FirstOrDefault(b => b.Number == sourceBoxNumber.Value);
-            if (box == null)
+            // 1. 把单加入装箱打包批次
+            var targetBatch = await _context.Batches.Include(b => b.BatchBoxes).FirstOrDefaultAsync(b => b.Id == targetBatchId) ?? throw new Exception($"目标箱号不存在: {targetBatchId}");
+            var newBoxNumber = 1;
+            if (targetBatch.BatchBoxes.Count > 0)
             {
-                throw new Exception($"源箱号不存在: {sourceBoxNumber}");
+                newBoxNumber = targetBatch.BatchBoxes.Select(bb => bb.Number).Max() + 1;
             }
-            var existingMap = await _context.BatchBoxMaps.FirstOrDefaultAsync(m => m.BatchId == targetBatchId && m.BoxId == box.Id);
-            if (existingMap == null)
+            var newBox = new BatchBox
             {
-                await _context.BatchBoxMaps.AddAsync(new BatchBoxMap { BatchId = targetBatchId, BoxId = box.Id });
-            }
-            await _context.SaveChangesAsync();
+                Number = newBoxNumber,
+                BatchBoxOrderMaps = new List<BatchBoxOrderMap>
+                {
+                    new BatchBoxOrderMap
+                    {
+                        OrderId = order.Id,
+                    }
+                }
+            };
 
+            targetBatch.BatchBoxes.Add(newBox);
+
+            // 2. 对于直邮线路，把单从待发货批次移除
+            if (order.RouteNavigation.Type == (int)RouteType.Direct)
+            {
+                var existingPendingDispatchBatch = await _context.Batches.Include(b => b.BatchBoxes).ThenInclude(bb => bb.BatchBoxOrderMaps)
+                    .Include(b => b.BatchBoxMaps).ThenInclude(bbm => bbm.BatchBox).ThenInclude(bb => bb.BatchBoxOrderMaps)
+                    .Where(b => b.GroupType == (int)BatchGroupType.PendingDispatch &&
+                        b.BatchBoxes.Any(bb => bb.BatchBoxOrderMaps.Any(bbom => bbom.OrderId == order.Id)) || b.BatchBoxMaps.Any(bbm => bbm.BatchBox.BatchBoxOrderMaps.Any(bbom => bbom.OrderId == order.Id)))
+                    .ToListAsync();
+                foreach(var b in existingPendingDispatchBatch)
+                {
+                    foreach(var bb in b.BatchBoxes)
+                    {
+                        foreach(var toDelete in bb.BatchBoxOrderMaps.Where(bbom => bbom.OrderId == order.Id))
+                        {
+                            _context.BatchBoxOrderMaps.Remove(toDelete);
+                        }
+                    }
+                    foreach(var bbm in b.BatchBoxMaps)
+                    {
+                        foreach(var toDelete in bbm.BatchBox.BatchBoxOrderMaps.Where(bbom => bbom.OrderId == order.Id))
+                        {
+                            _context.BatchBoxOrderMaps.Remove(toDelete);
+                        }
+                    }
+                }
+            }
+
+            // 3. 添加"装箱打包扫描"状态
+            await _context.OrderStatuses.AddAsync(new OrderStatus
+            {
+                OrderId = order.Id,
+                Status = (int)OrderStatusType.PackagingScan,
+                DateCreated = DateTime.Now,
+                UserId = _session.CurrentUser.Id,
+            });
+            await _context.SaveChangesAsync();
         }
 
 
@@ -2078,6 +2230,7 @@ WHERE bb.BatchId=@batchId
                 if (model.PaymentStatus == PackageBatchStatus.PaymentStatusPaid) updateToPaid = true;
                 batchPackage = new BatchPackage()
                 {
+                    CustomName = model.CustomName,
                     BatchId = model.Id,
                     TransportStatus = model.TransportStatus,
                     PaymentStatus = model.PaymentStatus
@@ -2086,6 +2239,7 @@ WHERE bb.BatchId=@batchId
             }
             else if (batchPackage != null)
             {
+                batchPackage.CustomName = model.CustomName;
                 if (batchPackage.PaymentStatus != PackageBatchStatus.PaymentStatusPaid && model.PaymentStatus == PackageBatchStatus.PaymentStatusPaid) updateToPaid = true;
                 batchPackage.TransportStatus = model.TransportStatus;
                 batchPackage.PaymentStatus = model.PaymentStatus;
@@ -2525,13 +2679,13 @@ WHERE bb.BatchId=@batchId
 
         private async Task<Batch> CreatePackageBatchAsync(PackageBatchEntity model)
         {
+            var route = await _context.Routes.FirstOrDefaultAsync(r => r.Id == model.RouteId);
             var batch = new Batch
             {
                 Name = model.Name,
                 IsFromChina = true,
                 DateCreated = DateTime.UtcNow,
                 GroupType = (int)model.GroupType,
-                RecipientUserId = model.RecipientId,
                 MasterBatchId = model.MasterBatchId,
                 RouteId = model.RouteId,
                 UserId = _session.CurrentUser.Id,
@@ -2546,6 +2700,14 @@ WHERE bb.BatchId=@batchId
                     },
                 },
             };
+            if (route.Type == (int)RouteType.Mixed)
+            {
+                var location = await _context.PickUpLocations.FirstOrDefaultAsync(l => l.Id == model.PickUpLocationId);
+                batch.RecipientUserId = location.BelongsToId;
+            } else if (route.Type == (int)RouteType.Direct)
+            {
+                batch.RecipientUserId = model.RecipientId;
+            }
 
             var batchBox = new BatchBox() { Number = 1 };
             batch.BatchBoxes.Add(batchBox);

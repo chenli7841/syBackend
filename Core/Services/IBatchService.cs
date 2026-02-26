@@ -10,9 +10,10 @@ namespace Domain.Services
     {
         Task<PagedResult<BatchEntity>> ListWarehouseReceiveBatchAsync(BatchListFilterOptions filterOptions);
         Task<PagedResult<BatchEntity>> ListLoadDeliveryBatchAsync(BatchListFilterOptions filterOptions);
-        Task<PagedResult<BatchEntity>> ListPalletBatchAsync(BatchListFilterOptions filterOptions);
+        Task<PagedResult<BatchEntity>> ListPalletBatchAsync(BatchListFilterOptions filterOptions, int[] companyIds);
         Task<PagedResult<BatchEntity>> ListAsync(BatchListFilterOptions filterOptions, int[] companyIds);
         Task<PagedResult<PendingDispatchBatchEntity>> ListPendingDispatchAsync(BatchListFilterOptions filterOptions, int[] companyIds);
+        Task<PagedResult<BatchEntity>> ListPalletAsync(BatchListFilterOptions filterOptions, int[] companyIds);
         Task<IEnumerable<BatchEntity>> ListMasterBatchesAsync(BatchGroupType groupType, int? routeId, int[] companyIds = null, BatchStageType? stage = null);
         Task<PagedResult<BatchOtherOrderEntity>> ListOtherOrderAsync(BatchListOtherOrderFilterOptions filterOptions);
         Task<IEnumerable<RouteBatchCount>> GetBatchCountByRouteAsync(BatchGroupType groupType, int[] companyIds);
@@ -26,6 +27,7 @@ namespace Domain.Services
         Task<BatchEntity> GetForAddOrderAsync(int boxId);
         Task<BatchEntity> GetForEditBoxAsync(int boxId);
         Task<BatchEntity> AddOrderAsync(int boxId, int orderId, OrderEntity order = null);
+        Task<BatchEntity> AddOrderToPackageBatchAsync(int boxId, int orderId, OrderEntity order);
         Task AddOtherOrderAsync(int boxId, string number, int userId);
         Task RemoveOrderAsync(int boxId, int orderId);
         Task<BatchEntity> SaveAsync(BatchEntity model);

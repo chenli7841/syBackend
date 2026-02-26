@@ -327,6 +327,12 @@
                                 <button id="update-to-dispatched" class="btn btn-primary">发货</button>
                             </div>
                         }
+                        else
+                        {
+                            <div>
+                                <button disabled class="btn btn-primary">已发货</button>
+                            </div>
+                        }
                         @Html.TextBoxFor(r => r.PaymentStatus, new { hidden = "hidden" })
                         @if (Model.PaymentStatus != "PackageBatchStatus.PaymentStatusPaid")
                         {
@@ -334,7 +340,13 @@
                                 <button id="update-to-paid" class="btn btn-primary">付款</button>
                             </div>
                         }
-                        
+                        else
+                        {
+                            <div>
+                                <button disabled class="btn btn-primary">已付款</button>
+                            </div>
+                        }
+
                         
                     </div>
                 }
@@ -372,7 +384,7 @@
                                 @foreach (var box in Model.Boxes)
                                 {
                                     <tr>
-                                        <td>@Html.ActionLink((string.IsNullOrWhiteSpace(box.Name) ? ($"{Model.Id} - {box.Number}") : box.Name), "EditBox", new { boxId = box.Id })</td>
+                                        <td>@Html.ActionLink((string.IsNullOrWhiteSpace(box.Name) ? ($"{Model.Id} - {box.Number}") : box.Name), "PackageEditBox", new { boxId = box.Id })</td>
                                         <td>@box.Orders.Count()</td>
                                         <td>@box.Orders.Sum(o => o.WeightKg)</td>
                                         <td><input id="length_@(box.Id)_input" type="number" class="form-control" value="@box.Length" /></td>
@@ -464,8 +476,16 @@
                     $('#formatted-name').text(`${companyCode}-${route.code}-@Model.RecipientCode-装箱打包`);
                 }
             }
-            $('#Name').val(`${$('#custom-name').val()}-${$('#formatted-name').text()}`);
+            updateName();
         }
+
+        function updateName() {
+            $('#Name').val(`${$('#CustomName').val()}-${$('#formatted-name').text()}`);
+        }
+
+        $('#CustomName').change(function() {
+            updateName();
+        });
 
         $('#DeliveryCost').change(function() {
             updateTotalExpense();
@@ -591,22 +611,19 @@
         });
 
         $('#acceptOrder').click(function () {
-            const sourceBatchAndBox = $('#targetBatch').val();
+            const sourceOrderNumberOrDomesticNumber = $('#targetBatch').val().trim();
             const targetBatchId = @Model.Id;
-            if (sourceBatchAndBox === '') {
+            if (sourceOrderNumberOrDomesticNumber === '') {
                 alert('请填写运单号或国内单号');
                 return false;
             }
 
             document.getElementById("site-overlay").style.display = "block";
-            const sourceBatchId = sourceBatchAndBox.split('-')[0].trim();
-            const sourceBoxNumber = (sourceBatchAndBox.split('-')[1] || '').trim();
 
             $.post('@Url.Action("AcceptOrder")',
                 {
                     targetBatchId,
-                    sourceBatchId,
-                    sourceBoxNumber
+                    orderOrDomesticNumber: sourceOrderNumberOrDomesticNumber,
                 },
                 function (result) {
                     document.getElementById("site-overlay").style.display = "none";
@@ -619,7 +636,7 @@
                         });
                     } else {
                         $.toast({
-                            heading: '合并成功',
+                            heading: '添加运单成功',
                             position: 'mid-center',
                             icon: 'success'
                         });

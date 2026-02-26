@@ -5,11 +5,11 @@
 @model Domain.Entities.PalletBatchEntity
 
 @{
-    ViewData["Title"] = "添加托盘";
+    ViewData["Title"] = "创建批次";
 }
 
 @section Styles
-    {
+{
     <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
     <style>
         #totalShippingCostBtn {
@@ -31,11 +31,20 @@
     </style>
 }
 
+@{
+    var recipients = (IEnumerable<UserEntity>)ViewBag.Recipients;
+    var agents = (IEnumerable<UserEntity>)ViewBag.Agents;
+    var pickuplocations = ((IEnumerable<PickUpLocationEntity>)ViewBag.PickUpLocations).ToList();
+    var masterBatches = ((IEnumerable<BatchEntity>)ViewBag.MasterBatches).ToList();
+    var companies = ((IEnumerable<CompanyEntity>)ViewBag.Companies).ToList();
+    var routes = ((IEnumerable<RouteEntity>)ViewBag.Routes).ToList();
+}
+
 <div class="row">
     <div class="col-md-12 grid-margin">
         <div class="card">
             <div class="card-body">
-                <h4 class="card-title">@(Model.Id > 0 ? "修改批次 开托盘" : "创建批次 开托盘")</h4>
+                <h4 class="card-title">创建批次 开托盘</h4>
                 @using (Html.BeginForm("SavePalletBatch", "Batch", FormMethod.Post, new { @class = "" }))
                 {
                     @Html.AntiForgeryToken()
@@ -45,34 +54,114 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group row">
-                                @Html.LabelFor(r => r.Name, "名称", new { @class = "col-sm-4 col-form-label" })
-                                <div class="col-sm-8">
-                                    @Html.TextBoxFor(r => r.Name, new { @class = "form-control" })
+                                @Html.LabelFor(r => r.CustomName, "名称", new { @class = "col-sm-2 col-form-label" })
+                                <div class="col-sm-10">
+                                    <div class="input-group">
+                                        @Html.TextBoxFor(r => r.CustomName, new { hidden = "hidden" })
+                                        @Html.TextBoxFor(r => r.Name, new { hidden = "hidden" })
+                                        <input type="text" class="form-control" id="custom-name" />
+                                        <span class="input-group-text" id="formatted-name"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group row">
+                                <label class="col-sm-2 col-form-label" for="destination-select">目的地</label>
+                                <div class="col-sm-10">
+                                    <select class="form-control" id="destination-select">
+                                        <option value="toronto">Toronto</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-3">
                             <div class="form-group row">
-                                @Html.LabelFor(r => r.WarehouseId, "运输方式", new { @class = "col-sm-4 col-form-label" })
+                                <label class="col-sm-4 col-form-label" for="company-select">公司</label>
+                                @Html.TextBoxFor(b => b.CompanyId, new { hidden = "hidden" })
                                 <div class="col-sm-8">
-                                    @Html.TextBoxFor(r => r.WarehouseId, new { hidden = "hidden" })
-                                    <select class="form-control" id="warehouse-select">
-                                        <option value="">---</option>
-                                        @foreach (var warehouse in Model.Warehouses)
-                                        {
-                                            <option value="@warehouse.Id">@warehouse.Name</option>
+                                    <select class="form-control" id="company-select">
+                                        @{
+                                            for (int i = 0; i < companies.Count; i++)
+                                            {
+                                                var c = companies[i];
+                                                <option value="@c.Id">@c.Name</option>
+                                            }
+                                        }
+
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label" for="route-select">线路</label>
+                                @Html.TextBoxFor(b => b.RouteId, new { hidden = "hidden" })
+                                <div class="col-sm-8">
+                                    <select class="form-control" id="route-select">
+                                        @{
+                                            for (int i = 0; i < routes.Count; i++)
+                                            {
+                                                var r = routes[i];
+                                                <option value="@r.Id">@r.Name</option>
+                                            }
                                         }
                                     </select>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group row">
-                                @Html.LabelFor(r => r.Destination, "目的地", new { @class = "col-sm-4 col-form-label" })
+                        <div class="col-md-3">
+                            <div style="display: none;" id="recipient-input" class="form-group row">
+                                @Html.LabelFor(r => r.RecipientId, "客户", new { @class = "col-sm-4 col-form-label" })
+                                @Html.TextBoxFor(b => b.RecipientId, new { hidden = "hidden" })
                                 <div class="col-sm-8">
-                                    @Html.TextBoxFor(r => r.Destination, new { @class = "form-control", type = "text" })
+                                    <input type="text" id="recipientSearch" class="form-control" data-toggle="dropdown" data-bs-auto-close="inside" />
+                                    <ul class="dropdown-menu" style="width: 100%" id="searched-recipient-options">
+                                    </ul>
+                                </div>
+                            </div>
+                            <div style="display: none;" id="pick-up-location-input" class="form-group row">
+                                <label class="col-sm-4 col-form-label" for="pick-up-location-select">取货点</label>
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(b => b.PickUpLocationId, new { hidden = "hidden" })
+                                    <select class="form-control" id="pick-up-location-select">
+                                        @{
+                                            for (int i = 0; i < pickuplocations.Count; i++)
+                                            {
+                                                var p = pickuplocations[i];
+                                                <option value="@p.Id">@p.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label" for="master-batch-select">装车发货批次</label>
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(b => b.MasterBatchId, new { hidden = "hidden" })
+                                    <select class="form-control" id="master-batch-select">
+                                        @{
+                                            for (int i = 0; i < masterBatches.Count; i++)
+                                            {
+                                                var b = masterBatches[i];
+                                                <option value="@b.Id">@b.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.TargetWeightKg, "目标重量", new { @class = "col-sm-1 col-form-label" })
+                                <div class="col-sm-11">
+                                    @Html.TextBoxFor(r => r.TargetWeightKg, "{0:0.00}", new { @class = "form-control", type = "number", step = "0.01" })
                                 </div>
                             </div>
                         </div>
@@ -84,7 +173,6 @@
                                 @Html.TextAreaFor(r => r.Note, new { @class = "form-control" })
                             </div>
                         </div>
-
                     </div>
 
 
@@ -92,12 +180,53 @@
                         <div>
                             <button type="submit" class="btn btn-success">保存</button>
                         </div>
-                        @*@if (Model.Id > 0)
-                    {
-                    <div class="col-md-1">
-                    <button class="btn btn-primary" id="send-message">发消息</button>
                     </div>
-                    }*@
+                }
+
+                @if (Model.Id > 0)
+                {
+                    <div class="form-group row mt-4">
+                        <label class="col-form-label col-1">从批次:</label>
+                        <input class="form-control col-3" id="targetBatch" />
+                        <button class="btn btn-primary ml-3" id="merge">合并</button>
+                    </div>
+                }
+
+                @if (Model.Id > 0)
+                {
+                    <div class="table-responsive">
+                        <table id="box-listing" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>箱号</th>
+                                    <th>总单数</th>
+                                    <th>总重量</th>
+                                    <th>编号</th>
+                                    <th>打印</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var box in Model.Boxes.OrderBy(b => b.Number))
+                                {
+                                    <tr>
+                                        <td>@Html.ActionLink(box.Number.ToString(), "EditBox", new { boxId = box.Id })</td>
+                                        <td>@box.Orders.Count()</td>
+                                        <td>@box.Orders.Sum(o => o.WeightKg)</td>
+                                        <td>@Model.Id - @box.Number</td>
+                                        <td><a href='@Url.Action("PrintBatchBox")?id=@box.Id' target="_blank"><i class="fa fa-print fa-lg"></i></a></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    @Html.ActionLink("添加", "AddBox", null, new { id = Model.Id, boxNumber = Model.Boxes.Count + 1 }, new { @class = "btn btn-primary" })
+
+                    <h5 class="mt-2">其他单</h5>
+                    <div class="row">
+                        @foreach (var otherOrder in Model.OtherOrders)
+                        {
+                            <div class="col-2">@otherOrder</div>
+                        }
                     </div>
                 }
             </div>
@@ -134,25 +263,56 @@
 </div>
 
 @section Scripts
-    {
+{
     <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
     <script>
-        $('#recipient-select').val($('#RecipientId').val());
+        let global_routes = @Html.Raw(Json.Serialize(ViewBag.Routes));
+        let global_companies = @Html.Raw(Json.Serialize(ViewBag.Companies));
+        let global_pick_up_locations = @Html.Raw(Json.Serialize(ViewBag.PickUpLocations));
+        let global_master_batch = @Html.Raw(Json.Serialize(ViewBag.MasterBatches));
+        let global_companyIds = global_companies[0].id, routeIds = '', global_selected_user_code = '';
+        let search = document.location.search;
+        if (search.includes("?")) {
+            search = search.replace("?", "");
+            let companyPart = search.split("&").find(p => p.split("=")[0].toLowerCase() === "companyids");
+            if (companyPart) global_companyIds = companyPart.split("=")[1];
+            let routePart = search.split("&").find(p => p.split("=")[0].toLowerCase() === "routeid");
+            if (!routePart) routeIds = "";
+            else routeIds = routePart.split("=")[1];
+        }
+        $('#recipientSearch').on('focusout', function() {
+            let recipientCode = $('#recipientSearch').val();
+            if (recipientCode.trim() === '') return;
+            $.get(`@Url.Action("SearchByUserCode", "User")?code=${recipientCode}&pageSize=10&companyIds=${global_companyIds}`,
+                {},
+                function (result) {
+                    document.getElementById("site-overlay").style.display = "none";
 
-        $('#recipient-select').change(function () {
-            $('#RecipientId').val(this.value);
+                    if (result.error && result.error.text) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        let searchUserHTML = '';
+                        for (const user of result.data) {
+                            searchUserHTML += `<li class="dropdown-item" onclick="onSelectRecipient(${user.id}, '${user.orderStartNumber}', '${user.orderStartNumber} - ${user.userName}')">${user.orderStartNumber} - ${user.userName}</li>`;
+                        }
+                        $('#searched-recipient-options').html(searchUserHTML);
+                    }
+                });
         });
-
+        function onSelectRecipient(userId, userCode, displayName) {
+            global_selected_user_code = userCode;
+            $('#recipientSearch').val(displayName);
+            $('#RecipientId').val(userId);
+            updateFormattedName();
+        }
         $('#agent-select').val($('#AgentId').val());
 
         $('#agent-select').change(function () {
             $('#AgentId').val(this.value);
-        });
-
-        $('#pickuplocation-select').val($('#PickUpLocationId').val());
-
-        $('#pickuplocation-select').change(function () {
-            $('#PickUpLocationId').val(this.value);
         });
 
         $('#master-batch-select').val($('#MasterBatchId').val());
@@ -167,57 +327,6 @@
             $('#Stage').val(this.value);
         });
 
-        $("#batch-edit-sms-submit-btn").click(function () {
-            const location = $('#batch-edit-pick-up-location-input').val();
-            const time = $('#batch-edit-pick-up-time-input').val();
-            const customMessage = $('#batch-edit-custom-content-input').val();
-            const customRecipientPhone = $('#batch-edit-custom-number-input').val();
-            if (location.trim() === '' || time.trim() === '') {
-                return;
-            }
-
-            $.post('@Url.Action("SmsNotify")',
-                {
-                    id: @Model.Id,
-                    pickUpLocation: location,
-                    pickUpTime: time,
-                    customMessage: customMessage,
-                    recipientPhoneNumber: customRecipientPhone
-                },
-                function (result) {
-                    if (result.error) {
-                        $.toast({
-                            heading: result.error.text,
-                            position: 'mid-center',
-                            icon: 'error'
-                        });
-                    } else {
-                        $.toast({
-                            heading: 'Success',
-                            text: '操作成功',
-                            showHideTransition: 'slide',
-                            icon: 'success',
-                            loaderBg: '#f2a654',
-                            position: 'mid-center'
-                        });
-                    }
-                }
-            );
-
-            $('#smsInputModal').removeClass("show");
-            $('#smsInputModal').hide();
-        });
-
-        $("#batch-edit-sms-cancel-btn").click(function () {
-            $('#smsInputModal').removeClass("show");
-            $('#smsInputModal').hide();
-        });
-
-        $('#batch_edit_sms_notify_btn').click(function () {
-            $('#smsInputModal').addClass("show");
-            $('#smsInputModal').show();
-            return false;
-        });
 
         $('#batch_edit_split_by_locations_btn').click(function () {
             fetch('/batch/SplitByLocations/' + @Model.Id)
@@ -424,6 +533,63 @@
         $('#batch-action').click(function () {
             document.getElementById("site-overlay").style.display = "block";
         });
+        $('#companyId').val(global_companyIds);
+        $('#company-select').val(global_companyIds);
+        $('#company-select').change(function () {
+            document.location = `${document.location.origin}${document.location.pathname}?groupType=Pallet&companyIds=${$('#company-select').val()}`;
+        });
+        function onSelectRoute(routeId) {
+            let r = global_routes.find(r => r.id === routeId);
+            if (!r) return;
+            if (r.type === @((int)RouteType.Mixed)) {
+                $('#recipient-input').hide();
+                $('#pick-up-location-input').show();
+            } else if (r.type === @((int)RouteType.Direct)) {
+                $('#recipient-input').show();
+                $('#pick-up-location-input').hide();
+            }
+        }
+        function updateFormattedName() {
+            let companyId = parseInt($('#company-select').val());
+            let companyCode = global_companies.find(c => c.id === companyId).code;
+            let routeId = parseInt($('#route-select').val());
+            let route = global_routes.find(r => r.id === routeId);
+            if (route.type === @((int)RouteType.Mixed)) {
+                let locationId = parseInt($('#pick-up-location-select').val());
+                let locationName = global_pick_up_locations.find(l => l.id === locationId).name;
+                $('#formatted-name').text(`${companyCode}-${route.code}-${locationName}-装箱打包`);
+            } else if (route.type === @((int)RouteType.Direct)) {
+                if (global_selected_user_code.toString().trim() === '') {
+                    $('#formatted-name').text(`${companyCode}-${route.code}-装箱打包`);
+                } else {
+                    $('#formatted-name').text(`${companyCode}-${route.code}-${global_selected_user_code}-装箱打包`);
+                }
+            }
+            $('#Name').val(`${$('#custom-name').val()}-${$('#formatted-name').text()}`);
+        }
+        $('#custom-name').change(function() {
+            $('#Name').val(`${$('#custom-name').val()}-${$('#formatted-name').text()}`);
+            $('#CustomName').val(`${$('#custom-name').val()}`);
+        });
+        $('#route-select').change(function () {
+            let routeId = parseInt($('#route-select').val());
+            $('#routeId').val(routeId);
+            let r = global_routes.find(r => r.id === routeId);
+            if (!r) return;
+            if (r.type === @((int)RouteType.Mixed)) {
+                $('#recipient-input').hide();
+                $('#pick-up-location-input').show();
+            } else if (r.type === @((int)RouteType.Direct)) {
+                $('#recipient-input').show();
+                $('#pick-up-location-input').hide();
+            }
+            updateFormattedName();
+        });
+        $('#pick-up-location-select').change(function () {
+            $('#PickUpLocationId').val($('#pick-up-location-select').val());
+            updateFormattedName();
+        });
+        onSelectRoute(global_routes[0].id);
 
         $('#merge').click(function () {
             const sourceBatchAndBox = $('#targetBatch').val();
@@ -512,12 +678,6 @@
                         $('#TotalStorageCost').val(body.data.totalStorageCost.toFixed(2))
                     }
                 });
-            $('#warehouse-select').val($('#WarehouseId').val());
-
-            $('#warehouse-select').change(function () {
-                $('#WarehouseId').val(this.value);
-            });
-
         })
     </script>
 }

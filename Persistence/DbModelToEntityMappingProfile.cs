@@ -244,7 +244,11 @@ namespace Persistence
                 .ForMember(dest => dest.Length, opt => opt.MapFrom(src => src.BatchPallets != null && src.BatchPallets.Any() ? src.BatchPallets.First().Length : 0))
                 .ForMember(dest => dest.Width, opt => opt.MapFrom(src => src.BatchPallets != null && src.BatchPallets.Any() ? src.BatchPallets.First().Width : 0))
                 .ForMember(dest => dest.Height, opt => opt.MapFrom(src => src.BatchPallets != null && src.BatchPallets.Any() ? src.BatchPallets.First().Height: 0))
-                .ForMember(dest => dest.Boxes, opt => opt.MapFrom(src => GetAllBatchBoxes(src)));
+                .ForMember(dest => dest.CustomName, opt => opt.MapFrom(src => src.BatchPallets != null && src.BatchPallets.Any() ? src.BatchPallets.First().CustomName : null))
+                .ForMember(dest => dest.Boxes, opt => opt.MapFrom(src => GetAllBatchBoxes(src)))
+                .ForMember(dest => dest.ShipFlightNumber, opt => opt.MapFrom(src => src.MasterBatch != null && src.MasterBatch.LoadDeliveryBatches != null && src.MasterBatch.LoadDeliveryBatches.Count > 0 ? src.MasterBatch.LoadDeliveryBatches.First().FlightInfo : ""))
+                .ForMember(dest => dest.LoadDeliveryStage, opt => opt.MapFrom(src => ((BatchStageType)src.MasterBatch.Stage).GetDescription()))
+                .ForMember(dest => dest.CompanyCode, opt => opt.MapFrom(src => src.Company.Code));
 
             CreateMap<Batch, PackageBatchEntity>()
                 .ForMember(dest => dest.CustomName, opt => opt.MapFrom(src => src.BatchPackages != null && src.BatchPackages.Any() ? src.BatchPackages.First().CustomName : null))
@@ -297,7 +301,21 @@ namespace Persistence
             {
                 foreach (var m in batch.BatchBoxMaps)
                 {
-                    boxes.Add(m.BatchBox);
+                    boxes.Add(new BatchBox
+                    {
+                        Id = m.BatchBox.Id,
+                        BatchId = m.BatchBox.BatchId,
+                        Length = m.BatchBox.Length,
+                        Width = m.BatchBox.Width,
+                        Height = m.BatchBox.Height,
+                        ActualWeightKg = m.BatchBox.ActualWeightKg,
+                        Name = m.BatchBox.Name,
+                        Number = m.BatchBox.Number,
+                        OriginalObjectNumber = m.OriginalObjectNumber,
+                        BatchBoxOrderMaps = m.BatchBox.BatchBoxOrderMaps,
+                        BatchBoxMaps = m.BatchBox.BatchBoxMaps,
+                        Batch = m.BatchBox.Batch,
+                    });
                 }
             }
             boxes.AddRange(batch.BatchBoxes.Where(bb => !boxes.Any(box => box.Id == bb.Id)));

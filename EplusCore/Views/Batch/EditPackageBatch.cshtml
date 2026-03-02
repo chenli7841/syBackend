@@ -458,7 +458,6 @@
             let storageCost = parseFloat($('#StorageCost').val()) || 0;
             let discount = parseFloat($('#Discount').val()) || 0;
             let totalExpense = baseShippingCost + operationCost + duty + deliveryCost + insuranceFee + storageCost - discount;
-            console.log("total expense: ", totalExpense);
             $('#TotalExpense').val(totalExpense.toFixed(2));
         }
 

@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 
 #nullable disable
 
@@ -20,6 +22,8 @@ namespace Persistence.Data
         public double? ActualWeightKg { get; set; }
         public int BatchId { get; set; }
         public string Name { get; set; }
+        public string OriginalObjectNumber { get; set; }
+
 
         public virtual Batch Batch { get; set; }
         public virtual ICollection<BatchBoxOrderMap> BatchBoxOrderMaps { get; set; }

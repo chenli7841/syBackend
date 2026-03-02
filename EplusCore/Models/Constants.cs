@@ -20,7 +20,7 @@ namespace WebUI.Models
             { OrderStatusType.PendingConfirmationMoney, "等待确认运费" },
             { OrderStatusType.Dispatched, "已发货" },
             { OrderStatusType.PackagingScan, "装箱打包扫描" },
-            { OrderStatusType.LeavingWarehouseScan, "出库扫描" },
+            { OrderStatusType.AddToPallet, "加入托盘" },
             { OrderStatusType.OnboardingScan, "装车扫描" },
             { OrderStatusType.PendingDeparture, "到达港口等待起航" },
             { OrderStatusType.InTransit, "运输中" },

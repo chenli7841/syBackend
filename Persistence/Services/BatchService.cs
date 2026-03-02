@@ -62,13 +62,13 @@ namespace Persistence.Services
             _todoItemService = todoItemService;
         }
 
-        public async Task<PagedResult<BatchEntity>> ListLoadDeliveryBatchAsync(BatchListFilterOptions filterOptions)
+        public async Task<PagedResult<BatchEntity>> ListLoadDeliveryBatchAsync(BatchListFilterOptions filterOptions, int[] companyIds)
         {
             var batchesFiltered = _context.Batches
                 .Include(b => b.LoadDeliveryBatches)
                 .Where(b => b.LoadDeliveryBatches.Count > 0 && b.LoadDeliveryBatches.First().WarehouseId == filterOptions.WarehouseId
                     && (filterOptions.GroupType == BatchGroupType.LoadDelivery)
-                    && (!filterOptions.Ids.Any() || filterOptions.Ids.Contains(b.Id)) && b.CompanyId == Config.COMPANY_ID)
+                    && (!filterOptions.Ids.Any() || filterOptions.Ids.Contains(b.Id)) && (companyIds == null ? (b.CompanyId == Config.COMPANY_ID) : companyIds.Contains(b.CompanyId.Value)))
                 .Include(b => b.BatchBoxes)
                     .ThenInclude(bx => bx.BatchBoxOrderMaps)
                         .ThenInclude(m => m.Order)
@@ -917,8 +917,10 @@ WHERE bb.BatchId=@batchId
                 .ThenInclude(m => m.Order)
                 .Include(b => b.BatchOtherOrders)
                 .Include(b => b.BatchPallets)
+                .Include(b => b.MasterBatch).ThenInclude(b => b.LoadDeliveryBatches)
                 .Include(b => b.BatchBoxMaps).ThenInclude(bx => bx.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
-                .FirstAsync(b => b.Id == id && b.CompanyId == Config.COMPANY_ID);
+                .Include(b => b.Company)
+                .FirstAsync(b => b.Id == id);
             var result = _mapper.Map<PalletBatchEntity>(batch);
             return result;
         }
@@ -1247,11 +1249,6 @@ WHERE bb.BatchId=@batchId
             {
                 // 装箱打包批次里的扫描，加 “装箱打包扫描” 的后台操作记录
                 await _orderService.AddInternalStatus(OrderStatusType.PackagingScan, _session.CurrentUser.Id, order.Id);
-            }
-            else if (batch.GroupType == BatchGroupType.ExitGarageScan)
-            {
-                // 出库扫描批次里的扫描，加 “出库扫描” 的后台操作记录
-                await _orderService.AddInternalStatus(OrderStatusType.LeavingWarehouseScan, _session.CurrentUser.Id, order.Id);
             }
             else if (batch.GroupType == BatchGroupType.LoadDelivery)
             {
@@ -2022,7 +2019,7 @@ WHERE bb.BatchId=@batchId
             await _context.SaveChangesAsync();
         }
 
-        public async Task MergeAsync(int targetBatchId, int sourceBatchId, int? sourceBoxNumber)
+        public async Task MergeAsync(int targetBatchId, int sourceBatchId, int? sourceBoxNumber, string originalBoxNumber)
         {
             var targetBatch = await GetAsyncForMerge(targetBatchId);
             var sourceBatch = await GetAsyncForMerge(sourceBatchId);
@@ -2040,7 +2037,7 @@ WHERE bb.BatchId=@batchId
 
             // TODO: add status
             var targetBoxNumber = targetBatch.Boxes.Max(b => b.Number) + 1;
-            var targetBox = new BatchBox() {BatchId = targetBatchId, Number = targetBoxNumber};
+            var targetBox = new BatchBox() {BatchId = targetBatchId, Number = targetBoxNumber, OriginalObjectNumber = originalBoxNumber};
             await _context.BatchBoxes.AddAsync(targetBox);
             await _context.SaveChangesAsync();
 
@@ -2058,7 +2055,7 @@ WHERE bb.BatchId=@batchId
             }
         }
 
-        public async Task AcceptBoxAsync(int targetBatchId, int sourceBatchId, int? sourceBoxNumber)
+        public async Task AcceptBoxAsync(int targetBatchId, int sourceBatchId, int? sourceBoxNumber, string originalBoxNumber)
         {
             var targetBatch = await GetAsyncForMerge(targetBatchId);
             var sourceBatch = await GetAsyncForMerge(sourceBatchId);
@@ -2070,10 +2067,56 @@ WHERE bb.BatchId=@batchId
             var existingMap =  await _context.BatchBoxMaps.FirstOrDefaultAsync(m => m.BatchId == targetBatchId && m.BoxId == box.Id);
             if (existingMap == null)
             {
-                await _context.BatchBoxMaps.AddAsync(new BatchBoxMap { BatchId = targetBatchId, BoxId = box.Id });
+                await _context.BatchBoxMaps.AddAsync(new BatchBoxMap { BatchId = targetBatchId, BoxId = box.Id, OriginalObjectNumber = originalBoxNumber });
             }
             await _context.SaveChangesAsync();
         }
+
+        public async Task AcceptOrderToPalletAsync(int targetBatchId, string orderOrDomesticNumber)
+        {
+            var order = await _context.TransportOrders.Include(o => o.RouteNavigation).FirstOrDefaultAsync(o => o.OrderNumber == orderOrDomesticNumber || o.DomesticNumber == orderOrDomesticNumber) ?? throw new Exception($"单号或国内单号不存在: {orderOrDomesticNumber}");
+            var existingPalletBatch = await _context.Batches.Include(b => b.BatchBoxes).ThenInclude(bb => bb.BatchBoxOrderMaps)
+                .Include(b => b.BatchBoxMaps).ThenInclude(bbm => bbm.BatchBox).ThenInclude(bb => bb.BatchBoxOrderMaps)
+                .Where(b => b.GroupType == (int)BatchGroupType.Pallet &&
+                    b.BatchBoxes.Any(bb => bb.BatchBoxOrderMaps.Any(bbom => bbom.OrderId == order.Id)) || b.BatchBoxMaps.Any(bbm => bbm.BatchBox.BatchBoxOrderMaps.Any(bbom => bbom.OrderId == order.Id)))
+                .FirstOrDefaultAsync();
+            if (existingPalletBatch != null)
+            {
+                throw new Exception($"运单 {orderOrDomesticNumber} 已存在于开托盘批次: {existingPalletBatch.Name}。无法再添加。");
+            }
+            // 1. 把单加入开托盘批次
+            var targetBatch = await _context.Batches.Include(b => b.BatchBoxes).FirstOrDefaultAsync(b => b.Id == targetBatchId) ?? throw new Exception($"目标批次不存在: {targetBatchId}");
+            var newBoxNumber = 1;
+            if (targetBatch.BatchBoxes.Count > 0)
+            {
+                newBoxNumber = targetBatch.BatchBoxes.Select(bb => bb.Number).Max() + 1;
+            }
+            var newBox = new BatchBox
+            {
+                Number = newBoxNumber,
+                BatchBoxOrderMaps = new List<BatchBoxOrderMap>
+                {
+                    new BatchBoxOrderMap
+                    {
+                        OrderId = order.Id,
+                    }
+                },
+                OriginalObjectNumber = orderOrDomesticNumber
+            };
+
+            targetBatch.BatchBoxes.Add(newBox);
+
+            // 3. 添加"加入托盘"状态
+            await _context.OrderStatuses.AddAsync(new OrderStatus
+            {
+                OrderId = order.Id,
+                Status = (int)OrderStatusType.AddToPallet,
+                DateCreated = DateTime.Now,
+                UserId = _session.CurrentUser.Id,
+            });
+            await _context.SaveChangesAsync();
+        }
+
 
         public async Task AcceptOrderAsync(int targetBatchId, string orderOrDomesticNumber)
         {
@@ -2541,7 +2584,7 @@ WHERE bb.BatchId=@batchId
                         WarehouseId = model.WarehouseId,
                     },
                 },
-                CompanyId = Config.COMPANY_ID,
+                CompanyId = (model.CompanyId ?? Config.COMPANY_ID),
             };
 
             var batchBox = new BatchBox() { Number = 1 };
@@ -2574,10 +2617,12 @@ WHERE bb.BatchId=@batchId
                 GroupType = (int) BatchGroupType.Pallet,
                 UserId = _session.CurrentUser.Id,
                 Note = model.Note,
+                MasterBatchId = model.MasterBatchId,
                 BatchPallets = new List<BatchPallet>
                 {
                     new BatchPallet
                     {
+                        CustomName = model.CustomName,
                         WarehouseId = model.WarehouseId,
                         Length = model.Length, 
                         Width = model.Width,
@@ -2585,7 +2630,7 @@ WHERE bb.BatchId=@batchId
                         WeightKg = model.WeightKg,
                     },
                 },
-                CompanyId = Config.COMPANY_ID,
+                CompanyId = (model.CompanyId ?? Config.COMPANY_ID),
             };
 
             var batchBox = new BatchBox() {Number = 1};

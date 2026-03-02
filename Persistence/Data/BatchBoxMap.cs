@@ -10,6 +10,7 @@ namespace Persistence.Data
         public int Id { get; set; }
         public int BatchId { get; set; }
         public int BoxId { get; set; }
+        public string OriginalObjectNumber { get; set; }
 
         public virtual BatchBox BatchBox { get; set; }
         public virtual Batch Batch { get; set; }

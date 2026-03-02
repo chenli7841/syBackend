@@ -9,7 +9,7 @@ namespace Domain.Services
     public interface IBatchService
     {
         Task<PagedResult<BatchEntity>> ListWarehouseReceiveBatchAsync(BatchListFilterOptions filterOptions);
-        Task<PagedResult<BatchEntity>> ListLoadDeliveryBatchAsync(BatchListFilterOptions filterOptions);
+        Task<PagedResult<BatchEntity>> ListLoadDeliveryBatchAsync(BatchListFilterOptions filterOptions, int[] companyIds);
         Task<PagedResult<BatchEntity>> ListPalletBatchAsync(BatchListFilterOptions filterOptions, int[] companyIds);
         Task<PagedResult<BatchEntity>> ListAsync(BatchListFilterOptions filterOptions, int[] companyIds);
         Task<PagedResult<PendingDispatchBatchEntity>> ListPendingDispatchAsync(BatchListFilterOptions filterOptions, int[] companyIds);
@@ -48,9 +48,10 @@ namespace Domain.Services
         Task SplitByNonLocation(int id);
         Task SplitByNonAgent(int id);
         Task DeleteAsync(int id);
-        Task MergeAsync(int targetBatchId, int sourceBatchId, int? sourceBoxNumber);
-        Task AcceptBoxAsync(int targetBatchId, int sourceBatchId, int? sourceBoxNumber);
+        Task MergeAsync(int targetBatchId, int sourceBatchId, int? sourceBoxNumber, string originalBoxNumber);
+        Task AcceptBoxAsync(int targetBatchId, int sourceBatchId, int? sourceBoxNumber, string originalBoxNumber);
         Task AcceptOrderAsync(int targetBatchId, string orderOrDomesticNumber);
+        Task AcceptOrderToPalletAsync(int targetBatchId, string orderOrDomesticNumber);
         Task CommissionAsync(int id);
         void RemoveCache(int id);
         Task<OrderScanStatusEntity> SaveOrderScanStatus(OrderScanStatusEntity model, int userId);

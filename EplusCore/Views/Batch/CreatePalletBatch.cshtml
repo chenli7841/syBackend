@@ -33,11 +33,8 @@
 
 @{
     var recipients = (IEnumerable<UserEntity>)ViewBag.Recipients;
-    var agents = (IEnumerable<UserEntity>)ViewBag.Agents;
-    var pickuplocations = ((IEnumerable<PickUpLocationEntity>)ViewBag.PickUpLocations).ToList();
     var masterBatches = ((IEnumerable<BatchEntity>)ViewBag.MasterBatches).ToList();
     var companies = ((IEnumerable<CompanyEntity>)ViewBag.Companies).ToList();
-    var routes = ((IEnumerable<RouteEntity>)ViewBag.Routes).ToList();
 }
 
 <div class="row">
@@ -77,11 +74,11 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <div class="form-group row">
-                                <label class="col-sm-4 col-form-label" for="company-select">公司</label>
+                                <label class="col-sm-2 col-form-label" for="company-select">公司</label>
                                 @Html.TextBoxFor(b => b.CompanyId, new { hidden = "hidden" })
-                                <div class="col-sm-8">
+                                <div class="col-sm-10">
                                     <select class="form-control" id="company-select">
                                         @{
                                             for (int i = 0; i < companies.Count; i++)
@@ -95,53 +92,10 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <div class="form-group row">
-                                <label class="col-sm-4 col-form-label" for="route-select">线路</label>
-                                @Html.TextBoxFor(b => b.RouteId, new { hidden = "hidden" })
-                                <div class="col-sm-8">
-                                    <select class="form-control" id="route-select">
-                                        @{
-                                            for (int i = 0; i < routes.Count; i++)
-                                            {
-                                                var r = routes[i];
-                                                <option value="@r.Id">@r.Name</option>
-                                            }
-                                        }
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div style="display: none;" id="recipient-input" class="form-group row">
-                                @Html.LabelFor(r => r.RecipientId, "客户", new { @class = "col-sm-4 col-form-label" })
-                                @Html.TextBoxFor(b => b.RecipientId, new { hidden = "hidden" })
-                                <div class="col-sm-8">
-                                    <input type="text" id="recipientSearch" class="form-control" data-toggle="dropdown" data-bs-auto-close="inside" />
-                                    <ul class="dropdown-menu" style="width: 100%" id="searched-recipient-options">
-                                    </ul>
-                                </div>
-                            </div>
-                            <div style="display: none;" id="pick-up-location-input" class="form-group row">
-                                <label class="col-sm-4 col-form-label" for="pick-up-location-select">取货点</label>
-                                <div class="col-sm-8">
-                                    @Html.TextBoxFor(b => b.PickUpLocationId, new { hidden = "hidden" })
-                                    <select class="form-control" id="pick-up-location-select">
-                                        @{
-                                            for (int i = 0; i < pickuplocations.Count; i++)
-                                            {
-                                                var p = pickuplocations[i];
-                                                <option value="@p.Id">@p.Name</option>
-                                            }
-                                        }
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group row">
-                                <label class="col-sm-4 col-form-label" for="master-batch-select">装车发货批次</label>
-                                <div class="col-sm-8">
+                                <label class="col-sm-2 col-form-label" for="master-batch-select">装车发货批次</label>
+                                <div class="col-sm-10">
                                     @Html.TextBoxFor(b => b.MasterBatchId, new { hidden = "hidden" })
                                     <select class="form-control" id="master-batch-select">
                                         @{
@@ -152,16 +106,6 @@
                                             }
                                         }
                                     </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="form-group row">
-                                @Html.LabelFor(r => r.TargetWeightKg, "目标重量", new { @class = "col-sm-1 col-form-label" })
-                                <div class="col-sm-11">
-                                    @Html.TextBoxFor(r => r.TargetWeightKg, "{0:0.00}", new { @class = "form-control", type = "number", step = "0.01" })
                                 </div>
                             </div>
                         </div>
@@ -266,9 +210,7 @@
 {
     <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
     <script>
-        let global_routes = @Html.Raw(Json.Serialize(ViewBag.Routes));
         let global_companies = @Html.Raw(Json.Serialize(ViewBag.Companies));
-        let global_pick_up_locations = @Html.Raw(Json.Serialize(ViewBag.PickUpLocations));
         let global_master_batch = @Html.Raw(Json.Serialize(ViewBag.MasterBatches));
         let global_companyIds = global_companies[0].id, routeIds = '', global_selected_user_code = '';
         let search = document.location.search;
@@ -280,53 +222,19 @@
             if (!routePart) routeIds = "";
             else routeIds = routePart.split("=")[1];
         }
-        $('#recipientSearch').on('focusout', function() {
-            let recipientCode = $('#recipientSearch').val();
-            if (recipientCode.trim() === '') return;
-            $.get(`@Url.Action("SearchByUserCode", "User")?code=${recipientCode}&pageSize=10&companyIds=${global_companyIds}`,
-                {},
-                function (result) {
-                    document.getElementById("site-overlay").style.display = "none";
-
-                    if (result.error && result.error.text) {
-                        $.toast({
-                            heading: result.error.text,
-                            position: 'mid-center',
-                            icon: 'error'
-                        });
-                    } else {
-                        let searchUserHTML = '';
-                        for (const user of result.data) {
-                            searchUserHTML += `<li class="dropdown-item" onclick="onSelectRecipient(${user.id}, '${user.orderStartNumber}', '${user.orderStartNumber} - ${user.userName}')">${user.orderStartNumber} - ${user.userName}</li>`;
-                        }
-                        $('#searched-recipient-options').html(searchUserHTML);
-                    }
-                });
-        });
-        function onSelectRecipient(userId, userCode, displayName) {
-            global_selected_user_code = userCode;
-            $('#recipientSearch').val(displayName);
-            $('#RecipientId').val(userId);
-            updateFormattedName();
-        }
-        $('#agent-select').val($('#AgentId').val());
-
-        $('#agent-select').change(function () {
-            $('#AgentId').val(this.value);
-        });
 
         $('#master-batch-select').val($('#MasterBatchId').val());
 
         $('#master-batch-select').change(function () {
             $('#MasterBatchId').val(this.value);
+            updateFormattedName();
         });
 
-        $('#stage-select').val($('#Stage').val());
-
-        $('#stage-select').change(function () {
-            $('#Stage').val(this.value);
+        $('#companyId').val(global_companyIds);
+        $('#company-select').val(global_companyIds);
+        $('#company-select').change(function () {
+            document.location = `${document.location.origin}${document.location.pathname}?groupType=Pallet&companyIds=${$('#company-select').val()}`;
         });
-
 
         $('#batch_edit_split_by_locations_btn').click(function () {
             fetch('/batch/SplitByLocations/' + @Model.Id)
@@ -360,166 +268,6 @@
             return false;
         });
 
-        $('#batch_edit_split_by_agents_btn').click(function () {
-            fetch('/batch/SplitByAgents/' + @Model.Id)
-                .then(async response => {
-                    if (response.status === 400) {
-                        const body = await response.json();
-                        if (!body.value.error) {
-                            $.toast({
-                                heading: '未知错误',
-                                hideAfter: false,
-                                position: 'mid-center',
-                                icon: 'error'
-                            });
-                        } else {
-                            $.toast({
-                                heading: body.value.error.text,
-                                hideAfter: false,
-                                position: 'mid-center',
-                                icon: 'error'
-                            });
-                        }
-                    }
-                    else if (response.status === 200) {
-                        $.toast({
-                            heading: '拆分成功',
-                            position: 'mid-center',
-                            icon: 'success'
-                        });
-                    }
-                });
-            return false;
-        });
-
-        $('#batch_edit_split_by_recipients_btn').click(function () {
-            fetch('/batch/SplitByRecipients/' + @Model.Id)
-                .then(async response => {
-                    if (response.status === 400) {
-                        const body = await response.json();
-                        if (!body.value.error) {
-                            $.toast({
-                                heading: '未知错误',
-                                hideAfter: false,
-                                position: 'mid-center',
-                                icon: 'error'
-                            });
-                        } else {
-                            $.toast({
-                                heading: body.value.error.text,
-                                hideAfter: false,
-                                position: 'mid-center',
-                                icon: 'error'
-                            });
-                        }
-                    }
-                    else if (response.status === 200) {
-                        $.toast({
-                            heading: '拆分成功',
-                            position: 'mid-center',
-                            icon: 'success'
-                        });
-                    }
-                });
-            return false;
-        });
-
-        $('#batch_edit_split_warehouse_cost_btn').click(function () {
-            fetch('/batch/SplitByNonAgent/' + @Model.Id)
-                .then(async response => {
-                    if (response.status === 400) {
-                        const body = await response.json();
-                        if (!body.value.error) {
-                            $.toast({
-                                heading: '未知错误',
-                                hideAfter: false,
-                                position: 'mid-center',
-                                icon: 'error'
-                            });
-                        } else {
-                            $.toast({
-                                heading: body.value.error.text,
-                                hideAfter: false,
-                                position: 'mid-center',
-                                icon: 'error'
-                            });
-                        }
-                    }
-                    else if (response.status === 200) {
-                        $.toast({
-                            heading: '拆分成功',
-                            position: 'mid-center',
-                            icon: 'success'
-                        });
-                    }
-                });
-            return false;
-        });
-
-        $('#batch_edit_split_bill_btn').click(function () {
-            fetch('/batch/SplitByNonLocation/' + @Model.Id)
-                .then(async response => {
-                    if (response.status === 400) {
-                        const body = await response.json();
-                        if (!body.value.error) {
-                            $.toast({
-                                heading: '未知错误',
-                                hideAfter: false,
-                                position: 'mid-center',
-                                icon: 'error'
-                            });
-                        } else {
-                            $.toast({
-                                heading: body.value.error.text,
-                                hideAfter: false,
-                                position: 'mid-center',
-                                icon: 'error'
-                            });
-                        }
-                    }
-                    else if (response.status === 200) {
-                        $.toast({
-                            heading: '拆分成功',
-                            position: 'mid-center',
-                            icon: 'success'
-                        });
-                    }
-                });
-            return false;
-        });
-
-        $('#batch_edit_update_order_load_delivery_properties_btn').click(function () {
-            fetch('/batch/UpdateLoadDeliveryProperties/' + @Model.Id)
-                .then(async response => {
-                    if (response.status === 400) {
-                        const body = await response.json();
-                        if (!body.value.error) {
-                            $.toast({
-                                heading: '未知错误',
-                                hideAfter: false,
-                                position: 'mid-center',
-                                icon: 'error'
-                            });
-                        } else {
-                            $.toast({
-                                heading: body.value.error.text,
-                                hideAfter: false,
-                                position: 'mid-center',
-                                icon: 'error'
-                            });
-                        }
-                    }
-                    else if (response.status === 200) {
-                        $.toast({
-                            heading: '批次名更新成功',
-                            position: 'mid-center',
-                            icon: 'success'
-                        });
-                    }
-                });
-            return false;
-        });
-
         $('#box-listing').DataTable({
             paging: false,
             searching: false,
@@ -533,64 +281,30 @@
         $('#batch-action').click(function () {
             document.getElementById("site-overlay").style.display = "block";
         });
-        $('#companyId').val(global_companyIds);
+        $('#CompanyId').val(global_companyIds);
         $('#company-select').val(global_companyIds);
         $('#company-select').change(function () {
             document.location = `${document.location.origin}${document.location.pathname}?groupType=Pallet&companyIds=${$('#company-select').val()}`;
         });
-        function onSelectRoute(routeId) {
-            let r = global_routes.find(r => r.id === routeId);
-            if (!r) return;
-            if (r.type === @((int)RouteType.Mixed)) {
-                $('#recipient-input').hide();
-                $('#pick-up-location-input').show();
-            } else if (r.type === @((int)RouteType.Direct)) {
-                $('#recipient-input').show();
-                $('#pick-up-location-input').hide();
-            }
-        }
         function updateFormattedName() {
             let companyId = parseInt($('#company-select').val());
             let companyCode = global_companies.find(c => c.id === companyId).code;
-            let routeId = parseInt($('#route-select').val());
-            let route = global_routes.find(r => r.id === routeId);
-            if (route.type === @((int)RouteType.Mixed)) {
-                let locationId = parseInt($('#pick-up-location-select').val());
-                let locationName = global_pick_up_locations.find(l => l.id === locationId).name;
-                $('#formatted-name').text(`${companyCode}-${route.code}-${locationName}-装箱打包`);
-            } else if (route.type === @((int)RouteType.Direct)) {
-                if (global_selected_user_code.toString().trim() === '') {
-                    $('#formatted-name').text(`${companyCode}-${route.code}-装箱打包`);
-                } else {
-                    $('#formatted-name').text(`${companyCode}-${route.code}-${global_selected_user_code}-装箱打包`);
-                }
+            let masterBatchId = parseInt($('#master-batch-select').val());
+            let destinationName = $('#destination-select').val();
+            if (!$('#master-batch-select').val()) {
+                $('#formatted-name').text(`${companyCode}-${destinationName}-托盘`);
+                $('#Name').val(`${$('#custom-name').val()}-${$('#formatted-name').text()}`);
+                return;
             }
+            let masterBatchName = global_master_batch.find(b => b.id === masterBatchId).name;
+            $('#formatted-name').text(`${companyCode}-${masterBatchName}-${destinationName}-托盘`);
             $('#Name').val(`${$('#custom-name').val()}-${$('#formatted-name').text()}`);
         }
         $('#custom-name').change(function() {
             $('#Name').val(`${$('#custom-name').val()}-${$('#formatted-name').text()}`);
             $('#CustomName').val(`${$('#custom-name').val()}`);
         });
-        $('#route-select').change(function () {
-            let routeId = parseInt($('#route-select').val());
-            $('#routeId').val(routeId);
-            let r = global_routes.find(r => r.id === routeId);
-            if (!r) return;
-            if (r.type === @((int)RouteType.Mixed)) {
-                $('#recipient-input').hide();
-                $('#pick-up-location-input').show();
-            } else if (r.type === @((int)RouteType.Direct)) {
-                $('#recipient-input').show();
-                $('#pick-up-location-input').hide();
-            }
-            updateFormattedName();
-        });
-        $('#pick-up-location-select').change(function () {
-            $('#PickUpLocationId').val($('#pick-up-location-select').val());
-            updateFormattedName();
-        });
-        onSelectRoute(global_routes[0].id);
-
+        updateFormattedName();
         $('#merge').click(function () {
             const sourceBatchAndBox = $('#targetBatch').val();
             const targetBatchId = @Model.Id;

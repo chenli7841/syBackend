@@ -361,3 +361,7 @@ ADD CONSTRAINT `fk_todo_item_BatchId`
   REFERENCES `batch` (`Id`)
   ON DELETE CASCADE
   ON UPDATE NO ACTION;
+
+ALTER TABLE batch_pallet ADD COLUMN CustomName varchar(64) NULL
+
+alter table batch_box_map add column OriginalObjectNumber varchar(64)

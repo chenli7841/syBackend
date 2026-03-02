@@ -27,10 +27,10 @@ namespace Persistence.Services
             _dateTime = dateTime;
         }
 
-        public async Task<IEnumerable<WarehouseEntity>> ListAsync()
+        public async Task<IEnumerable<WarehouseEntity>> ListAsync(int[] companyIds = null)
         {
             var result = await _context.Warehouses
-                .Where(r => r.CompanyId == Config.COMPANY_ID)
+                .Where(r => (companyIds == null ? (r.CompanyId == Config.COMPANY_ID) : companyIds.Contains(r.CompanyId)))
                 .Select(r => _mapper.Map<WarehouseEntity>(r))
                 .ToListAsync();
             return result;

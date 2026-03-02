@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 #nullable disable
 
@@ -1831,6 +1832,11 @@ namespace Persistence.Data
                     .HasColumnName("WeightKg")
                     .HasComment("托盘重量(千克)");
 
+                entity.Property(e => e.CustomName)
+                    .HasColumnType("varchar(64)")
+                    .HasColumnName("CustomName")
+                    .HasComment("手动输入的名称");
+
                 entity.HasOne(d => d.Warehouse)
                     .WithMany(p => p.BatchPallets)
                     .HasForeignKey(d => d.WarehouseId)
@@ -1915,7 +1921,11 @@ namespace Persistence.Data
                 entity.Property(e => e.ActualWeightKg)
                     .HasColumnType("decimal(18,0)")
                     .HasColumnName("ActualWeightKg")
-                    .HasComment("实际重量(kg)");
+                .HasComment("实际重量(kg)");
+
+                entity.Property(e => e.OriginalObjectNumber)
+                    .HasColumnType("varchar(64)")
+                    .HasColumnName("OriginalObjectNumber");
 
                 entity.HasOne(d => d.Batch)
                     .WithMany(p => p.BatchBoxes)
@@ -1941,6 +1951,11 @@ namespace Persistence.Data
                 entity.Property(e => e.BoxId)
                     .HasColumnType("int(11)")
                     .HasComment("批次箱id");
+
+                entity.Property(e => e.OriginalObjectNumber)
+                    .HasColumnType("varchar(64)")
+                    .HasColumnName("OriginalObjectNumber")
+                    .HasComment("原始号码");
 
                 entity.Property(e => e.BatchId)
                     .HasColumnType("int(11)")

@@ -31,6 +31,10 @@
     </style>
 }
 
+@{
+    var companies = ((IEnumerable<CompanyEntity>)ViewBag.Companies).ToList();
+}
+
 <div class="row">
     <div class="col-md-12 grid-margin">
         <div class="card">
@@ -48,6 +52,24 @@
                                 @Html.LabelFor(r => r.Name, "名称", new { @class = "col-sm-4 col-form-label" })
                                 <div class="col-sm-8">
                                     @Html.TextBoxFor(r => r.Name, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group row">
+                                <label class="col-sm-2 col-form-label" for="company-select">公司</label>
+                                @Html.TextBoxFor(b => b.CompanyId, new { hidden = "hidden" })
+                                <div class="col-sm-10">
+                                    <select class="form-control" id="company-select">
+                                        @{
+                                            for (int i = 0; i < companies.Count; i++)
+                                            {
+                                                var c = companies[i];
+                                                <option value="@c.Id">@c.Name</option>
+                                            }
+                                        }
+
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -137,6 +159,19 @@
     {
     <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
     <script>
+        let global_companies = @Html.Raw(Json.Serialize(ViewBag.Companies));
+        let global_companyIds = global_companies[0].id;
+        let search = document.location.search;
+        if (search.includes("?")) {
+            search = search.replace("?", "");
+            let companyPart = search.split("&").find(p => p.split("=")[0].toLowerCase() === "companyids");
+            if (companyPart) global_companyIds = companyPart.split("=")[1];
+        }
+        $('#CompanyId').val(global_companyIds);
+        $('#company-select').val(global_companyIds);
+        $('#company-select').change(function () {
+            document.location = `${document.location.origin}${document.location.pathname}?groupType=LoadDelivery&companyIds=${$('#company-select').val()}`;
+        });
         $('#recipient-select').val($('#RecipientId').val());
 
         $('#recipient-select').change(function () {

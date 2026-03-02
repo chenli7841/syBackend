@@ -30,8 +30,8 @@ namespace Domain.Enums
         Dispatched = 12,
         [Description("装箱打包扫描")]
         PackagingScan = 13,
-        [Description("出库扫描")]
-        LeavingWarehouseScan = 14,
+        [Description("加入托盘")]
+        AddToPallet = 14,
         [Description("装车扫描")]
         OnboardingScan = 15,
         [Description("到达港口等待起航")]

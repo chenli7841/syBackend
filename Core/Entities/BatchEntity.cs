@@ -327,6 +327,7 @@ namespace Domain.Entities
         public double? Height { get; set; }
         public double? ActualWeightKg { get; set; }
         public int BatchId { get; set; }
+        public string OriginalObjectNumber { get; set; }
         public IEnumerable<OrderEntity> Orders { get; set; }
     }
 
@@ -398,7 +399,7 @@ namespace Domain.Entities
         public string Name { get; set; }
         public BatchGroupType GroupType { get; set; }
         public IList<BatchBoxEntity> Boxes { get; set; }
-        public int WarehouseId { get; set; }
+        public int? WarehouseId { get; set; }
         public string Note { get; set; }
         public string Destination { get; set; }
         public IEnumerable<WarehouseEntity> Warehouses { get; set; }
@@ -416,6 +417,18 @@ namespace Domain.Entities
         public int? MasterBatchId { get; set; }
         public decimal? TargetWeightKg { get; set; }
         public IList<string> OtherOrders { get; set; }
+        public string LoadDeliveryStage {  get; set; }
+        public int TotalOrders { get; set; }
+        public decimal TotalWeightKg { get; set; }
+        public decimal TotalVolume {  get; set; }
+        public decimal TotalChargedWeightKg { get; set; }
+        public decimal TotalExpense {  get; set; }
+        public string TransportStatus { get; set; }
+        public string PaymentStatus { get; set; }
+        public string CompanyCode { get; set; }
+        public string PickUpLocationName {  get; set; }
+        public string RecipientCode { get; set; }
+
     }
 
     public class LoadDeliveryBatchEntity
@@ -435,6 +448,7 @@ namespace Domain.Entities
         public IEnumerable<WarehouseEntity> Warehouses { get; set; }
         public string ShipFlightNumber { get; set; }
         public string State { get; set; }
+        public int? CompanyId { get; set; }
     }
 
     public class WarehouseReceiveBatchEntity

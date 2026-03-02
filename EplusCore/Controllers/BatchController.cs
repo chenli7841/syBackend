@@ -200,11 +200,13 @@ namespace WebUI.Controllers
             return View(result);
         }
 
-        public async Task<IActionResult> LoadDeliveryInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId)
+        public async Task<IActionResult> LoadDeliveryInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, string companyIds)
         {
-            var warehouses = (await _warehouseService.ListAsync()).ToList();
-            var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
-            var users = await _userService.ListByBatchesAsync(BatchGroupType.LoadDelivery, routeId, warehouseId);
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            var warehouses = (await _warehouseService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).ToList();
+            var routes = (await _routeService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).Where(r => !r.IsDeleted).ToList();
+            var users = await _userService.ListByBatchesAsync(BatchGroupType.LoadDelivery, routeId, warehouseId, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
+            var companies = await _context.Companies.ToListAsync();
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.LoadDelivery,
@@ -214,15 +216,18 @@ namespace WebUI.Controllers
                 Warehouses = warehouses.OrderBy(w => w.DisplaySequence),
                 Users = users,
                 SelectedRecipientUserId = recipientUserId,
-                SelectedBelongsToUserId = belongsToUserId
+                SelectedBelongsToUserId = belongsToUserId,
+                Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c)),
+                CompanyIds = companyIds
             };
             return View(result);
         }
         public async Task<IActionResult> PalletInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, string companyIds)
         {
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
             var warehouses = (await _warehouseService.ListAsync()).ToList();
-            var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
-            var users = await _userService.ListByBatchesAsync(BatchGroupType.Pallet, routeId, warehouseId);
+            var routes = (await _routeService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).Where(r => !r.IsDeleted).ToList();
+            var users = await _userService.ListByBatchesAsync(BatchGroupType.Pallet, routeId, warehouseId, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
             var companies = await _context.Companies.ToListAsync();
             var result = new BatchInventoryResponse()
             {
@@ -374,7 +379,7 @@ namespace WebUI.Controllers
                 }
                 else if (groupType == BatchGroupType.LoadDelivery)
                 {
-                    data = await _batchService.ListLoadDeliveryBatchAsync(filter);
+                    data = await _batchService.ListLoadDeliveryBatchAsync(filter, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
                 }
                 else if (groupType == BatchGroupType.WarehouseReceive)
                 {
@@ -497,15 +502,18 @@ namespace WebUI.Controllers
             ViewBag.ActionType = ViewBag.ActionTypes[0];
             return View("CreatePackageBatch", batch);
         }
-        public async Task<IActionResult> CreateLoadDeliveryBatch()
+        public async Task<IActionResult> CreateLoadDeliveryBatch(string companyIds)
         {
             var batch = new LoadDeliveryBatchEntity()
             {
                 GroupType = BatchGroupType.LoadDelivery,
             };
-            var warehouses = await _warehouseService.ListAsync();
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            if (parsedCompanyIds.Length == 0) parsedCompanyIds = null;
+            var warehouses = await _warehouseService.ListAsync(parsedCompanyIds);
             batch.Warehouses = warehouses;
-            //await SetEditDropdownOptions(batch);
+            var companies = await _context.Companies.ToListAsync();
+            ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
             return View("CreateLoadDeliveryBatch", batch);
         }
         public async Task<IActionResult> CreateWarehouseReceiveBatch()
@@ -521,15 +529,19 @@ namespace WebUI.Controllers
 
         }
 
-        public async Task<IActionResult> CreatePalletBatch()
+        public async Task<IActionResult> CreatePalletBatch(string companyIds)
         {
             var batch = new PalletBatchEntity()
             {
-                GroupType = BatchGroupType.Package,
+                GroupType = BatchGroupType.Pallet,
             };
             var warehouses = await _warehouseService.ListAsync();
             batch.Warehouses = warehouses;
-            //await SetEditDropdownOptions(batch);
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            if (parsedCompanyIds.Length == 0) parsedCompanyIds = null;
+            var companies = await _context.Companies.ToListAsync();
+            ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
+            ViewBag.MasterBatches = (await _batchService.ListMasterBatchesAsync(BatchGroupType.LoadDelivery, batch.RouteId, parsedCompanyIds, BatchStageType.Gathering));
             return View("CreatePalletBatch", batch);
         }
 
@@ -562,6 +574,8 @@ namespace WebUI.Controllers
         public async Task<IActionResult> EditPalletBatch(int id)
         {
             var batchEntity = await _batchService.GetForEditPalletAsync(id);
+            ViewBag.Routes = await _routeService.ListAsync(new int[] { batchEntity.CompanyId.Value });
+            ViewBag.MasterBatches = (await _batchService.ListMasterBatchesAsync(BatchGroupType.LoadDelivery, batchEntity.RouteId, new int[] { batchEntity.CompanyId.Value }, BatchStageType.Gathering));
             return View("EditPalletBatch", batchEntity);
         }
 
@@ -1107,11 +1121,11 @@ WHERE BatchId={id}");
         }
         
         [HttpPost]
-        public async Task<JsonResult> AcceptBox(int targetBatchId, int sourceBatchId, int? sourceBoxNumber)
+        public async Task<JsonResult> AcceptBox(int targetBatchId, int sourceBatchId, int? sourceBoxNumber, string originalBoxNumber)
         {
             try
             {
-                await _batchService.AcceptBoxAsync(targetBatchId, sourceBatchId, sourceBoxNumber);
+                await _batchService.AcceptBoxAsync(targetBatchId, sourceBatchId, sourceBoxNumber, originalBoxNumber);
                 return Json(new MethodResult<bool>(true));
             }
             catch (Exception e)
@@ -1133,12 +1147,27 @@ WHERE BatchId={id}");
                 return Json(new MethodResult<bool>(new Error() { Text = e.Message }));
             }
         }
+
         [HttpPost]
-        public async Task<JsonResult> Merge(int targetBatchId, int sourceBatchId, int? sourceBoxNumber)
+        public async Task<JsonResult> AcceptOrderToPallet(int targetBatchId, string orderOrDomesticNumber)
         {
             try
             {
-                await _batchService.MergeAsync(targetBatchId, sourceBatchId, sourceBoxNumber);
+                await _batchService.AcceptOrderToPalletAsync(targetBatchId, orderOrDomesticNumber);
+                return Json(new MethodResult<bool>(true));
+            }
+            catch (Exception e)
+            {
+                return Json(new MethodResult<bool>(new Error() { Text = e.Message }));
+            }
+        }
+
+        [HttpPost]
+        public async Task<JsonResult> Merge(int targetBatchId, int sourceBatchId, int? sourceBoxNumber, string originalBoxNumber)
+        {
+            try
+            {
+                await _batchService.MergeAsync(targetBatchId, sourceBatchId, sourceBoxNumber, originalBoxNumber);
                 return Json(new MethodResult<bool>(true));
             }
             catch (Exception e)

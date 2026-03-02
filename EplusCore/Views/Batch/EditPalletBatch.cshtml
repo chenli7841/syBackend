@@ -5,11 +5,11 @@
 @model Domain.Entities.PalletBatchEntity
 
 @{
-    ViewData["Title"] = "托盘详情";
+    ViewData["Title"] = "批次详情";
 }
 
 @section Styles
-    {
+{
     <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
     <style>
         #totalShippingCostBtn {
@@ -20,15 +20,6 @@
             cursor: pointer;
         }
 
-        #totalShippingCostModal td:nth-child(2) {
-            padding: 5px 20px;
-        }
-
-        #totalShippingCostModal td:nth-child(3) {
-            text-align: right;
-            padding: 5px 20px;
-        }
-
         .link {
             color: #007bff;
             border: none;
@@ -37,11 +28,16 @@
     </style>
 }
 
+@{
+    var masterBatches = ((IEnumerable<BatchEntity>)ViewBag.MasterBatches).ToList();
+    var routes = ((IEnumerable<RouteEntity>)ViewBag.Routes).ToList();
+}
+
 <div class="row">
     <div class="col-md-12 grid-margin">
         <div class="card">
             <div class="card-body">
-                <h4 class="card-title">@(Model.Id > 0 ? "修改批次 开托盘" : "创建批次 开托盘")</h4>
+                <h4 class="card-title">修改批次 开托盘</h4>
                 @using (Html.BeginForm("SavePalletBatch", "Batch", FormMethod.Post, new { @class = "" }))
                 {
                     @Html.AntiForgeryToken()
@@ -49,35 +45,101 @@
                     @Html.TextBoxFor(b => b.GroupType, new { hidden = "hidden" })
 
                     <div class="row">
-                        <div class="col-md-3">
+                        <div class="col-md-1">
+                            <label class="col-form-label">基础信息</label>
+                        </div>
+                        <div class="col-md-4">
                             <div class="form-group row">
-                                @Html.LabelFor(r => r.Name, "名称", new { @class = "col-sm-4 col-form-label" })
-                                <div class="col-sm-8">
-                                    @Html.TextBoxFor(r => r.Name, new { @class = "form-control" })
+                                @Html.LabelFor(r => r.Name, "名称", new { @class = "col-sm-2 col-form-label" })
+                                <div class="col-sm-10">
+                                    <div class="input-group">
+                                        @Html.TextBoxFor(r => r.Name, new { hidden = "hidden" })
+                                        @Html.TextBoxFor(r => r.CustomName, new { @class = "form-control" })
+                                        <span class="input-group-text" id="formatted-name"></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-1">
+                            <label class="col-form-label">位置信息</label>
+                        </div>
+                        <div class="col-md-2">
                             <div class="form-group row">
-                                @Html.LabelFor(r => r.ShipFlightNumber, "船号/航空号", new { @class = "col-sm-4 col-form-label" })
+                                @Html.LabelFor(r => r.MasterBatchId, "装车发货", new { @class = "col-sm-4 col-form-label" })
                                 <div class="col-sm-8">
-                                    @Html.TextBoxFor(r => r.ShipFlightNumber, new { @class = "form-control" })
+                                    @Html.TextBoxFor(r => r.MasterBatchId, new { hidden = "hidden" })
+                                    <select class="form-control" id="master-batch-select">
+                                        @{
+                                            for (int i = 0; i < masterBatches.Count; i++)
+                                            {
+                                                var b = masterBatches[i];
+                                                <option value="@b.Id">@b.Name</option>
+                                            }
+                                        }
+                                    </select>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group row">
-                                @Html.LabelFor(r => r.Destination, "目的地", new { @class = "col-sm-4 col-form-label" })
+                                @Html.LabelFor(r => r.ShipFlightNumber, "船号", new { @class = "col-sm-4 col-form-label" })
                                 <div class="col-sm-8">
-                                    @Html.TextBoxFor(r => r.Destination, new { @class = "form-control" })
+                                    @Html.TextBoxFor(r => r.ShipFlightNumber, new { @class = "form-control", disabled = true })
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group row">
-                                @Html.LabelFor(r => r.State, "状态", new { @class = "col-sm-4 col-form-label" })
+                                @Html.LabelFor(r => r.LoadDeliveryStage, "批次状态", new { @class = "col-sm-4 col-form-label" })
                                 <div class="col-sm-8">
-                                    @Html.TextBoxFor(r => r.State, new { @class = "form-control" })
+                                    @Html.TextBoxFor(r => r.LoadDeliveryStage, new { @class = "form-control", disabled = true })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-1 col-md-1">
+                            <label class="col-form-label">基础数据</label>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.TotalOrders, "总单数", new { @class = "col-sm-6 col-form-label" })
+                                <div class="col-sm-6">
+                                    @Html.TextBoxFor(r => r.TotalOrders, new { @class = "form-control", disabled = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.TotalWeightKg, "总重量", new { @class = "col-sm-6 col-form-label" })
+                                <div class="col-sm-6">
+                                    @Html.TextBoxFor(r => r.TotalWeightKg, new { @class = "form-control", disabled = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.TotalVolume, "总体积", new { @class = "col-sm-6 col-form-label" })
+                                <div class="col-sm-6">
+                                    @Html.TextBoxFor(r => r.TotalVolume, new { @class = "form-control", disabled = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Boxes.Count, "总箱数", new { @class = "col-sm-6 col-form-label" })
+                                <div class="col-sm-6">
+                                    @Html.TextBoxFor(r => r.Boxes.Count, new { @class = "form-control", disabled = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.TotalChargedWeightKg, "总收费重量", new { @class = "col-sm-6 col-form-label" })
+                                <div class="col-sm-6">
+                                    @Html.TextBoxFor(r => r.TotalChargedWeightKg, new { @class = "form-control", disabled = true })
                                 </div>
                             </div>
                         </div>
@@ -118,6 +180,14 @@
                         </div>
                     </div>
 
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Note, "仓库备注", new { @class = "col-sm-1 col-form-label" })
+                                @Html.TextAreaFor(r => r.Note, new { @class = "col-sm-11 form-control" })
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="row" style="gap: 20px;">
                         <div>
@@ -132,51 +202,27 @@
                     </div>
                 }
 
-                <div class="modal fade" id="smsInputModal" tabindex="-1" role="dialog" aria-labelledby="smsInputModalLabel" aria-hidden="true">
-                    <div class="modal-dialog" role="document">
-                        <div class="modal-content">
-                            <div class="modal-body">
-                                <div class="row">
-                                    <label class="col-form-label col-4">请输入取货地点：</label>
-                                    <input class="form-control col-8" id="batch-edit-pick-up-location-input" value="壹嘉万锦门店，333 Denison St Unit 16" />
-                                </div>
-                                <div class="row">
-                                    <label class="col-form-label col-4">请输入取货时间：</label>
-                                    <input class="form-control col-8" id="batch-edit-pick-up-time-input" value="周二-周四 12点-6点 周五 周六 10点-7点" />
-                                </div>
-                                <div class="row">
-                                    <label class="col-form-label col-4">自定义收信电话：</label>
-                                    <input class="form-control col-8" id="batch-edit-custom-number-input" />
-                                </div>
-                                <div class="row" style="margin-top: 5px;">
-                                    <textarea class="form-control" id="batch-edit-custom-content-input" placeholder="自定义短信内容："></textarea>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" id="batch-edit-sms-submit-btn" class="btn btn-success">Submit</button>
-                                <button type="button" id="batch-edit-sms-cancel-btn" class="btn btn-light" data-dismiss="modal">Cancel</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+                @if (Model.Id > 0)
+                {
                     <div class="form-group row mt-4">
                         <label class="col-form-label col-1">从批次:</label>
                         <input class="form-control col-3" id="targetBatch" />
                         <button class="btn btn-primary ml-3" id="merge">合并</button>
                         <button class="btn btn-primary ml-3" id="acceptBox">加入包裹</button>
+                        <button class="btn btn-primary ml-3" id="acceptOrder">加入运单</button>
                     </div>
+                }
+
+                @if (Model.Id > 0)
+                {
                     <div class="table-responsive">
                         <table id="box-listing" class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th>编号</th>
+                                    <th>箱号</th>
                                     <th>总单数</th>
                                     <th>包裹总重量(kg)</th>
-                                    <th>长(cm)</th>
-                                    <th>宽(cm)</th>
-                                    <th>高(cm)</th>
-                                    <th>实际重量(kg)</th>
+                                    <th>标签号</th>
                                     <th>打印</th>
                                     <th>保存</th>
                                 </tr>
@@ -185,13 +231,10 @@
                                 @foreach (var box in Model.Boxes.OrderBy(b => b.Number))
                                 {
                                     <tr>
-                                        <td>@Html.ActionLink(string.IsNullOrWhiteSpace(box.Name) ? ($"{Model.Id} - {box.Number}") : box.Name, "EditBox", new { boxId = box.Id })</td>
+                                        <td>@Html.ActionLink((string.IsNullOrWhiteSpace(box.Name) ? ($"{box.BatchId} - {box.Number}") : box.Name), "PackageEditBox", new { boxId = box.Id })</td>
                                         <td>@box.Orders.Count()</td>
                                         <td>@box.Orders.Sum(o => o.WeightKg)</td>
-                                        <td><input id="length_@(box.Id)_input" type="number" class="form-control" value="@box.Length" /></td>
-                                        <td><input id="width_@(box.Id)_input" type="number" class="form-control" value="@box.Width" /></td>
-                                        <td><input id="height_@(box.Id)_input" type="number" class="form-control" value="@box.Height" /></td>
-                                        <td><input id="actualWeight_@(box.Id)_input" type="number" class="form-control" value="@box.ActualWeightKg" /></td>
+                                        <td>@box.OriginalObjectNumber</td>
                                         <td><a href='@Url.Action("PrintBatchBox")?id=@box.Id' target="_blank"><i class="fa fa-print fa-lg"></i></a></td>
                                         <td><button class="link" onclick="UpdateBatchBox(@box.Id)"><i class="fa fa-save fa-lg"></i></button></td>
                                     </tr>
@@ -199,44 +242,18 @@
                             </tbody>
                         </table>
                     </div>
-                    @Html.ActionLink("添加", "AddBoxPalletBatch", null, new { id = Model.Id, boxNumber = Model.Boxes.Where(b => b.BatchId == Model.Id).Select(b => b.Number).Max() + 1 }, new { @class = "btn btn-primary" })
-            </div>
-        </div>
-    </div>
-</div>
-<div class="modal fade" id="totalShippingCostModal" tabindex="-1" role="dialog" aria-labelledby="totalShippingCostModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-body">
-                <p>运费 = 物品运费 + 实收关税 + 超长费用 + 熏蒸费用 + 仓库费用 + 港杂费 + 保险金额</p>
-                <p>注意：不包括仓储费 和 地区附加费</p>
-                <table>
-                    <tbody>
-                        <tr><td></td><td>物品运费总计</td><td id='totalItemCostText'></td></tr>
-                        <tr><td></td><td>实收关税总计</td><td id='totalDutyText'></td></tr>
-                        <tr><td></td><td>超长费用总计</td><td id='totalOversizeCostText'></td></tr>
-                        <tr><td></td><td>熏蒸费用总计</td><td id='totalFumigationCostText'></td></tr>
-                        <tr><td></td><td>仓库费用总计</td><td id='totalWarehouseCostText'></td></tr>
-                        <tr><td></td><td>港杂费总计</td><td id='totalPortMisCostText'></td></tr>
-                        <tr><td>+</td><td>保险金额总计</td><td id='totalInsuranceText'></td></tr>
-                        <tr style='border-bottom: 1px black solid'><td>-</td><td>总折扣</td><td id='totalDiscountText'></td></tr>
-                        <tr><td></td><td style='padding-bottom: 30px'>总运费</td><td id='totalShippingCostText' style='padding-bottom: 30px'></td></tr>
-                        <tr><td></td><td>仓储费总计</td><td id='totalStorageCostText'></td></tr>
-                        <tr><td></td><td>地区附加费总计</td><td id='totalDistrictAdditionalCostText'></td></tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="modal-footer">
-                <button type="button" id="totalShippingCost-cancel-btn" class="btn btn-light" data-dismiss="modal">关闭</button>
+                }
             </div>
         </div>
     </div>
 </div>
 
 @section Scripts
-    {
+{
     <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
     <script>
+        let global_routes = @Html.Raw(Json.Serialize(ViewBag.Routes));
+        let global_master_batch = @Html.Raw(Json.Serialize(ViewBag.MasterBatches));
         function UpdateBatchBox(batchBoxId) {
             let length = parseFloat($(`#length_${batchBoxId}_input`).val()) || undefined;
             let width = parseFloat($(`#width_${batchBoxId}_input`).val()) || undefined;
@@ -267,22 +284,27 @@
                 }
             );
         }
-        $('#recipient-select').val($('#RecipientId').val());
 
-        $('#recipient-select').change(function () {
-            $('#RecipientId').val(this.value);
-        });
+        function updateFormattedName() {
+            let companyCode = '@Model.CompanyCode';
+            let masterBatchId = parseInt($('#master-batch-select').val());
+            let destinationName = 'toronto';
+            if (!$('#master-batch-select').val()) {
+                $('#formatted-name').text(`${companyCode}-${destinationName}-托盘`);
+                updateName();
+                return;
+            }
+            let masterBatchName = global_master_batch.find(b => b.id === masterBatchId).name;
+            $('#formatted-name').text(`${companyCode}-${masterBatchName}-${destinationName}-托盘`);
+            updateName();
+        }
 
-        $('#agent-select').val($('#AgentId').val());
+        function updateName() {
+            $('#Name').val(`${$('#CustomName').val()}-${$('#formatted-name').text()}`);
+        }
 
-        $('#agent-select').change(function () {
-            $('#AgentId').val(this.value);
-        });
-
-        $('#pickuplocation-select').val($('#PickUpLocationId').val());
-
-        $('#pickuplocation-select').change(function () {
-            $('#PickUpLocationId').val(this.value);
+        $('#CustomName').change(function() {
+            updateName();
         });
 
         $('#master-batch-select').val($('#MasterBatchId').val());
@@ -291,204 +313,12 @@
             $('#MasterBatchId').val(this.value);
         });
 
-        $('#stage-select').val($('#Stage').val());
-
-        $('#stage-select').change(function () {
-            $('#Stage').val(this.value);
+        $('#update-to-dispatched').click(function () {
+            $('#TransportStatus').val("dispatched");
         });
 
-        $("#batch-edit-sms-submit-btn").click(function () {
-            const location = $('#batch-edit-pick-up-location-input').val();
-            const time = $('#batch-edit-pick-up-time-input').val();
-            const customMessage = $('#batch-edit-custom-content-input').val();
-            const customRecipientPhone = $('#batch-edit-custom-number-input').val();
-            if (location.trim() === '' || time.trim() === '') {
-                return;
-            }
-
-            $.post('@Url.Action("SmsNotify")',
-                {
-                    id: @Model.Id,
-                    pickUpLocation: location,
-                    pickUpTime: time,
-                    customMessage: customMessage,
-                    recipientPhoneNumber: customRecipientPhone
-                },
-                function (result) {
-                    if (result.error) {
-                        $.toast({
-                            heading: result.error.text,
-                            position: 'mid-center',
-                            icon: 'error'
-                        });
-                    } else {
-                        $.toast({
-                            heading: 'Success',
-                            text: '操作成功',
-                            showHideTransition: 'slide',
-                            icon: 'success',
-                            loaderBg: '#f2a654',
-                            position: 'mid-center'
-                        });
-                    }
-                }
-            );
-
-            $('#smsInputModal').removeClass("show");
-            $('#smsInputModal').hide();
-        });
-
-        $("#batch-edit-sms-cancel-btn").click(function () {
-            $('#smsInputModal').removeClass("show");
-            $('#smsInputModal').hide();
-        });
-
-        $('#batch_edit_sms_notify_btn').click(function () {
-            $('#smsInputModal').addClass("show");
-            $('#smsInputModal').show();
-            return false;
-        });
-
-        $('#batch_edit_split_by_locations_btn').click(function () {
-            fetch('/batch/SplitByLocations/' + @Model.Id)
-                .then(async response => {
-                    if (response.status === 400) {
-                        const body = await response.json();
-                        if (!body.value.error) {
-                            $.toast({
-                                heading: '未知错误',
-                                hideAfter: false,
-                                position: 'mid-center',
-                                icon: 'error'
-                            });
-                        } else {
-                            $.toast({
-                                heading: body.value.error.text,
-                                hideAfter: false,
-                                position: 'mid-center',
-                                icon: 'error'
-                            });
-                        }
-                    }
-                    else if (response.status === 200) {
-                        $.toast({
-                            heading: '拆分成功',
-                            position: 'mid-center',
-                            icon: 'success'
-                        });
-                    }
-                });
-            return false;
-        });
-
-        $('#batch_edit_split_warehouse_cost_btn').click(function () {
-            fetch('/batch/SplitByNonAgent/' + @Model.Id)
-                .then(async response => {
-                    if (response.status === 400) {
-                        const body = await response.json();
-                        if (!body.value.error) {
-                            $.toast({
-                                heading: '未知错误',
-                                hideAfter: false,
-                                position: 'mid-center',
-                                icon: 'error'
-                            });
-                        } else {
-                            $.toast({
-                                heading: body.value.error.text,
-                                hideAfter: false,
-                                position: 'mid-center',
-                                icon: 'error'
-                            });
-                        }
-                    }
-                    else if (response.status === 200) {
-                        $.toast({
-                            heading: '拆分成功',
-                            position: 'mid-center',
-                            icon: 'success'
-                        });
-                    }
-                });
-            return false;
-        });
-
-        $('#batch_edit_split_bill_btn').click(function () {
-            fetch('/batch/SplitByNonLocation/' + @Model.Id)
-                .then(async response => {
-                    if (response.status === 400) {
-                        const body = await response.json();
-                        if (!body.value.error) {
-                            $.toast({
-                                heading: '未知错误',
-                                hideAfter: false,
-                                position: 'mid-center',
-                                icon: 'error'
-                            });
-                        } else {
-                            $.toast({
-                                heading: body.value.error.text,
-                                hideAfter: false,
-                                position: 'mid-center',
-                                icon: 'error'
-                            });
-                        }
-                    }
-                    else if (response.status === 200) {
-                        $.toast({
-                            heading: '拆分成功',
-                            position: 'mid-center',
-                            icon: 'success'
-                        });
-                    }
-                });
-            return false;
-        });
-
-        $('#batch_edit_update_order_load_delivery_properties_btn').click(function () {
-            fetch('/batch/UpdateLoadDeliveryProperties/' + @Model.Id)
-                .then(async response => {
-                    if (response.status === 400) {
-                        const body = await response.json();
-                        if (!body.value.error) {
-                            $.toast({
-                                heading: '未知错误',
-                                hideAfter: false,
-                                position: 'mid-center',
-                                icon: 'error'
-                            });
-                        } else {
-                            $.toast({
-                                heading: body.value.error.text,
-                                hideAfter: false,
-                                position: 'mid-center',
-                                icon: 'error'
-                            });
-                        }
-                    }
-                    else if (response.status === 200) {
-                        $.toast({
-                            heading: '批次名更新成功',
-                            position: 'mid-center',
-                            icon: 'success'
-                        });
-                    }
-                });
-            return false;
-        });
-
-        $('#box-listing').DataTable({
-            paging: false,
-            searching: false,
-            info: false,
-            order: [],
-            language: {
-                search: "搜索:",
-            },
-        });
-
-        $('#batch-action').click(function () {
-            document.getElementById("site-overlay").style.display = "block";
+        $('#update-to-paid').click(function () {
+            $('#PaymentStatus').val("paid");
         });
 
         $('#merge').click(function () {
@@ -507,7 +337,8 @@
                 {
                     targetBatchId,
                     sourceBatchId,
-                    sourceBoxNumber
+                    sourceBoxNumber,
+                    originalBoxNumber: sourceBatchAndBox
                 },
                 function (result) {
                     document.getElementById("site-overlay").style.display = "none";
@@ -546,7 +377,8 @@
                 {
                     targetBatchId,
                     sourceBatchId,
-                    sourceBoxNumber
+                    sourceBoxNumber,
+                    originalBoxNumber: sourceBatchAndBox
                 },
                 function (result) {
                     document.getElementById("site-overlay").style.display = "none";
@@ -569,55 +401,47 @@
                 });
         });
 
+        $('#acceptOrder').click(function () {
+            const sourceOrderNumberOrDomesticNumber = $('#targetBatch').val().trim();
+            const targetBatchId = @Model.Id;
+            if (sourceOrderNumberOrDomesticNumber === '') {
+                alert('请填写运单号或国内单号');
+                return false;
+            }
 
-        $(document).ready(() => {
-            fetch('/batch/GetOrderCostSummary?batchId=' + @Model.Id)
-                .then(async response => {
-                    const body = await response.json();
-                    if (response.status === 400) {
-                        if (!body.value.error) {
-                            $.toast({
-                                heading: '未知错误',
-                                hideAfter: false,
-                                position: 'mid-center',
-                                icon: 'error'
-                            });
-                        } else {
-                            $.toast({
-                                heading: body.value.error.text,
-                                hideAfter: false,
-                                position: 'mid-center',
-                                icon: 'error'
-                            });
-                        }
-                    }
-                    else if (response.status === 200) {
-                        $('#totalItemCostText').text(body.data.totalItemCost.toFixed(2));
-                        $('#totalDutyText').text(body.data.totalDuty.toFixed(2));
-                        $('#totalOversizeCostText').text(body.data.totalOversizeCost.toFixed(2));
-                        $('#totalFumigationCostText').text(body.data.totalFumigationCost.toFixed(2));
-                        $('#totalWarehouseCostText').text(body.data.totalWarehouseCost.toFixed(2));
-                        $('#totalPortMisCostText').text(body.data.totalPortMisCost.toFixed(2));
-                        $('#totalInsuranceText').text(body.data.totalInsurance.toFixed(2));
-                        $('#totalDiscountText').text(body.data.totalDiscount.toFixed(2));
-                        const totalShippingCost =
-                            body.data.totalItemCost +
-                            body.data.totalDuty +
-                            body.data.totalOversizeCost +
-                            body.data.totalFumigationCost +
-                            body.data.totalWarehouseCost +
-                            body.data.totalPortMisCost +
-                            body.data.totalInsurance -
-                            body.data.totalDiscount;
-                        $('#totalShippingCostText').text(totalShippingCost.toFixed(2));
-                        $('#totalStorageCostText').text(body.data.totalStorageCost.toFixed(2));
-                        $('#totalDistrictAdditionalCostText').text(body.data.totalDistrictAdditionalCost.toFixed(2));
+            document.getElementById("site-overlay").style.display = "block";
 
-                        $('#TotalShippingCost').val(totalShippingCost.toFixed(2));
-                        $('#TotalOversizeCost').val(body.data.totalDistrictAdditionalCost.toFixed(2))
-                        $('#TotalStorageCost').val(body.data.totalStorageCost.toFixed(2))
+            $.post('@Url.Action("AcceptOrderToPallet")',
+                {
+                    targetBatchId,
+                    orderOrDomesticNumber: sourceOrderNumberOrDomesticNumber,
+                },
+                function (result) {
+                    document.getElementById("site-overlay").style.display = "none";
+
+                    if (result.error && result.error.text) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        $.toast({
+                            heading: '添加运单成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+
+                        setTimeout(() => { window.location.reload(); }, 2 * 1000);
                     }
                 });
+        });
+
+
+
+
+        $(document).ready(() => {
+            updateFormattedName();
         })
     </script>
 }

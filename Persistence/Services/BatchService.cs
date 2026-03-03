@@ -700,18 +700,21 @@ WHERE bb.BatchId=@batchId
         {
             // Need batchId, batch.GroupType, batch.RouteId, otherOrders, box.Number, count box.order, total box.order.WeightKg
             // batch.Route.Type, batch.Stage
-            var batch = await _context.Batches.Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps)
-                .ThenInclude(m => m.Order)
-                .Include(b => b.BatchOtherOrders)
+            var batchBase = await _context.Batches.Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
                 .Include(b => b.Route)
                 .Include(b => b.LoadDeliveryBatches)
-                .Include(b => b.BatchBoxMaps).ThenInclude(bx => bx.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
                 .FirstAsync(b => b.Id == id);
-            foreach(var b in batch.BatchBoxes)
+            var batchWithOtherOrders = await _context.Batches.Include(b => b.BatchOtherOrders)
+                .FirstAsync(b => b.Id == id);
+            var batchWithMergedOrders = await _context.Batches.Include(b => b.BatchBoxMaps).ThenInclude(bx => bx.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
+                .FirstAsync(b => b.Id == id);
+            batchBase.BatchOtherOrders = batchWithOtherOrders.BatchOtherOrders;
+            batchBase.BatchOrderMaps = batchWithMergedOrders.BatchOrderMaps;
+            foreach (var b in batchBase.BatchBoxes)
             {
                 b.BatchBoxOrderMaps = b.BatchBoxOrderMaps.Where(bbom => bbom.Order.CompanyId == Config.COMPANY_ID).ToList();
             }
-            var result = _mapper.Map<BatchEntity>(batch);
+            var result = _mapper.Map<BatchEntity>(batchBase);
             return result;
         }
 

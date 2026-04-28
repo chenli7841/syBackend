@@ -519,6 +519,7 @@ WHERE bb.BatchId=@batchId
                     },
                     BatchBoxes = b.BatchBoxes.Select(bx => new BatchBox
                     {
+                        Id = bx.Id,
                         Number = bx.Number,
                         BatchBoxOrderMaps = bx.BatchBoxOrderMaps.Select(m => new BatchBoxOrderMap
                         {

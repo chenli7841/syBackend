@@ -21,5 +21,6 @@ namespace Persistence.Data
         public virtual ICollection<Warehouse> Warehouses { get; set; }
 
         public virtual ICollection<PickUpLocation> PickUpLocations { get; set; }
+        public virtual ICollection<CompanyKeyValue> CompanyKeyValues { get; set; }
     }
 }

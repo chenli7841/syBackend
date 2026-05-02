@@ -28,6 +28,10 @@ namespace WebUI.Controllers
             {
                 photos.Add(new SystemPhotoEntity());
             }
+            while (mobilePhotos.Count < 4)
+            {
+                mobilePhotos.Add(new SystemPhotoEntity());
+            }
 
             var result = new SystemViewModel()
             {
@@ -81,6 +85,19 @@ namespace WebUI.Controllers
         {
             await _systemService.UpdateSettingsAsync(model);
             return RedirectToAction(nameof(Index));
+        }
+
+        public async Task<IActionResult> ContactUs()
+        {
+            var keyValues = await _systemService.GetCompanyKeyValue(SystemContactUsViewModel.GetKeys());
+            var result = SystemContactUsViewModel.FromTuples(keyValues);
+            return View(result);
+        }
+
+        public async Task<IActionResult> SaveContactUs(SystemContactUsViewModel model)
+        {
+            await _systemService.UpdateCompanyKeyValue(model.ToKeyValuePairs());
+            return RedirectToAction(nameof(ContactUs));
         }
     }
 }

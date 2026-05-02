@@ -25,6 +25,8 @@ namespace Domain.Enums
         PendingPickUp = 60,
         [Description("待派送")]
         PendingDelivery = 65,
+        [Description("已派送")]
+        Delivered = 66,
         [Description("每日退运")]
         DailyReturn = 70,
         [Description("违禁品")]

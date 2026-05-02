@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using Domain.Entities;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using Domain.Entities;
 
 namespace Domain.Services
 {
@@ -13,5 +14,8 @@ namespace Domain.Services
         Task UpdateSettingsAsync(SystemSettingsEntity settings);
         Task<SystemPhotoEntity> GetPhotoUploadUrl(int id);
         Task<SystemPhotoEntity> GetMobilePhotoUploadUrl(int id);
+        Task UpdateCompanyKeyValue(List<Tuple<string, string>> keyValuePairs);
+        Task<List<Tuple<string, string>>> GetCompanyKeyValue(List<string> keys);
+        Task SaveSystemPropertyImages(string name, string rawData);
     }
 }

@@ -51,6 +51,7 @@ namespace Persistence.Data
         public virtual DbSet<ChinaItem> ChinaItems { get; set; }
         public virtual DbSet<Customer> Customers { get; set; }
         public virtual DbSet<Company> Companies { get; set; }
+        public virtual DbSet<CompanyKeyValue> CompanyKeyValues { get; set; }
         public virtual DbSet<Coupon> Coupons { get; set; }
         public virtual DbSet<CouponBatch> CouponBatches { get; set; }
         public virtual DbSet<CouponStatus> CouponStatuses { get; set; }
@@ -2448,6 +2449,37 @@ namespace Persistence.Data
                     .IsRequired()
                     .HasMaxLength(32)
                     .HasComment("公司代码");
+            });
+
+            modelBuilder.Entity<CompanyKeyValue>(entity =>
+            {
+                entity.ToTable("company_key_value");
+
+                entity.HasComment("公司全局属性");
+
+                entity.HasIndex(e => e.Id, "Id");
+
+                entity.Property(e => e.Id)
+                    .IsRequired()
+                    .HasColumnType("int(11)");
+
+                entity.Property(e => e.CompanyId)
+                    .IsRequired()
+                    .HasColumnType("int(11)");
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(64)
+                    .HasComment("属性名称");
+
+                entity.Property(e => e.Content)
+                    .HasMaxLength(1024)
+                    .HasComment("属性内容");
+
+                entity.HasOne(d => d.Company)
+                    .WithMany(p => p.CompanyKeyValues)
+                    .HasForeignKey(d => d.CompanyId)
+                    .HasConstraintName("FK_dbo.CompanyKeyValue_dbo.CompanyId");
             });
 
             modelBuilder.Entity<Coupon>(entity =>
@@ -9284,6 +9316,8 @@ namespace Persistence.Data
                 entity.Property(e => e.Type).HasColumnType("int(11)");
 
                 entity.Property(e => e.Url).IsRequired();
+
+                entity.Property(e => e.CompanyId).HasColumnType("int(11)");
             });
 
             modelBuilder.Entity<SystemSetting>(entity =>

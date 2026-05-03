@@ -1,0 +1,212 @@
+﻿@model WebUI.Models.ViewModels.SystemContactUsViewModel
+
+@{
+    ViewData["Title"] = "系统设置";
+}
+
+@section Styles
+{
+    <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
+}
+
+<div class="row">
+    <div class="col-lg-12 grid-margin stretch-card">
+        <div class="card">
+            <div class="card-body">
+                <h4 style="display: none;" class="card-title">系统设置</h4>
+
+                @using (Html.BeginForm("SaveContactUs", "System", FormMethod.Post, new { @class = "", id = "system" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <h1 class="h4 mb-3">联系客服</h1>
+                    <div class="form-group row mb-3">
+                        @Html.LabelFor(r => r.WarehouseAddress, "多伦多总仓地址：", new { @class = "col-sm-4 col-form-label" })
+                        <div class="col-sm-8">
+                            @Html.TextBoxFor(r => r.WarehouseAddress, new { @class = "form-control" })
+                        </div>
+                    </div>
+                    <div class="form-group row mb-3">
+                        @Html.LabelFor(r => r.ContactPhone, "仓库联系电话：", new { @class = "col-sm-4 col-form-label" })
+                        <div class="col-sm-8">
+                            @Html.TextBoxFor(r => r.ContactPhone, new { @class = "form-control" })
+                        </div>
+                    </div>
+                    <div class="form-group row mb-3">
+                        @Html.LabelFor(r => r.BusinessHours, "营业时间：", new { @class = "col-sm-4 col-form-label" })
+                        <div class="col-sm-8">
+                            @Html.TextAreaFor(r => r.BusinessHours, new { @class = "form-control", @rows = "3" })
+                        </div>
+                    </div>
+                    <h6 class="h6 mb-3">
+                        客服微信：
+                    </h6>
+
+                    <div class="row">
+                        <div class="col-md-1">
+                            <button type="submit" class="btn btn-success mr-2">保存</button>
+                        </div>
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            const uploadPhotoUrl = '@Url.Action("GetPhotoUploadUrl")'; // '@Url.Action("UploadPhoto")';
+            const pcuploaders = $('.pc-photo-uploader');
+            for (let i = 0, il = pcuploaders.length; i < il; i++) {
+                /*
+                const uploader = $(pcuploaders[i]);
+                uploader.cropit({
+                    imageState: { src: uploader.data('photourl') },
+                    imageBackground: true,
+                    imageBackgroundBorderWidth: 15,
+                    smallImage: 'allow',
+                    allowDragNDrop: false,
+                });
+                */
+            }
+
+            $('.pc-photo-uploader .select').click(function() {
+                $(this).closest('.pc-photo-uploader').find('.cropit-image-input').click();
+
+                return false;
+            });
+
+            $('.pc-photo-uploader .upload').click(function () {
+                const uploader = $(this).closest('.pc-photo-uploader');
+                let photoData = ''; //uploader.cropit('export');
+                const photoId = uploader.data('photoid');
+                var myFile = $(this).closest('.pc-photo-uploader').find('.cropit-image-input').prop('files')[0];
+                let reader = new FileReader();
+                reader.addEventListener("load", () => {
+                    // convert image file to base64 string
+                    photoData = reader.result;
+                    $.post(uploadPhotoUrl,
+                    {
+                        photoId,
+                        platform: "pc",
+                        //photoData: photoData,
+                    },
+                    function(result) {
+                        if (result.error && result.error.text) {
+                            $.toast({
+                                heading: 'Danger',
+                                text: result.error.text,
+                                showHideTransition: 'slide',
+                                icon: 'error',
+                                loaderBg: '#f2a654',
+                                position: 'mid-center'
+                            });
+                        } else {
+                            $.toast({
+                                heading: '成功',
+                                showHideTransition: 'slide',
+                                icon: 'success',
+                                loaderBg: '#f2a654',
+                                position: 'mid-center'
+                            });
+
+                            fetch(result.data.url, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'png',
+                                    'x-ms-blob-type': 'BlockBlob',
+                                },
+                                body: myFile
+                            });
+
+
+                            //uploader.data('photoid', data.id);
+                            //uploader.data('photourl', data.url);
+                        }
+                    });
+                }, false);
+                reader.readAsDataURL(myFile);
+                return false;
+            });
+
+
+
+
+            const mobileuploaders = $('.mobile-photo-uploader');
+            for (let i = 0, il = mobileuploaders.length; i < il; i++) {
+                /*
+                const uploader = $(mobileuploaders[i]);
+                uploader.cropit({
+                    imageState: { src: uploader.data('photourl') },
+                    imageBackground: true,
+                    imageBackgroundBorderWidth: 15,
+                    smallImage: 'allow',
+                    allowDragNDrop: false,
+                });
+                */
+            }
+
+            $('.mobile-photo-uploader .select').click(function() {
+                $(this).closest('.mobile-photo-uploader').find('.cropit-image-input').click();
+
+                return false;
+            });
+
+            $('.mobile-photo-uploader .upload').click(function () {
+                const uploader = $(this).closest('.mobile-photo-uploader');
+                let photoData = ''; //uploader.cropit('export');
+                const photoId = uploader.data('photoid');
+                var myFile = $(this).closest('.mobile-photo-uploader').find('.cropit-image-input').prop('files')[0];
+                let reader = new FileReader();
+                reader.addEventListener("load", () => {
+                    // convert image file to base64 string
+                    photoData = reader.result;
+                    $.post(uploadPhotoUrl,
+                    {
+                        photoId,
+                        platform: "mobile",
+                        //photoData: photoData,
+                    },
+                    function(result) {
+                        if (result.error && result.error.text) {
+                            $.toast({
+                                heading: 'Danger',
+                                text: result.error.text,
+                                showHideTransition: 'slide',
+                                icon: 'error',
+                                loaderBg: '#f2a654',
+                                position: 'mid-center'
+                            });
+                        } else {
+                            $.toast({
+                                heading: '成功',
+                                showHideTransition: 'slide',
+                                icon: 'success',
+                                loaderBg: '#f2a654',
+                                position: 'mid-center'
+                            });
+
+                            fetch(result.data.url, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'png',
+                                    'x-ms-blob-type': 'BlockBlob',
+                                },
+                                body: myFile
+                            });
+
+
+                            //uploader.data('photoid', data.id);
+                            //uploader.data('photourl', data.url);
+                        }
+                    });
+                }, false);
+                reader.readAsDataURL(myFile);
+                return false;
+            });
+        });
+    </script>
+}

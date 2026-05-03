@@ -48,6 +48,26 @@ namespace Persistence.Services
             return _mapper.Map<SystemPhotoEntity>(photo);
         }
 
+        public async Task SaveSystemPropertyImages(string name, string rawData)
+        {
+            var imageURL = await _storageService.UploadToAzureAsync(rawData, "system/photos", $"{name}_{DateTime.Now.ToString("s")}");
+            var property = await _context.CompanyKeyValues.FirstOrDefaultAsync(kv => kv.CompanyId == Config.COMPANY_ID && kv.Name == name);
+            if (property == null)
+            {
+                await _context.CompanyKeyValues.AddAsync(new CompanyKeyValue
+                {
+                    CompanyId = Config.COMPANY_ID,
+                    Name = name,
+                    Content = imageURL
+                });
+            }
+            else
+            {
+                property.Content = imageURL;
+            }
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<SystemPhotoEntity> GetPhotoUploadUrl(int id)
         {
             SystemPhoto photo;
@@ -100,7 +120,7 @@ namespace Persistence.Services
 
         public async Task<IEnumerable<SystemPhotoEntity>> ListPhotosAsync()
         {
-            return await _context.SystemPhotos.Select(p => _mapper.Map<SystemPhotoEntity>(p)).ToListAsync();
+            return await _context.SystemPhotos.Where(p => p.CompanyId == Config.COMPANY_ID).Select(p => _mapper.Map<SystemPhotoEntity>(p)).ToListAsync();
         }
 
         public async Task<IEnumerable<SystemPhotoEntity>> ListMobilePhotosAsync()
@@ -126,6 +146,36 @@ namespace Persistence.Services
 
             return result;
         }
+
+        public async Task UpdateCompanyKeyValue(List<Tuple<string, string>> keyValuePairs)
+        {
+            foreach(var keyValue in keyValuePairs)
+            {
+                var record = await _context.CompanyKeyValues.FirstOrDefaultAsync(kv => kv.CompanyId == Config.COMPANY_ID && kv.Name == keyValue.Item1);
+                if (record != null)
+                {
+                    record.Content = keyValue.Item2;
+                }
+                else
+                {
+                    await _context.CompanyKeyValues.AddAsync(new CompanyKeyValue
+                    {
+                        CompanyId = Config.COMPANY_ID,
+                        Name = keyValue.Item1,
+                        Content = keyValue.Item2,
+                    });
+                }
+            }
+            await _context.SaveChangesAsync();
+
+        }
+
+        public async Task<List<Tuple<string, string>>> GetCompanyKeyValue(List<string> keys)
+        {
+            var keyValues = await _context.CompanyKeyValues.Where(kv => kv.CompanyId == Config.COMPANY_ID && keys.Contains(kv.Name)).ToListAsync();
+            return keyValues.Select(kv => new Tuple<string, string>(kv.Name, kv.Content)).ToList();
+        }
+    
 
         public async Task UpdateSettingsAsync(SystemSettingsEntity model)
         {

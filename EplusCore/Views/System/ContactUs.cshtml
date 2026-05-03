@@ -55,11 +55,11 @@
                                     <div>图片:</div>
 
                                     <button class="btn btn-info select">选择</button>
-                                    <button class="btn btn-primary upload">上传</button>
+                                <button class="btn btn-primary upload">上传</button>
+                                <a class="btn btn-primary view" style="color: white; display: @(string.IsNullOrWhiteSpace(Model.CustomerServiceWeChat) ? "none" : "")" target="_blank" href="@(Model.CustomerServiceWeChat)">打开</a>
 
                                     <!-- The cropit- classes above are needed so cropit can identify these elements -->
                                 </div>
-                                <div class="mb-5"><img src="@(Model.CustomerServiceWeChat)" style="width: 100%" /></div>
                             </div>
                     </div>
 
@@ -128,6 +128,8 @@
                                     'x-ms-blob-type': 'BlockBlob',
                                 },
                                 body: myFile
+                            }).then(() => {
+                                document.location.reload();
                             });
                         }
                     });

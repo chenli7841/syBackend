@@ -30,10 +30,10 @@
 
                             <button class="btn btn-info select">选择</button>
                             <button class="btn btn-primary upload">上传</button>
+                            <a class="btn btn-primary view" style="color: white; display: @(string.IsNullOrWhiteSpace(Model.OceanRuleImageURL) ? "none" : "")" target="_blank" href="@(Model.OceanRuleImageURL)">打开</a>
 
                             <!-- The cropit- classes above are needed so cropit can identify these elements -->
                         </div>
-                        <div class="mb-5"><img src="@(Model.OceanRuleImageURL)" style="width: 100%" /></div>
                     </div>
                 </div>
                 <h1 class="h4 mb-3">空运细则图片</h1>
@@ -53,10 +53,11 @@
 
                             <button class="btn btn-info select">选择</button>
                             <button class="btn btn-primary upload">上传</button>
+                            <a class="btn btn-primary view" style="color: white; display: @(string.IsNullOrWhiteSpace(Model.FlightRuleImageURL) ? "none" : "")" target="_blank" href="@(Model.FlightRuleImageURL)">打开</a>
+
 
                             <!-- The cropit- classes above are needed so cropit can identify these elements -->
                         </div>
-                        <div class="mb-5"><img src="@(Model.FlightRuleImageURL)" style="width: 100%" /></div>
                     </div>
                 </div>
                 <h1 class="h4 mb-3">常见问题图片</h1>
@@ -76,10 +77,10 @@
 
                             <button class="btn btn-info select">选择</button>
                             <button class="btn btn-primary upload">上传</button>
+                            <a class="btn btn-primary view" style="color: white; display: @(string.IsNullOrWhiteSpace(Model.CommonQuestionImageURL) ? "none" : "")" target="_blank" href="@(Model.CommonQuestionImageURL)">打开</a>
 
                             <!-- The cropit- classes above are needed so cropit can identify these elements -->
                         </div>
-                        <div class="mb-5"><img src="@(Model.CommonQuestionImageURL)" style="width: 100%" /></div>
                     </div>
                 </div>
                 <h1 class="h4 mb-3">保险条例图片</h1>
@@ -99,10 +100,10 @@
 
                             <button class="btn btn-info select">选择</button>
                             <button class="btn btn-primary upload">上传</button>
+                            <a class="btn btn-primary view" style="color: white; display: @(string.IsNullOrWhiteSpace(Model.InsurancePolicyImageURL) ? "none" : "")" target="_blank" href="@(Model.InsurancePolicyImageURL)">打开</a>
 
                             <!-- The cropit- classes above are needed so cropit can identify these elements -->
                         </div>
-                        <div class="mb-5"><img src="@(Model.InsurancePolicyImageURL)" style="width: 100%" /></div>
                     </div>
                 </div>
 
@@ -123,10 +124,10 @@
 
                             <button class="btn btn-info select">选择</button>
                             <button class="btn btn-primary upload">上传</button>
+                            <a class="btn btn-primary view" style="color: white; display: @(string.IsNullOrWhiteSpace(Model.OrderCreateGuidelineImageURL) ? "none" : "")" target="_blank" href="@(Model.OrderCreateGuidelineImageURL)">打开</a>
 
                             <!-- The cropit- classes above are needed so cropit can identify these elements -->
                         </div>
-                        <div class="mb-5"><img src="@(Model.OrderCreateGuidelineImageURL)" style="width: 100%" /></div>
                     </div>
                 </div>
             </div>
@@ -185,6 +186,8 @@
                                     'x-ms-blob-type': 'BlockBlob',
                                 },
                                 body: myFile
+                            }).then(() => {
+                                document.location.reload();
                             });
 
 

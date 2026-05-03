@@ -80,6 +80,21 @@ namespace WebUI.Controllers
         }
 
         [HttpPost]
+        public async Task<JsonResult> GetSystemImageUploadUrl(string propertyName)
+        {
+            try
+            {
+                var imageUploadUrl = await _systemService.GetSystemImageUploadUrl(propertyName);
+                return Json(new MethodResult<string>(imageUploadUrl));
+            }
+            catch (Exception e)
+            {
+                return Json(new MethodResult<SystemPhotoEntity>(new Error() { Text = e.Message }));
+            }
+        }
+
+
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Save(SystemSettingsEntity model)
         {
@@ -88,6 +103,13 @@ namespace WebUI.Controllers
         }
 
         public async Task<IActionResult> ContactUs()
+        {
+            var keyValues = await _systemService.GetCompanyKeyValue(SystemContactUsViewModel.GetKeys());
+            var result = SystemContactUsViewModel.FromTuples(keyValues);
+            return View(result);
+        }
+
+        public async Task<IActionResult> TransportRules()
         {
             var keyValues = await _systemService.GetCompanyKeyValue(SystemContactUsViewModel.GetKeys());
             var result = SystemContactUsViewModel.FromTuples(keyValues);

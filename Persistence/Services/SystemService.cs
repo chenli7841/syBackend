@@ -93,6 +93,29 @@ namespace Persistence.Services
             return photoEntity;
         }
 
+        public async Task<string> GetSystemImageUploadUrl(string propertyName)
+        {
+            var photoUrl = _storageService.GetAzureUploadUrl("system/images", $"{propertyName}.png");
+            var fileUrl = _storageService.GetFileUrl("system/images", $"{propertyName}.png");
+
+            var property = await _context.CompanyKeyValues.FirstOrDefaultAsync(kv => kv.CompanyId == Config.COMPANY_ID && kv.Name == propertyName);
+            if (property == null)
+            {
+                await _context.CompanyKeyValues.AddAsync(new CompanyKeyValue
+                {
+                    CompanyId = Config.COMPANY_ID,
+                    Name = propertyName,
+                    Content = fileUrl
+                });
+            }
+            else
+            {
+                property.Content = fileUrl;
+            }
+            await _context.SaveChangesAsync();
+            return photoUrl;
+        }
+
         public async Task<SystemPhotoEntity> GetMobilePhotoUploadUrl(int id)
         {
             BaseAdvert photo;

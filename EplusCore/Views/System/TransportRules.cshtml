@@ -1,0 +1,278 @@
+﻿@model WebUI.Models.ViewModels.SystemContactUsViewModel
+
+@{
+    ViewData["Title"] = "运输细则";
+}
+
+@section Styles
+{
+    <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
+}
+
+<div class="row">
+    <div class="col-lg-12 grid-margin stretch-card">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="h4 mb-3">海运细则图片</h1>
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div style="display: flex; gap: 24px; align-items: center;" class="image-uploader mb-3" data-photoid="@nameof(Model.OceanRuleImageURL)" data-photourl='@(Model.OceanRuleImageURL)'>
+                            <!-- This is where the preview image is displayed -->
+                            <div class="cropit-preview" style="display: none; height: 450px; border: 1px #999 dashed; line-height: 100px; color: #666;"></div>
+
+                            <!-- This range input controls zoom -->
+                            <!-- You can add additional elements here, e.g. the image icons -->
+                            <input type="range" class="cropit-image-zoom-input" style="display: none; margin-top: 30px" />
+
+                            <!-- This is where user selects new image -->
+                            <input type="file" class="cropit-image-input" style="display: none" />
+                            <div>图片:</div>
+
+                            <button class="btn btn-info select">选择</button>
+                            <button class="btn btn-primary upload">上传</button>
+
+                            <!-- The cropit- classes above are needed so cropit can identify these elements -->
+                        </div>
+                        <div class="mb-5"><img src="@(Model.OceanRuleImageURL)" style="width: 100%" /></div>
+                    </div>
+                </div>
+                <h1 class="h4 mb-3">空运细则图片</h1>
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div style="display: flex; gap: 24px; align-items: center;" class="image-uploader mb-3" data-photoid="@nameof(Model.FlightRuleImageURL)" data-photourl='@(Model.FlightRuleImageURL)'>
+                            <!-- This is where the preview image is displayed -->
+                            <div class="cropit-preview" style="display: none; height: 450px; border: 1px #999 dashed; line-height: 100px; color: #666;"></div>
+
+                            <!-- This range input controls zoom -->
+                            <!-- You can add additional elements here, e.g. the image icons -->
+                            <input type="range" class="cropit-image-zoom-input" style="display: none; margin-top: 30px" />
+
+                            <!-- This is where user selects new image -->
+                            <input type="file" class="cropit-image-input" style="display: none" />
+                            <div>图片:</div>
+
+                            <button class="btn btn-info select">选择</button>
+                            <button class="btn btn-primary upload">上传</button>
+
+                            <!-- The cropit- classes above are needed so cropit can identify these elements -->
+                        </div>
+                        <div class="mb-5"><img src="@(Model.FlightRuleImageURL)" style="width: 100%" /></div>
+                    </div>
+                </div>
+                <h1 class="h4 mb-3">常见问题图片</h1>
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div style="display: flex; gap: 24px; align-items: center;" class="image-uploader mb-3" data-photoid="@nameof(Model.CommonQuestionImageURL)" data-photourl='@(Model.CommonQuestionImageURL)'>
+                            <!-- This is where the preview image is displayed -->
+                            <div class="cropit-preview" style="display: none; height: 450px; border: 1px #999 dashed; line-height: 100px; color: #666;"></div>
+
+                            <!-- This range input controls zoom -->
+                            <!-- You can add additional elements here, e.g. the image icons -->
+                            <input type="range" class="cropit-image-zoom-input" style="display: none; margin-top: 30px" />
+
+                            <!-- This is where user selects new image -->
+                            <input type="file" class="cropit-image-input" style="display: none" />
+                            <div>图片:</div>
+
+                            <button class="btn btn-info select">选择</button>
+                            <button class="btn btn-primary upload">上传</button>
+
+                            <!-- The cropit- classes above are needed so cropit can identify these elements -->
+                        </div>
+                        <div class="mb-5"><img src="@(Model.CommonQuestionImageURL)" style="width: 100%" /></div>
+                    </div>
+                </div>
+                <h1 class="h4 mb-3">保险条例图片</h1>
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div style="display: flex; gap: 24px; align-items: center;" class="image-uploader mb-3" data-photoid="@nameof(Model.InsurancePolicyImageURL)" data-photourl='@(Model.InsurancePolicyImageURL)'>
+                            <!-- This is where the preview image is displayed -->
+                            <div class="cropit-preview" style="display: none; height: 450px; border: 1px #999 dashed; line-height: 100px; color: #666;"></div>
+
+                            <!-- This range input controls zoom -->
+                            <!-- You can add additional elements here, e.g. the image icons -->
+                            <input type="range" class="cropit-image-zoom-input" style="display: none; margin-top: 30px" />
+
+                            <!-- This is where user selects new image -->
+                            <input type="file" class="cropit-image-input" style="display: none" />
+                            <div>图片:</div>
+
+                            <button class="btn btn-info select">选择</button>
+                            <button class="btn btn-primary upload">上传</button>
+
+                            <!-- The cropit- classes above are needed so cropit can identify these elements -->
+                        </div>
+                        <div class="mb-5"><img src="@(Model.InsurancePolicyImageURL)" style="width: 100%" /></div>
+                    </div>
+                </div>
+
+                <h1 class="h4 mb-3">创建包裹流程图片</h1>
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div style="display: flex; gap: 24px; align-items: center;" class="image-uploader mb-3" data-photoid="@nameof(Model.OrderCreateGuidelineImageURL)" data-photourl='@(Model.OrderCreateGuidelineImageURL)'>
+                            <!-- This is where the preview image is displayed -->
+                            <div class="cropit-preview" style="display: none; height: 450px; border: 1px #999 dashed; line-height: 100px; color: #666;"></div>
+
+                            <!-- This range input controls zoom -->
+                            <!-- You can add additional elements here, e.g. the image icons -->
+                            <input type="range" class="cropit-image-zoom-input" style="display: none; margin-top: 30px" />
+
+                            <!-- This is where user selects new image -->
+                            <input type="file" class="cropit-image-input" style="display: none" />
+                            <div>图片:</div>
+
+                            <button class="btn btn-info select">选择</button>
+                            <button class="btn btn-primary upload">上传</button>
+
+                            <!-- The cropit- classes above are needed so cropit can identify these elements -->
+                        </div>
+                        <div class="mb-5"><img src="@(Model.OrderCreateGuidelineImageURL)" style="width: 100%" /></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            const uploadPhotoUrl = '@Url.Action("GetSystemImageUploadUrl")'; // '@Url.Action("UploadPhoto")';
+            $('.image-uploader .select').click(function() {
+                $(this).closest('.image-uploader').find('.cropit-image-input').click();
+
+                return false;
+            });
+
+            $('.image-uploader .upload').click(function () {
+                const uploader = $(this).closest('.image-uploader');
+                let photoData = ''; //uploader.cropit('export');
+                const photoId = uploader.data('photoid');
+                var myFile = $(this).closest('.image-uploader').find('.cropit-image-input').prop('files')[0];
+                let reader = new FileReader();
+                reader.addEventListener("load", () => {
+                    // convert image file to base64 string
+                    photoData = reader.result;
+                    $.post(uploadPhotoUrl,
+                    {
+                        propertyName: photoId
+                    },
+                    function(result) {
+                        if (result.error && result.error.text) {
+                            $.toast({
+                                heading: 'Danger',
+                                text: result.error.text,
+                                showHideTransition: 'slide',
+                                icon: 'error',
+                                loaderBg: '#f2a654',
+                                position: 'mid-center'
+                            });
+                        } else {
+                            $.toast({
+                                heading: '成功',
+                                showHideTransition: 'slide',
+                                icon: 'success',
+                                loaderBg: '#f2a654',
+                                position: 'mid-center'
+                            });
+
+                            fetch(result.data, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'png',
+                                    'x-ms-blob-type': 'BlockBlob',
+                                },
+                                body: myFile
+                            });
+
+
+                            //uploader.data('photoid', data.id);
+                            //uploader.data('photourl', data.url);
+                        }
+                    });
+                }, false);
+                reader.readAsDataURL(myFile);
+                return false;
+            });
+
+
+
+
+
+            const mobileuploaders = $('.mobile-photo-uploader');
+            for (let i = 0, il = mobileuploaders.length; i < il; i++) {
+                /*
+                const uploader = $(mobileuploaders[i]);
+                uploader.cropit({
+                    imageState: { src: uploader.data('photourl') },
+                    imageBackground: true,
+                    imageBackgroundBorderWidth: 15,
+                    smallImage: 'allow',
+                    allowDragNDrop: false,
+                });
+                */
+            }
+
+            $('.mobile-photo-uploader .select').click(function() {
+                $(this).closest('.mobile-photo-uploader').find('.cropit-image-input').click();
+
+                return false;
+            });
+
+            $('.mobile-photo-uploader .upload').click(function () {
+                const uploader = $(this).closest('.mobile-photo-uploader');
+                let photoData = ''; //uploader.cropit('export');
+                const photoId = uploader.data('photoid');
+                var myFile = $(this).closest('.mobile-photo-uploader').find('.cropit-image-input').prop('files')[0];
+                let reader = new FileReader();
+                reader.addEventListener("load", () => {
+                    // convert image file to base64 string
+                    photoData = reader.result;
+                    $.post(uploadPhotoUrl,
+                    {
+                        photoId,
+                        platform: "mobile",
+                        //photoData: photoData,
+                    },
+                    function(result) {
+                        if (result.error && result.error.text) {
+                            $.toast({
+                                heading: 'Danger',
+                                text: result.error.text,
+                                showHideTransition: 'slide',
+                                icon: 'error',
+                                loaderBg: '#f2a654',
+                                position: 'mid-center'
+                            });
+                        } else {
+                            $.toast({
+                                heading: '成功',
+                                showHideTransition: 'slide',
+                                icon: 'success',
+                                loaderBg: '#f2a654',
+                                position: 'mid-center'
+                            });
+
+                            fetch(result.data.url, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'png',
+                                    'x-ms-blob-type': 'BlockBlob',
+                                },
+                                body: myFile
+                            });
+
+
+                            //uploader.data('photoid', data.id);
+                            //uploader.data('photourl', data.url);
+                        }
+                    });
+                }, false);
+                reader.readAsDataURL(myFile);
+                return false;
+            });
+        });
+    </script>
+}

@@ -13,6 +13,7 @@ namespace Domain.Services
         Task<SystemSettingsEntity> GetSettingsAsync();
         Task UpdateSettingsAsync(SystemSettingsEntity settings);
         Task<SystemPhotoEntity> GetPhotoUploadUrl(int id);
+        Task<string> GetSystemImageUploadUrl(string propertyName);
         Task<SystemPhotoEntity> GetMobilePhotoUploadUrl(int id);
         Task UpdateCompanyKeyValue(List<Tuple<string, string>> keyValuePairs);
         Task<List<Tuple<string, string>>> GetCompanyKeyValue(List<string> keys);

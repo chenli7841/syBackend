@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Domain.Entities;
+using Domain.Enums;
 using Domain.Models.Extensions;
 using System.Collections.Generic;
 using System.Linq;
@@ -65,6 +66,10 @@ namespace WebUI.Mapping
             CreateMap<BatchEntity, BatchViewModel>()
                 .ForMember(dest => dest.Orders, opt => opt.MapFrom(src => src.Boxes.SelectMany(o => o.Orders)))
                 .ForMember(dest => dest.StageDescription, opt => opt.MapFrom(src => src.Stage.GetDescription()));
+            CreateMap<PackageBatchEntity, PackageBatchViewModel>()
+                .ForMember(dest => dest.Orders, opt => opt.MapFrom(src => src.Boxes.SelectMany(o => o.Orders)))
+                .ForMember(dest => dest.StageDescription, opt => opt.MapFrom(src => src.Stage.GetDescription()))
+                .ForMember(dest => dest.TransportStatusDescription, opt => opt.MapFrom(src => TransportStatusType.GetDescription(src.TransportStatus)));
         }
     }
 }

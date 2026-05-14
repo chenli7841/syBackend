@@ -1,12 +1,15 @@
+using AutoMapper;
+using Domain;
+using Domain.Entities;
+using Domain.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Persistence.Data;
 using System;
 using System.Linq;
-using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using AutoMapper;
-using Domain.Services;
 using WebUI.Models;
 using WebUI.Models.ViewModels;
-using Domain;
 
 namespace WebUI.Controllers
 {
@@ -15,6 +18,8 @@ namespace WebUI.Controllers
         private readonly IUserService _userService;
         private readonly IStatService _statService;
         private readonly ILocationService _locationService;
+        private readonly EplusDbContext _context;
+        private readonly IMapper _mapper;
 
         const int LARGE_PAGE_SIZE = 999;
 
@@ -22,19 +27,25 @@ namespace WebUI.Controllers
             IUserService userService,
             IMapper mapper,
             IStatService statService,
-            ILocationService locationService)
+            ILocationService locationService,
+            EplusDbContext context)
         {
             _userService = userService;
             _statService = statService;
             _locationService = locationService;
+            _mapper = mapper;
+            _context = context;
         }
 
-        public async Task<IActionResult> Inventory(int numberOfMonths = 3, int version = 1)
+        public async Task<IActionResult> Inventory(int numberOfMonths = 3, int version = 1, string companyIds = null)
         {
             try
             {
+                var companies = await _context.Companies.ToListAsync();
+                ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
+                var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
                 var viewModel = new PickUpLocationInventoryViewModel();
-                var locations = (await _userService.ListPickUpLocationsAsync(version)).OrderBy(r => r.Number);
+                var locations = (await _userService.ListPickUpLocationsAsync(version, companyIds: parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).OrderBy(r => r.Number);
                 var areas = await _locationService.ListAreas();
                 var users = await _userService.ListAsync(new Domain.Models.UserListFilterOptions
                 {
@@ -64,8 +75,8 @@ namespace WebUI.Controllers
 
         public async Task<IActionResult> TogglePickUpLocationVisibility(int id)
         {
-            await _userService.TogglePickUpLocationVisibilityAsync(id);
-            return await Inventory();
+            var v = await _userService.TogglePickUpLocationVisibilityAsync(id);
+            return await Inventory(version: v);
         }
 
         public async Task<IActionResult> TransferUsers(int fromPickupLocationId, int toPickupLocationId)

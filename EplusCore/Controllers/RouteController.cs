@@ -2,9 +2,15 @@
 using Domain.Entities;
 using Domain.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using Persistence.Data;
+using Persistence.Services;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using WebUI.Models;
 using WebUI.Models.ViewModels;
 
 namespace WebUI.Controllers
@@ -14,24 +20,36 @@ namespace WebUI.Controllers
         private readonly IRouteService _routeService;
         private readonly IWarehouseService _warehouseService;
         private readonly IMapper _mapper;
+        private readonly EplusDbContext _context;
 
-        public RouteController(IRouteService routeService, IWarehouseService warehouseService, IMapper mapper)
+        public RouteController(IRouteService routeService, IWarehouseService warehouseService, IMapper mapper, EplusDbContext context)
         {
             _routeService = routeService;
             _warehouseService = warehouseService;
             _mapper = mapper;
+            _context = context;
         }
 
-        public async Task<IActionResult> Inventory()
+        public async Task<IActionResult> Inventory(string companyIds)
         {
-            var routes = (await _routeService.ListAsync()).OrderBy(r => r.DisplaySequence);
+            var companies = await _context.Companies.ToListAsync();
+            ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
+            int parsed;
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
+            var routes = (await _routeService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).OrderBy(r => r.DisplaySequence);
             return View(routes);
         }
 
         public async Task<IActionResult> Edit(int id)
         {
             ViewBag.Warehouses = await _warehouseService.ListAsync();
-            var route = await _routeService.GetAsync(id);
+            var companies = await _context.Companies.ToListAsync();
+            ViewBag.Companies = companies.Select(c => new SelectListItem
+            {
+                Value = c.Id.ToString(),
+                Text = c.Name
+            });
+            var route = await _routeService.GetAsync(id, false);
             var result = _mapper.Map<RouteViewModel>(route);
             return View(result);
         }
@@ -39,6 +57,12 @@ namespace WebUI.Controllers
         public async Task<IActionResult> Create()
         {
             ViewBag.Warehouses = await _warehouseService.ListAsync();
+            var companies = await _context.Companies.ToListAsync();
+            ViewBag.Companies = companies.Select(c => new SelectListItem
+            {
+                Value = c.Id.ToString(),
+                Text = c.Name
+            });
             var result = _mapper.Map<RouteViewModel>(new RouteEntity());
             return View("Edit", result);
         }
@@ -86,6 +110,20 @@ namespace WebUI.Controllers
             var route = _mapper.Map<RouteEntity>(model);
             var result = await _routeService.SaveAsync(route, model.PhotoData);
             return RedirectToAction(nameof(Edit), new {id = result.Id});
+        }
+
+        [HttpPost]
+        public async Task<JsonResult> GetRouteImageUploadUrl(int routeId)
+        {
+            try
+            {
+                var imageUploadUrl = await _routeService.GetRouteImageUploadUrl(routeId);
+                return Json(new MethodResult<string>(imageUploadUrl));
+            }
+            catch (Exception e)
+            {
+                return Json(new MethodResult<SystemPhotoEntity>(new Error() { Text = e.Message }));
+            }
         }
 
         public async Task<IActionResult> Delete(int id)

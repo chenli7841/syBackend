@@ -16,7 +16,7 @@ namespace Domain.Services
         Task<List<UserEntity>> ListByBatchesAsync(BatchGroupType groupType, int? routeId, int? warehouseId, int[] companyIds = null);
         Task<IEnumerable<UserEntity>> ListAgentsAsync();
         Task<IEnumerable<PickUpLocationEntity>> ListPickUpLocationsAsync(int version = 1, int[] companyIds = null);
-        Task TogglePickUpLocationVisibilityAsync(int id);
+        Task<int> TogglePickUpLocationVisibilityAsync(int id);
         Task UpdatePickupLocation(int id, string name, string address, decimal districtAdditionalRate, int sequence, string note);
         Task TransferUser(int fromPickupLocationId, int toPickupLocationId);
         //Task<UserEntity> CreateAsync(UserEntity user);

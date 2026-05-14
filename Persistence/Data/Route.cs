@@ -43,6 +43,7 @@ namespace Persistence.Data
         public string Departure { get; set; }
         public bool? NeedInsurance { get; set; }
         public decimal? InsuranceRatio { get; set; }
+        public decimal? DutyRate { get; set; }
         public decimal? VolumeWeightRatio { get; set; }
 
         public virtual Warehouse Warehouse { get; set; }

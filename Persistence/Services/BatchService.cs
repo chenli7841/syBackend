@@ -229,6 +229,72 @@ namespace Persistence.Services
             return result;
         }
 
+        public async Task<PagedResult<PackageBatchEntity>> ListPackageBatchAsync(BatchListFilterOptions filterOptions, int[] companyIds)
+        {
+            var batchesFiltered = _context.Batches
+                .Where(b => b.IsFromChina
+                && ((int)BatchGroupType.Package == b.GroupType)
+                && (!filterOptions.WarehouseId.HasValue || filterOptions.WarehouseId == b.WarehouseId)
+                && (!filterOptions.RouteId.HasValue || filterOptions.RouteId == b.RouteId)
+                && (!filterOptions.Ids.Any() || filterOptions.Ids.Contains(b.Id))
+                && (!filterOptions.RecipientIds.Any() || (b.RecipientUserId != null && filterOptions.RecipientIds.Contains(b.RecipientUserId.Value)))
+                && (!filterOptions.BelongsToUserIds.Any() || (b.BelongsToUserId != null && filterOptions.BelongsToUserIds.Contains(b.BelongsToUserId.Value)))
+                && (companyIds == null ? (b.CompanyId == Config.COMPANY_ID) : companyIds.Contains(b.CompanyId.Value))
+                )
+                .Include(b => b.Route)
+                .Include(b => b.BatchPackages)
+                .Include(b => b.BatchBoxMaps).ThenInclude(m => m.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
+                .Include(b => b.BatchBoxes)
+                    .ThenInclude(bx => bx.BatchBoxOrderMaps)
+                        .ThenInclude(m => m.Order)
+                            .ThenInclude(o => o.CreatedBy)
+                                .ThenInclude(o => o.BelongsToNavigation)
+                .Include(b => b.MasterBatch);
+
+            IOrderedQueryable<Batch> batches;
+            if (filterOptions.GroupType.HasValue)
+            {
+                if (filterOptions.GroupType == BatchGroupType.PendingDispatch)
+                {
+                    batches = batchesFiltered.OrderBy(b => b.BatchBoxes.Sum(box => box.BatchBoxOrderMaps.Count));
+                }
+                else
+                {
+                    batches = batchesFiltered.OrderByDescending(b => b.DateCreated);
+                }
+            }
+            else
+            {
+                batches = batchesFiltered.OrderByDescending(b => b.DateCreated);
+            }
+
+            var total = await batches.CountAsync();
+            var pagedBatches = batches.Skip(filterOptions.Skip);
+
+            if (filterOptions.PageSize > 0)
+            {
+                pagedBatches = pagedBatches.Take(filterOptions.PageSize);
+            }
+            foreach (var b in pagedBatches)
+            {
+                foreach (var box in b.BatchBoxes)
+                {
+                    box.BatchBoxOrderMaps = box.BatchBoxOrderMaps.Where(bbom => companyIds == null ? (bbom.Order.CompanyId == Config.COMPANY_ID) : companyIds.Contains(bbom.Order.CompanyId.Value)).ToList();
+                }
+            }
+
+            var itemsQuery = pagedBatches.Select(o => _mapper.Map<PackageBatchEntity>(o));
+            var items = await itemsQuery.ToListAsync();
+
+            var result = new PagedResult<PackageBatchEntity>()
+            {
+                Total = total,
+                Items = items
+            };
+
+            return result;
+        }
+
         private void AddParameter(DbCommand command, string name, DbType type, object value)
         {
             var param1 = command.CreateParameter();
@@ -2427,6 +2493,19 @@ WHERE bb.BatchId=@batchId
 
             if (model.GroupType == BatchGroupType.LoadDelivery)
             {
+                int? warehouseId = null;
+                if (batch.WarehouseId.HasValue)
+                {
+                    warehouseId = batch.WarehouseId.Value;
+                }
+                else if (batch.Route != null)
+                {
+                    warehouseId = batch.Route.WarehouseId;
+                }
+                else if (batch.LoadDeliveryBatches.Count > 0)
+                {
+                    warehouseId = batch.LoadDeliveryBatches.First().WarehouseId;
+                }
                 batch.LoadDeliveryBatches = new List<LoadDeliveryBatch>
                 {
                     new LoadDeliveryBatch
@@ -2435,7 +2514,7 @@ WHERE bb.BatchId=@batchId
                         FlightInfo = model.FlightInfo,
                         CargoNumber = model.CargoNumber,
                         ArrivalTime = model.ArrivalTime,
-                        WarehouseId = batch.Route.WarehouseId,
+                        WarehouseId = warehouseId,
                     }
                 };
             }

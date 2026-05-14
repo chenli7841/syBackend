@@ -7239,6 +7239,7 @@ namespace Persistence.Data
                 entity.Property(e => e.NeedInsurance).HasColumnType("bit");
 
                 entity.Property(e => e.InsuranceRatio).HasColumnType("decimal(16,3)");
+                entity.Property(e => e.DutyRate).HasColumnType("decimal(16,3)");
 
                 entity.Property(e => e.VolumeWeightRatio).HasColumnType("decimal(16,3)");
 

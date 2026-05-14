@@ -407,6 +407,47 @@ namespace WebUI.Controllers
             }
         }
 
+
+
+        public async Task<IActionResult> LoadPackageData(BatchGroupType groupType, string companyIds, int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, DataTableRequestModel requestModel)
+        {
+            try
+            {
+                var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+                var filter = new BatchListFilterOptions()
+                {
+                    GroupType = groupType,
+                    WarehouseId = warehouseId,
+                    RouteId = routeId,
+                    PageSize = requestModel.Length,
+                    Skip = requestModel.Start
+                };
+                if (recipientUserId.HasValue)
+                {
+                    filter.RecipientIds.Add(recipientUserId.Value);
+                }
+                if (belongsToUserId.HasValue)
+                {
+                    filter.BelongsToUserIds.Add(belongsToUserId.Value);
+                }
+
+                PagedResult<PackageBatchEntity> data = await _batchService.ListPackageBatchAsync(filter, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
+                
+                
+
+                var viewModels = data.Items.Select(it => _mapper.Map<PackageBatchViewModel>(it)).ToList();
+                return Json(new { requestModel.Draw, recordsFiltered = data.Total, recordsTotal = data.Total, data = viewModels });
+            }
+            catch (Exception e)
+            {
+                return Json(new MethodResult<object>(new Error
+                {
+                    Name = "LoadDataError",
+                    Text = e.Message
+                }));
+            }
+        }
+
         public async Task<IActionResult> LoadPendingDispatchData(string companyIds, DataTableRequestModel requestModel)
         {
             try
@@ -651,6 +692,10 @@ namespace WebUI.Controllers
             {
                 return RedirectToAction(nameof(DailyScanEdit), new { id = result.Id });
 
+            }
+            else if (model.GroupType == BatchGroupType.LoadDelivery)
+            {
+                return RedirectToAction(nameof(EditLoadDeliveryBatch), new { id = result.Id });
             }
             else
             {
@@ -1052,6 +1097,12 @@ WHERE BatchId={id}");
         }
 
         public async Task<IActionResult> Pay(int id)
+        {
+            await _batchService.PayAndMoveNextAsync(id, PayType.Balance);
+            return RedirectToAction(nameof(Edit), new { id });
+        }
+
+        public async Task<IActionResult> PackagePay(int id)
         {
             await _batchService.PayAndMoveNextAsync(id, PayType.Balance);
             return RedirectToAction(nameof(Edit), new { id });

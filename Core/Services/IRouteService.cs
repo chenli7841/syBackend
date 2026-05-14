@@ -10,6 +10,7 @@ namespace Domain.Services
         Task<IEnumerable<RouteEntity>> ListAsync(int[] companyId = null);
         Task<RouteEntity> GetAsync(int id, bool checkCompany = true, int? companyId = null);
         Task<RouteEntity> SaveAsync(RouteEntity model, string photoData);
+        Task<string> GetRouteImageUploadUrl(int routeId);
         Task HideAsync(int id);
         Task ShowAsync(int id);
         Task ToggleIsRegular(int id);

@@ -76,6 +76,18 @@ namespace Persistence.Services
             return model;
         }
 
+        public async Task<string> GetRouteImageUploadUrl(int routeId)
+        {
+            var photoUrl = _storageService.GetAzureUploadUrl("system/routes", $"{routeId}.png");
+            var fileUrl = _storageService.GetFileUrl("system/routes", $"{routeId}.png");
+
+            var route = await _context.Routes.FirstAsync(r => r.Id == routeId);
+            route.Photo = fileUrl;
+
+            await _context.SaveChangesAsync();
+            return photoUrl;
+        }
+
         private async Task<Route> UpdateAsync(RouteEntity model)
         {
             var route = await _context.Routes.FirstAsync(r => r.Id == model.Id);
@@ -90,12 +102,12 @@ namespace Persistence.Services
             route.SupportDescription = model.SupportDescription;
             route.Price = JsonConvert.SerializeObject(model.ItemPrices);
             route.DisplaySequence = model.DisplaySequence;
-            route.CompanyId = Config.COMPANY_ID;
             route.Destination = model.Destination;
             route.Departure = model.Departure;
             route.NeedInsurance = model.NeedInsurance;
             route.VolumeWeightRatio = model.VolumeWeightRatio;
             route.InsuranceRatio = model.InsuranceRatio;
+            route.DutyRate = model.DutyRate;
             await _context.SaveChangesAsync();
             return route;
         }

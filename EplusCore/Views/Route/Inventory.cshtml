@@ -1,8 +1,13 @@
-﻿@using Domain.Models.Extensions
+﻿﻿@using Domain.Models.Extensions
 @model IEnumerable<Domain.Entities.RouteEntity>
+@using Domain.Entities
 
 @{
     ViewData["Title"] = "线路管理";
+}
+
+@{
+    var companies = ((IEnumerable<CompanyEntity>)ViewBag.Companies).ToList();
 }
 
 <div class="row">
@@ -16,36 +21,37 @@
                                 <th>名称</th>
                                 <th>代码</th>
                                 <th>类型</th>
-                                <th style="display: none;">常规</th>
+                                <th>常规</th>
                                 <th>仓库</th>
                                 <th>说明</th>
                                 <th>排序</th>
-                                <th style="display: none;">显示</th>
-                                <th style="display: none;">永久删除</th>
+                                <th>显示</th>
+                                <th>永久删除</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var route in Model)
                             {
                                 <tr>
-                                    <td style="display: none;">@Html.ActionLink(route.Name, "Edit", new { @id = route.Id }, new { @class = "" })</td>
-                                    <td>@route.Name</td>
+                                    <td>@Html.ActionLink(route.Name, "Edit", new { @id = route.Id }, new { @class = "" })</td>
                                     <td>@route.Code</td>
                                     <td>@route.Type.GetDescription()</td>
-                                    <td style="display: none;"><a href='@Url.Action("ToggleIsRegular")?id=@route.Id'>
-                                        @if (route.IsRegular)
-                                        {
-                                            <i class="fa fa-check fa-lg" style="color: #fc0324de"></i>
-                                        }
-                                        else
-                                        {
-                                            <i class="fa fa-times fa-lg" style="color: green"></i>
-                                        }
-                                    </a></td>
+                                    <td>
+                                        <a href='@Url.Action("ToggleIsRegular")?id=@route.Id'>
+                                            @if (route.IsRegular)
+                                            {
+                                                <i class="fa fa-check fa-lg" style="color: #fc0324de"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="fa fa-times fa-lg" style="color: green"></i>
+                                            }
+                                        </a>
+                                    </td>
                                     <td>@route.Warehouse?.Name</td>
                                     <td>@route.Description</td>
                                     <td>@route.DisplaySequence</td>
-                                    <td style="display: none;">
+                                    <td>
                                         @if (route.IsDeleted)
                                         {
                                             <i class="fa fa-times fa-lg" style="color: #fc0324de"></i>
@@ -55,7 +61,7 @@
                                             <i class="fa fa-check fa-lg" style="color: green"></i>
                                         }
                                     </td>
-                                    <td style="display: none;"><a href='@Url.Action("Delete")?id=@route.Id'><i class="fa fa-times fa-lg" style="color: #fc0324de"></i></a></td>
+                                    <td><a href='@Url.Action("Delete")?id=@route.Id'><i class="fa fa-times fa-lg" style="color: #fc0324de"></i></a></td>
                                 </tr>
                             }
                         </tbody>
@@ -69,18 +75,48 @@
 @section Scripts
 {
     <script>
-    const createUrl = '@Url.Action("Create")';
+        const createUrl = '@Url.Action("Create")';
 
-    $('#route-listing').DataTable({
-      paging: false,
-      info: false,
-      order: [],
-      language: {
-        search: "搜索:",
-      },
-    });
+        $('#route-listing').DataTable({
+          paging: false,
+          info: false,
+          order: [],
+          language: {
+            search: "搜索:",
+          },
+        });
 
-    //$('#route-listing').closest('.dataTables_wrapper').find('div.row:first-child > div:first-child')
-    //  .append(`<a class="btn btn-primary ml-2" href="${createUrl}">添加</button>`);
+        $('#route-listing').closest('.dataTables_wrapper').find('div.row:first-child > div:first-child')
+          .append(
+              `<div style="display: flex; gap: 12px; align-items: center;"><a class="btn btn-primary ml-2" style="width: 80px; padding-top: 8px; padding-bottom: 8px;" href="${createUrl}">添加</a>
+              <select class="form-control" id="company-select">
+              @{
+                    for (int i = 0; i < companies.Count; i++)
+                    {
+                        var c = companies[i];
+                        <option value="@c.Id">@c.Name</option>
+                        if (i == companies.Count - 1)
+                        {
+                                var allCompanyIds = string.Join(",", companies.Select(c => c.Id));
+                                <option value="@allCompanyIds">All</option>
+                        }
+                    }
+                }
+              </select>
+              </div>
+              `);
+
+        let companyIds = '';
+        let search = document.location.search;
+        if (search.includes("?")) {
+            search = search.replace("?", "");
+            let part = search.split("&").find(p => p.split("=")[0].toLowerCase() === "companyids");
+            if (!part) companyIds = "";
+            else companyIds = part.split("=")[1];
+        }
+        $('#company-select').val(companyIds || '@(string.Join(",", companies.Select(c => c.Id)))');
+        $('#company-select').change(function () {
+            document.location = `${document.location.origin}${document.location.pathname}?companyIds=${$('#company-select').val()}`;
+        });
     </script>
 }

@@ -5,8 +5,14 @@
     ViewData["Title"] = Model.Id > 0 ? "修改线路" : "创建线路";
 }
 
+@section Styles
+{
+    <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
+}
+
 @{
     var warehouses = (IList<WarehouseEntity>)ViewBag.Warehouses;
+    var companies = (IEnumerable<SelectListItem>)ViewBag.Companies;
 }
 
 <div class="row">
@@ -20,15 +26,29 @@
                     @Html.TextBoxFor(r => r.Id, new { hidden = "hidden" })
 
                     <div class="row">
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <div class="form-group row">
-                                @Html.LabelFor(r => r.Name, "名称", new { @class = "col-sm-4 col-form-label" })
+                                @Html.LabelFor(r => r.CompanyId, "公司", new { @class = "col-sm-4 col-form-label" })
                                 <div class="col-sm-8">
+                                    @Html.DropDownListFor(
+                                        m => m.CompanyId,
+                                        companies,
+                                        "请选择公司",
+                                        new { @class = "form-control" }
+
+                                    )
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Name, "名称", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
                                     @Html.TextBoxFor(r => r.Name, new { @class = "form-control" })
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group row">
                                 @Html.LabelFor(r => r.Code, "代码", new { @class = "col-sm-4 col-form-label" })
                                 <div class="col-sm-8">
@@ -36,7 +56,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group row">
                                 @Html.LabelFor(r => r.Departure, "起始港", new { @class = "col-sm-4 col-form-label" })
                                 <div class="col-sm-8">
@@ -48,7 +68,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group row">
                                 @Html.LabelFor(r => r.Destination, "目的地", new { @class = "col-sm-4 col-form-label" })
                                 <div class="col-sm-8">
@@ -60,6 +80,8 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                    <div class="row">
                         <div class="col-md-3">
                             <div class="form-group row">
                                 @Html.LabelFor(r => r.Type, "类别", new { @class = "col-sm-4 col-form-label" })
@@ -67,6 +89,7 @@
                                     @Html.TextBoxFor(r => r.Type, new { hidden = "hidden" })
                                     <select class="form-control" id="type-select">
                                         <option value="Mixed">集运</option>
+                                        <option value="Direct">直邮</option>
                                     </select>
                                 </div>
                             </div>
@@ -86,7 +109,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-3" style="display: none;">
                             <div class="form-group row">
                                 @Html.LabelFor(r => r.FixedPrice, "每公斤运费", new { @class = "col-sm-4 col-form-label" })
                                 <div class="col-sm-8">
@@ -94,10 +117,99 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.DisplaySequence, "排序", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.DisplaySequence, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.FixedPrice, "入库费", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.FixedPrice, new { @class = "form-control", type = "number", step = "0.01" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @for (var j = 0; j < Model.ItemPrices.Count; j += 6)
+                    {
+                        <div class="row">
+                            @for (var i = 0; i < 6; i++)
+                            {
+                                if (i + j >= Model.ItemPrices.Count)
+                                {
+                                    break;
+                                }
+
+                                <div class="col-md-2">
+                                    <div class="form-group row">
+                                        @Html.HiddenFor(r => r.ItemPrices[i + j].Item)
+                                        @Html.LabelFor(r => r.ItemPrices[i + j].Price, Model.ItemPrices[i + j].Item, new { @class = "col-sm-4 col-form-label" })
+                                        <div class="col-sm-8">
+                                            @Html.TextBoxFor(r => r.ItemPrices[i + j].Price, new { @class = "form-control", type = "number", step = "0.01" })
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.DutyRate, "关税税率", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.DutyRate, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.DutyRate, "体积重量比", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.VolumeWeightRatio, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.InsuranceRatio, "保险比例", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.InsuranceRatio, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group row" style="align-items: center;">
+                                @Html.LabelFor(r => r.NeedInsurance, "强制保险", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.CheckBoxFor(r => r.NeedInsurance, new { @class = "" })
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="row">
                         <div class="col-12">
-                            @await Html.PartialAsync("Components/PhotoUpload/Default")
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Description, "说明", new { @class = "col-sm-1 col-form-label" })
+                                <div class="col-sm-11">
+                                    @Html.TextAreaFor(r => r.Description, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div style="display: flex; gap: 24px; align-items: center;" class="image-uploader mb-3" data-photoid="@(Model.Id)" data-photourl='@(Model.Id)'>                                    
+                                <!-- This is where user selects new image -->
+                                <input type="file" class="cropit-image-input" style="display: none" />
+                                <div>图片:</div>
+                                <button type="button" class="btn btn-info select">选择</button>
+                                <button type="button" class="btn btn-primary upload">上传</button>
+                                <a class="btn btn-primary view" style="color: white; display: @(string.IsNullOrWhiteSpace(Model.PhotoUrl) ? "none" : "")" target="_blank" href="@(Model.PhotoUrl)">打开</a>                                    
+                            </div>
                         </div>
                     </div>
                     <div class="row" style="gap: 10px;">
@@ -140,6 +252,7 @@
 
 @section Scripts
 {
+    <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
     <script>
         $(document).ready(function () {
             $('#type-select').val($('#Type').val());
@@ -164,6 +277,73 @@
 
             $('#warehouse-select').change(function () {
                 $('#WarehouseId').val(this.value);
+            });
+
+            const uploadPhotoUrl = '@Url.Action("GetRouteImageUploadUrl")';
+
+            $('.image-uploader .select').click(function() {
+                if (@Model.Id > 0) {
+                    $(this).closest('.image-uploader').find('.cropit-image-input').click();
+                } else {
+                    $.toast({
+                        heading: 'Danger',
+                        text: '请先创建新线路，再回来编辑时上传图片',
+                        showHideTransition: 'slide',
+                        icon: 'error',
+                        loaderBg: '#f2a654',
+                        position: 'mid-center'
+                    });
+                }
+                return false;
+            });
+
+            $('.image-uploader .upload').click(function () {
+                const uploader = $(this).closest('.image-uploader');
+                let photoData = '';
+                const photoId = uploader.data('photoid');
+                var myFile = $(this).closest('.image-uploader').find('.cropit-image-input').prop('files')[0];
+                let reader = new FileReader();
+                reader.addEventListener("load", () => {
+                    // convert image file to base64 string
+                    photoData = reader.result;
+                    $.post(uploadPhotoUrl,
+                    {
+                        routeId: parseInt(@Model.Id),
+                    },
+                    function(result) {
+                        if (result.error && result.error.text) {
+                            $.toast({
+                                heading: 'Danger',
+                                text: result.error.text,
+                                showHideTransition: 'slide',
+                                icon: 'error',
+                                loaderBg: '#f2a654',
+                                position: 'mid-center'
+                            });
+                        } else {
+                            $.toast({
+                                heading: '成功',
+                                showHideTransition: 'slide',
+                                icon: 'success',
+                                loaderBg: '#f2a654',
+                                position: 'mid-center'
+                            });
+
+                            fetch(result.data, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'png',
+                                    'x-ms-blob-type': 'BlockBlob',
+                                },
+                                body: myFile
+                            }).then(() => {
+                                document.location.reload();
+                            });
+                        }
+                    });
+                }, false);
+                reader.readAsDataURL(myFile);
+                return false;
             });
         });
     </script>

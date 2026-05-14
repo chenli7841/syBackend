@@ -1,9 +1,14 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using AutoMapper;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Domain.Entities;
 using Domain.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Persistence.Data;
+using Persistence.Services;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using WebUI.Models;
 using WebUI.Models.ViewModels;
 
@@ -12,10 +17,14 @@ namespace WebUI.Controllers
     public class SystemController : Controller
     {
         private readonly ISystemService _systemService;
+        private readonly EplusDbContext _context;
+        private readonly IMapper _mapper;
 
-        public SystemController(ISystemService systemService)
+        public SystemController(ISystemService systemService, EplusDbContext context, IMapper mapper)
         {
             _systemService = systemService;
+            _context = context;
+            _mapper = mapper;
         }
 
         public async Task<IActionResult> Index()
@@ -80,11 +89,15 @@ namespace WebUI.Controllers
         }
 
         [HttpPost]
-        public async Task<JsonResult> GetSystemImageUploadUrl(string propertyName)
+        public async Task<JsonResult> GetSystemImageUploadUrl(string propertyName, int? companyId)
         {
             try
             {
-                var imageUploadUrl = await _systemService.GetSystemImageUploadUrl(propertyName);
+                if (!companyId.HasValue)
+                {
+                    throw new Exception("Need company Id");
+                }
+                var imageUploadUrl = await _systemService.GetSystemImageUploadUrl(propertyName, companyId.Value);
                 return Json(new MethodResult<string>(imageUploadUrl));
             }
             catch (Exception e)
@@ -102,16 +115,28 @@ namespace WebUI.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        public async Task<IActionResult> ContactUs()
+        public async Task<IActionResult> ContactUs(int? companyIds)
         {
-            var keyValues = await _systemService.GetCompanyKeyValue(SystemContactUsViewModel.GetKeys());
+            var companies = await _context.Companies.ToListAsync();
+            ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
+            if (!companyIds.HasValue)
+            {
+                return View(new SystemContactUsViewModel());
+            }
+            var keyValues = await _systemService.GetCompanyKeyValue(SystemContactUsViewModel.GetKeys(), companyIds.Value);
             var result = SystemContactUsViewModel.FromTuples(keyValues);
             return View(result);
         }
 
-        public async Task<IActionResult> TransportRules()
+        public async Task<IActionResult> TransportRules(int? companyIds)
         {
-            var keyValues = await _systemService.GetCompanyKeyValue(SystemContactUsViewModel.GetKeys());
+            var companies = await _context.Companies.ToListAsync();
+            ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
+            if (!companyIds.HasValue)
+            {
+                return View(new SystemContactUsViewModel());
+            }
+            var keyValues = await _systemService.GetCompanyKeyValue(SystemContactUsViewModel.GetKeys(), companyIds.Value);
             var result = SystemContactUsViewModel.FromTuples(keyValues);
             return View(result);
         }

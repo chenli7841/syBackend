@@ -1,4 +1,5 @@
 ﻿@model WebUI.Models.ViewModels.SystemContactUsViewModel
+@using Domain.Entities
 
 @{
     ViewData["Title"] = "运输细则";
@@ -9,10 +10,29 @@
     <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
 }
 
+@{
+    var companies = ((IEnumerable<CompanyEntity>)ViewBag.Companies).ToList();
+}
+
 <div class="row">
     <div class="col-lg-12 grid-margin stretch-card">
         <div class="card">
             <div class="card-body">
+                <div class="form-group row">
+                    <select class="form-control" id="company-select">
+                        @{
+                            for (int i = 0; i < companies.Count; i++)
+                            {
+                                if (i == 0)
+                                {
+                                    <option value="">请选择公司</option>
+                                }
+                                var c = companies[i];
+                                <option value="@c.Id">@c.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
                 <h1 class="h4 mb-3">海运细则图片</h1>
                 <div class="row mt-4">
                     <div class="col-md-12">
@@ -140,14 +160,50 @@
     <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
     <script type="text/javascript">
         $(document).ready(function () {
+            let companyIds = '';
+            let search = document.location.search;
+            if (search.includes("?")) {
+                search = search.replace("?", "");
+                let part = search.split("&").find(p => p.split("=")[0].toLowerCase() === "companyids");
+                if (!part) companyIds = "";
+                else companyIds = part.split("=")[1];
+            }
+            $('#company-select').val(companyIds);
+            $('#company-select').change(function () {
+                document.location = `${document.location.origin}${document.location.pathname}?companyIds=${$('#company-select').val()}`;
+            });
+
             const uploadPhotoUrl = '@Url.Action("GetSystemImageUploadUrl")'; // '@Url.Action("UploadPhoto")';
             $('.image-uploader .select').click(function() {
+                if (isNaN(parseInt(companyIds))) {
+                    $.toast({
+                        heading: 'Danger',
+                        text: "请先选择公司",
+                        showHideTransition: 'slide',
+                        icon: 'error',
+                        loaderBg: '#f2a654',
+                        position: 'mid-center'
+                    });
+                    return false;
+                }
+
                 $(this).closest('.image-uploader').find('.cropit-image-input').click();
 
                 return false;
             });
 
             $('.image-uploader .upload').click(function () {
+                if (isNaN(parseInt(companyIds))) {
+                    $.toast({
+                        heading: 'Danger',
+                        text: "请先选择公司",
+                        showHideTransition: 'slide',
+                        icon: 'error',
+                        loaderBg: '#f2a654',
+                        position: 'mid-center'
+                    });
+                    return false;
+                }
                 const uploader = $(this).closest('.image-uploader');
                 let photoData = ''; //uploader.cropit('export');
                 const photoId = uploader.data('photoid');
@@ -158,7 +214,8 @@
                     photoData = reader.result;
                     $.post(uploadPhotoUrl,
                     {
-                        propertyName: photoId
+                        propertyName: photoId,
+                        companyId: parseInt(companyIds),
                     },
                     function(result) {
                         if (result.error && result.error.text) {
@@ -265,6 +322,8 @@
                                     'x-ms-blob-type': 'BlockBlob',
                                 },
                                 body: myFile
+                            }).then(() => {
+                                document.location.reload();
                             });
 
 

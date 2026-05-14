@@ -190,11 +190,12 @@ namespace Persistence.Services
             return await _context.Roles.Where(r => r.Code != null && !exclude.Contains(r.Code)).Select(r => new RoleEntity { RoleId = r.RoleId, Name = r.Name, Code = r.Code }).ToListAsync();
         }
 
-        public async Task TogglePickUpLocationVisibilityAsync(int id)
+        public async Task<int> TogglePickUpLocationVisibilityAsync(int id)
         {
             var location = await _context.PickUpLocations.FirstOrDefaultAsync(u => u.Id == id);
             location.IsDel = !location.IsDel;
             await _context.SaveChangesAsync();
+            return location.Version;
         }
 
         public async Task UpdatePickupLocation(int id, string name, string address, decimal districtAdditionalRate, int sequence, string note)

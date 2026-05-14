@@ -50,6 +50,30 @@ namespace WebUI.Models.ViewModels
         public string ArrivalTimeDisplay => ArrivalTime?.ToString("yy/MM/dd HH:mm");
     }
 
+    public class PackageBatchViewModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public DateTime DateCreated { get; set; }
+        public BatchStageType Stage { get; set; }
+        public string StageDescription { get; set; }
+        public IEnumerable<OrderEntity> Orders { get; set; }
+        public BatchViewModel MasterBatch { get; set; }
+
+        public decimal Duty { get; set; }
+        public decimal StorageCost { get; set; }
+        public decimal Discount { get; set; }
+        public string TransportStatusDescription { get; set; }
+        public string PaymentStatus { get; set; }
+        public string FinishStatus { get; set; }
+
+        public string DateCreatedDisplay => DateCreated.ToString("yy/MM/dd HH:mm");
+        public int TotalOrders => Orders.Count();
+        public decimal TotalWeightKg => Orders.Sum(o => o.WeightKg);
+        public decimal TotalOrderShippingCost => Orders.Sum(o => o.ShippingCost);
+        public decimal TotalShippingCost => TotalOrderShippingCost + Duty + StorageCost - Discount;
+    }
+
     public class PendingDispatchBatchViewModel
     {
         public int Id { get; set; }

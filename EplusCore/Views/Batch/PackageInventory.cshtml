@@ -142,7 +142,7 @@
                 "searchPanes": true,
                 "ajax": {
                     "url":
-                        '@Html.Raw(Url.Action("LoadData", new {groupType = Model.GroupType, routeId = Model.SelectedRouteId, recipientUserId=Model.SelectedRecipientUserId, belongsToUserId=Model.SelectedBelongsToUserId, warehouseId = Model.SelectedWarehouseId, companyIds = Model.CompanyIds}))',
+                        '@Html.Raw(Url.Action("LoadPackageData", new { groupType = Model.GroupType, routeId = Model.SelectedRouteId, recipientUserId = Model.SelectedRecipientUserId, belongsToUserId = Model.SelectedBelongsToUserId, warehouseId = Model.SelectedWarehouseId, companyIds = Model.CompanyIds }))',
                     "type": "POST",
                     "datatype": "json"
                 },
@@ -171,8 +171,8 @@
                             }&groupType=${groupType}&routeId=${routeId}&warehouseId=${warehouseId}'><i class="fa fa-trash-o fa-lg" style="color: red"></i></a>`
                     },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("PrintBatch")?id=${full.id}' target="_blank"><i class="fa fa-print fa-lg"></i></a>` },
-                    { "render": (data, type, full, meta) => `<a href='@Url.Action("Export")?id=${full.id}' target="_blank"><i class="fa fa-table fa-lg"></i></a>` },
-                    { "render": (data, type, full, meta) => `<a href='@Url.Action("Export")?id=${full.id}' target="_blank"><i class="fa fa-table fa-lg"></i></a>` },
+                    { "render": (data, type, full, meta) => `${full.transportStatusDescription}` },
+                    { "render": (data, type, full, meta) => `${full.masterBatch ? full.masterBatch.stageDescription : ""}` },
                 ],
                 "language": {
                     // https://datatables.net/manual/i18n

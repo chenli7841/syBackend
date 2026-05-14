@@ -93,17 +93,17 @@ namespace Persistence.Services
             return photoEntity;
         }
 
-        public async Task<string> GetSystemImageUploadUrl(string propertyName)
+        public async Task<string> GetSystemImageUploadUrl(string propertyName, int companyId)
         {
             var photoUrl = _storageService.GetAzureUploadUrl("system/images", $"{propertyName}.png");
             var fileUrl = _storageService.GetFileUrl("system/images", $"{propertyName}.png");
 
-            var property = await _context.CompanyKeyValues.FirstOrDefaultAsync(kv => kv.CompanyId == Config.COMPANY_ID && kv.Name == propertyName);
+            var property = await _context.CompanyKeyValues.FirstOrDefaultAsync(kv => kv.CompanyId == companyId && kv.Name == propertyName);
             if (property == null)
             {
                 await _context.CompanyKeyValues.AddAsync(new CompanyKeyValue
                 {
-                    CompanyId = Config.COMPANY_ID,
+                    CompanyId = companyId,
                     Name = propertyName,
                     Content = fileUrl
                 });
@@ -193,9 +193,9 @@ namespace Persistence.Services
 
         }
 
-        public async Task<List<Tuple<string, string>>> GetCompanyKeyValue(List<string> keys)
+        public async Task<List<Tuple<string, string>>> GetCompanyKeyValue(List<string> keys, int companyId)
         {
-            var keyValues = await _context.CompanyKeyValues.Where(kv => kv.CompanyId == Config.COMPANY_ID && keys.Contains(kv.Name)).ToListAsync();
+            var keyValues = await _context.CompanyKeyValues.Where(kv => kv.CompanyId == companyId && keys.Contains(kv.Name)).ToListAsync();
             return keyValues.Select(kv => new Tuple<string, string>(kv.Name, kv.Content)).ToList();
         }
     

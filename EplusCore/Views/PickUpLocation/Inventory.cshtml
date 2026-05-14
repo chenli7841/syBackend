@@ -1,5 +1,6 @@
 @using Domain.Models.Extensions
 @model WebUI.Models.ViewModels.PickUpLocationInventoryViewModel
+@using Domain.Entities
 
 @{
     ViewData["Title"] = "取货点管理";
@@ -23,6 +24,10 @@
             margin-right: 8px;
         }
     </style>
+}
+
+@{
+    var companies = ((IEnumerable<CompanyEntity>)ViewBag.Companies).ToList();
 }
 
 <div class="row">
@@ -56,7 +61,7 @@
                                     <td><button class='pickupInventoryTransferUserBtn' onclick="initializeBatchTransferUserModal(@location.Id, '@location.Name')" data-toggle="modal" data-target="#batchTransferUserModal">@location.NumberOfUsers</button></td>
                                     <td>@location.RecentItemTotalWeightKg</td>
                                     <td>
-                                        <a href='@Url.Action("TogglePickUpLocationVisibility")?id=@location.Id'>
+                                        <a href='@Url.Action("TogglePickUpLocationVisibility")?id=@location.Id&version=2'>
                                             @if (location.IsDel)
                                             {
                                                 <i class="fa fa-times fa-lg" style="color: #fc0324de"></i>
@@ -434,5 +439,30 @@
               添加
               </button>`);
         }
+        $('#route-listing').closest('.dataTables_wrapper').find('div.row:first-child > div:nth-child(2)')
+            .append(`
+            <select class="form-control" id="company-select">
+                @{
+                        for (int i = 0; i < companies.Count; i++)
+                        {
+                                var c = companies[i];
+                                <option value="@c.Id">@c.Name</option>
+                        }
+                }
+            </select>`);
+
+        let companyIds = '';
+        let search = document.location.search;
+        search = search.replace("?", "");
+        let parts = search.split("&");
+        let part = parts.find(p => p.split("=")[0].toLowerCase() === "companyids");
+        if (!part) companyIds = "";
+        else companyIds = part.split("=")[1];
+        $('#company-select').val(companyIds || 1);
+        $('#company-select').change(function () {
+            let otherParts = parts.filter(p => p.split("=")[0].toLowerCase() !== "companyids");
+            document.location = `${document.location.origin}${document.location.pathname}?${[...otherParts, `companyIds=${$('#company-select').val()}`].join("&")}`;
+        });
+
     </script>
 }

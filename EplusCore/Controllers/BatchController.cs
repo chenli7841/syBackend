@@ -3,6 +3,7 @@ using ClosedXML.Excel;
 using ClosedXML.Extensions;
 using Common;
 using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using DocumentFormat.OpenXml.Spreadsheet;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Domain;
@@ -683,6 +684,69 @@ namespace WebUI.Controllers
             return RedirectToAction(nameof(EditPackageBatch), new { id = result.Id });
         }
 
+        [HttpPost]
+        public async Task<IActionResult> UpdatePackageBatchToSealing(int id)
+        {
+            try
+            {
+                var batch = await _context.Batches.Include(b => b.BatchPackages).Include(b => b.Route)
+                    .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
+                    .Include(b => b.BatchBoxMaps).ThenInclude(bx => bx.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
+                    .FirstAsync(b => b.Id == id);
+                if (batch == null)
+                {
+                    throw new Exception($"Batch {id} not found.");
+                }
+                if ((BatchGroupType)batch.GroupType != BatchGroupType.Package)
+                {
+                    throw new Exception($"Batch {batch.Name} is not package type.");
+                }
+                if (batch.Route == null)
+                {
+                    throw new Exception($"Batch {batch.Name} route not found.");
+                }
+                if ((RouteType)batch.Route.Type != RouteType.Direct)
+                {
+                    throw new Exception($"Batch {batch.Name} route ${batch.Route.Name} is not direct.");
+                }
+                if (batch.BatchPackages.Count > 0 && batch.BatchPackages.First().TransportStatus == TransportStatusType.SEALING)
+                {
+                    throw new Exception($"Batch {batch.Name} is already sealing.");
+                }
+                if (batch.BatchPackages.Count == 0)
+                {
+                    batch.BatchPackages.Add(new BatchPackage
+                    {
+                        TransportStatus = TransportStatusType.SEALING
+                    });
+                }
+                else
+                {
+                    batch.BatchPackages.First().TransportStatus = TransportStatusType.SEALING;
+                }
+                foreach(var order in batch.BatchOrderMaps.Select(bbom => bbom.Order).Union(batch.BatchBoxes.SelectMany(bb => bb.BatchBoxOrderMaps.Select(bbom => bbom.Order))))
+                {
+                    order.OrderStatuses.Add(new OrderStatus
+                    {
+                        DateCreated = DateTime.Now,
+                        Status = (int)OrderStatusType.PendingDispatch,
+                        UserId = _session.CurrentUser.Id,
+                    });
+                    order.State = (int)OrderState.Dispatched;
+                }
+                await _context.SaveChangesAsync();
+                return Json(new MethodResult<bool>(true));
+            }
+            catch (Exception e)
+            {
+                return Json(new MethodResult<bool>(new Error()
+                {
+                    Name = nameof(UpdatePackageBatchToSealing),
+                    Text = e.Message
+                }));
+            }
+        }
+
         [ValidateAntiForgeryToken]
         [HttpPost]
         public async Task<IActionResult> Save(BatchEntity model)
@@ -1104,8 +1168,67 @@ WHERE BatchId={id}");
 
         public async Task<IActionResult> PackagePay(int id)
         {
-            await _batchService.PayAndMoveNextAsync(id, PayType.Balance);
-            return RedirectToAction(nameof(Edit), new { id });
+            try
+            {
+                var batch = await _context.Batches.Include(b => b.BatchPackages).Include(b => b.Route)
+                    .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
+                    .Include(b => b.BatchBoxMaps).ThenInclude(bx => bx.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
+                    .Include(b => b.RecipientUser)
+                    .FirstAsync(b => b.Id == id);
+                if (batch == null)
+                {
+                    throw new Exception($"Batch {id} not found.");
+                }
+                if ((BatchGroupType)batch.GroupType != BatchGroupType.Package)
+                {
+                    throw new Exception($"Batch {batch.Name} is not package type.");
+                }
+                if (batch.Route == null)
+                {
+                    throw new Exception($"Batch {batch.Name} route not found.");
+                }
+                if ((RouteType)batch.Route.Type != RouteType.Direct)
+                {
+                    throw new Exception($"Batch {batch.Name} route ${batch.Route.Name} is not direct.");
+                }
+                if (batch.BatchPackages.Count > 0 && batch.BatchPackages.First().PaymentStatus== PaymentStatusType.PAID)
+                {
+                    throw new Exception($"Batch {batch.Name} is already paid.");
+                }
+                User deductFromUser = batch.RecipientUser;
+                if (deductFromUser.Balance + 1 < batch.TotalExpense)
+                {
+                    var error = $"User's balance {deductFromUser.Balance} is less than the cost {batch.TotalExpense}";
+                    throw new Exception(error);
+                }
+
+                _userService.Transfer(deductFromUser.Id, _session.CurrentUser.Id, batch.TotalExpense, TransactionType.BatchDeduct, id);
+                if (batch.BatchPackages.Count == 0)
+                {
+                    batch.BatchPackages.Add(new BatchPackage
+                    {
+                        PaymentStatus = PaymentStatusType.PAID
+                    });
+                }
+                else
+                {
+                    batch.BatchPackages.First().PaymentStatus = PaymentStatusType.PAID;
+                }
+                foreach (var order in batch.BatchOrderMaps.Select(bbom => bbom.Order).Union(batch.BatchBoxes.SelectMany(bb => bb.BatchBoxOrderMaps.Select(bbom => bbom.Order))))
+                {
+                    order.HasPaid = true;
+                }
+                await _context.SaveChangesAsync();
+                return Json(new MethodResult<bool>(true));
+            }
+            catch (Exception e)
+            {
+                return Json(new MethodResult<bool>(new Error()
+                {
+                    Name = nameof(UpdatePackageBatchToSealing),
+                    Text = e.Message
+                }));
+            }
         }
         public async Task<IActionResult> Commission(int id)
         {

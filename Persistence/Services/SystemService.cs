@@ -68,12 +68,12 @@ namespace Persistence.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task<SystemPhotoEntity> GetPhotoUploadUrl(int id)
+        public async Task<SystemPhotoEntity> GetPhotoUploadUrl(int id, int companyId)
         {
             SystemPhoto photo;
             if (id == 0)
             {
-                photo = new SystemPhoto() { Url = "" };
+                photo = new SystemPhoto() { Url = "", CompanyId = companyId };
                 await _context.SystemPhotos.AddAsync(photo);
                 await _context.SaveChangesAsync();
             }
@@ -82,14 +82,23 @@ namespace Persistence.Services
                 photo = await _context.SystemPhotos.FirstAsync(p => p.Id == id);
             }
             var urlList = await _context.SystemPhotos.Select(p => p.Url).ToListAsync();
-            var nextId = urlList.Select(u => Int32.Parse(u.Split("system/photos/pc/")[1].Split(".png")[0])).Max() + 1;
+            var validUrlList = urlList.Where(u =>
+            {
+                if (!u.Contains("system/photos/pc/")) return false;
+                return Int32.TryParse(u.Split("system/photos/pc/")[1].Split(".png")[0], out _);
+            });
+            int nextId = 1;
+            if (validUrlList.Any())
+            {
+                nextId = validUrlList.Select(u => Int32.Parse(u.Split("system/photos/pc/")[1].Split(".png")[0])).Max() + 1;
+            }
             var photoUrl = _storageService.GetAzureUploadUrl("system/photos/pc", $"{nextId}.png");
             var fileUrl = _storageService.GetFileUrl("system/photos/pc", $"{nextId}.png");
             photo.Url = fileUrl;
             await _context.SaveChangesAsync();
 
             var photoEntity = _mapper.Map<SystemPhotoEntity>(photo);
-            photo.Url = photoUrl;
+            photoEntity.Url = photoUrl;
             return photoEntity;
         }
 
@@ -116,12 +125,12 @@ namespace Persistence.Services
             return photoUrl;
         }
 
-        public async Task<SystemPhotoEntity> GetMobilePhotoUploadUrl(int id)
+        public async Task<SystemPhotoEntity> GetMobilePhotoUploadUrl(int id, int companyId)
         {
             BaseAdvert photo;
             if (id == 0)
             {
-                photo = new BaseAdvert() { AdPictureKey = "" };
+                photo = new BaseAdvert() { AdPictureKey = "", CompanyId = companyId };
                 await _context.BaseAdverts.AddAsync(photo);
                 await _context.SaveChangesAsync();
             }
@@ -129,7 +138,7 @@ namespace Persistence.Services
             {
                 photo = await _context.BaseAdverts.FirstAsync(p => p.Id == id);
             }
-            var urlList = await _context.BaseAdverts.Where(b => b.IsShow == true && b.IsDel == false && b.CompanyId == Config.COMPANY_ID && b.AdType == 26).Select(p => p.AdPictureKey).ToListAsync();
+            var urlList = await _context.BaseAdverts.Where(b => b.IsShow == true && b.IsDel == false && b.AdType == 26).Select(p => p.AdPictureKey).ToListAsync();
             var nextId = urlList.Select(u => Int32.Parse(u.Split("system/photos/mobile/")[1].Split(".png")[0])).Max() + 1;
             var uploadUrl = _storageService.GetAzureUploadUrl("system/photos/mobile", $"{nextId}.png");
             var fileUrl = _storageService.GetFileUrl("system/photos/mobile", $"{nextId}.png");
@@ -141,14 +150,14 @@ namespace Persistence.Services
             return photoEntity;
         }
 
-        public async Task<IEnumerable<SystemPhotoEntity>> ListPhotosAsync()
+        public async Task<IEnumerable<SystemPhotoEntity>> ListPhotosAsync(int? companyIds)
         {
-            return await _context.SystemPhotos.Where(p => p.CompanyId == Config.COMPANY_ID).Select(p => _mapper.Map<SystemPhotoEntity>(p)).ToListAsync();
+            return await _context.SystemPhotos.Where(p => p.CompanyId == (companyIds ?? Config.COMPANY_ID)).Select(p => _mapper.Map<SystemPhotoEntity>(p)).ToListAsync();
         }
 
-        public async Task<IEnumerable<SystemPhotoEntity>> ListMobilePhotosAsync()
+        public async Task<IEnumerable<SystemPhotoEntity>> ListMobilePhotosAsync(int? companyIds)
         {
-            return await _context.BaseAdverts.Where(a => a.AdType == 26 && a.IsDel == false && a.IsShow == true && a.CompanyId == Config.COMPANY_ID).Select(p => _mapper.Map<SystemPhotoEntity>(p)).ToListAsync();
+            return await _context.BaseAdverts.Where(a => a.AdType == 26 && a.IsDel == false && a.IsShow == true && a.CompanyId == (companyIds ?? Config.COMPANY_ID)).Select(p => _mapper.Map<SystemPhotoEntity>(p)).ToListAsync();
         }
 
         public async Task<SystemSettingsEntity> GetSettingsAsync()

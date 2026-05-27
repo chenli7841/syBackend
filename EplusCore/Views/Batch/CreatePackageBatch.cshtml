@@ -541,6 +541,7 @@
         function onSelectRoute(routeId) {
             let r = global_routes.find(r => r.id === routeId);
             if (!r) return;
+            $("RouteId").val(r.id);
             if (r.type === @((int)RouteType.Mixed)) {
                 $('#recipient-input').hide();
                 $('#pick-up-location-input').show();

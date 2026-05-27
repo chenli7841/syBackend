@@ -9827,6 +9827,12 @@ namespace Persistence.Data
 
                 entity.Property(e => e.CompanyId).HasColumnType("int");
 
+                entity.Property(e => e.HasPaid)
+                    .HasColumnType("tinyint(4)")
+                    .HasColumnName("HasPaid")
+                    .HasDefaultValueSql("'0'")
+                    .HasComment("是否已付款：0->否，1->是");
+
                 entity.HasOne(d => d.CreatedBy)
                     .WithMany(p => p.TransportOrderCreatedBies)
                     .HasForeignKey(d => d.CreatedById)

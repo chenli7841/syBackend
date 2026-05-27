@@ -15,7 +15,7 @@ namespace Domain.Enums
             return stage switch
             {
                 "transportfilling" => "运输装填",
-                SEALING => "封箱",
+                SEALING => "封箱", // 对应的运单类型是 "已发货" Dispatched，对应的运单状态是 "打包封装等待发出" PendingDispatch
                 "delivering" => "正在派送",
                 "done" => "已完成",
                 _ => "",

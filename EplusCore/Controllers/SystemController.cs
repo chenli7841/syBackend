@@ -27,11 +27,13 @@ namespace WebUI.Controllers
             _mapper = mapper;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int? companyIds)
         {
+            var companies = await _context.Companies.ToListAsync();
+            ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
             var settings = await _systemService.GetSettingsAsync();
-            var photos = (await _systemService.ListPhotosAsync()).ToList();
-            var mobilePhotos = (await _systemService.ListMobilePhotosAsync()).ToList();
+            var photos = (await _systemService.ListPhotosAsync(companyIds)).ToList();
+            var mobilePhotos = (await _systemService.ListMobilePhotosAsync(companyIds)).ToList();
 
             while (photos.Count < 4)
             {
@@ -67,17 +69,17 @@ namespace WebUI.Controllers
         }
 
         [HttpPost]
-        public async Task<JsonResult> GetPhotoUploadUrl(int photoId, string platform)
+        public async Task<JsonResult> GetPhotoUploadUrl(int photoId, string platform, int companyId)
         {
             try
             {
                 if (platform == "pc")
                 {
-                    var savedPhoto = await _systemService.GetPhotoUploadUrl(photoId);
+                    var savedPhoto = await _systemService.GetPhotoUploadUrl(photoId, companyId);
                     return Json(new MethodResult<SystemPhotoEntity>(savedPhoto));
                 } else
                 {
-                    var savedPhoto = await _systemService.GetMobilePhotoUploadUrl(photoId);
+                    var savedPhoto = await _systemService.GetMobilePhotoUploadUrl(photoId, companyId);
                     return Json(new MethodResult<SystemPhotoEntity>(savedPhoto));
 
                 }

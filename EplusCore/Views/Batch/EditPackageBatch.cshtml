@@ -311,7 +311,7 @@
 
                     <div class="row" style="gap: 20px;">
                         <div>
-                            <button type="submit" class="btn btn-success">保存</button>
+                            <button type="submit" id="save-btn" class="btn btn-success">保存</button>
                         </div>
                         @*@if (Model.Id > 0)
                     {
@@ -321,10 +321,10 @@
                     }*@
 
                         @Html.TextBoxFor(r => r.TransportStatus, new { hidden = "hidden" })
-                        @if (Model.TransportStatus != @PackageBatchStatus.TransportStatusDispatched)
+                        @if (Model.TransportStatus != TransportStatusType.SEALING)
                         {
                             <div>
-                                <button id="update-to-dispatched" class="btn btn-primary">发货</button>
+                                <button id="update-to-dispatched" type="button" class="btn btn-primary">发货</button>
                             </div>
                         }
                         else
@@ -334,10 +334,10 @@
                             </div>
                         }
                         @Html.TextBoxFor(r => r.PaymentStatus, new { hidden = "hidden" })
-                        @if (Model.PaymentStatus != "PackageBatchStatus.PaymentStatusPaid")
+                        @if (Model.PaymentStatus != PaymentStatusType.PAID)
                         {
                             <div>
-                                <button id="update-to-paid" class="btn btn-primary">付款</button>
+                                <button id="update-to-paid" type="button" class="btn btn-primary">付款</button>
                             </div>
                         }
                         else
@@ -524,11 +524,47 @@
         });
 
         $('#update-to-dispatched').click(function () {
-            $('#TransportStatus').val(@TransportStatusType.SEALING);
+            $.post('@Url.Action("UpdatePackageBatchToSealing")',
+                {id: @Model.Id },
+                function (result) {
+                    if (result.error && result.error.text) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        $.toast({
+                            heading: '更新成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+
+                        setTimeout(() => { window.location.reload(); }, 2 * 1000);
+                    }
+                });
         });
 
         $('#update-to-paid').click(function () {
-            $('#PaymentStatus').val("paid");
+            $.post('@Url.Action("PackagePay")',
+                {id: @Model.Id },
+                function (result) {
+                    if (result.error && result.error.text) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        $.toast({
+                            heading: '更新成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+
+                        setTimeout(() => { window.location.reload(); }, 2 * 1000);
+                    }
+                });
         });
 
         $('#merge').click(function () {

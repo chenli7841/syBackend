@@ -87,6 +87,7 @@ namespace Persistence.Data
         public int? CompanyId { get; set; }
         public decimal? TotalVolume { get; set; }
         public decimal? InsuranceCost { get; set; }
+        public bool? HasPaid { get; set; }
 
         public virtual User CreatedBy { get; set; }
         public virtual User Owner { get; set; }

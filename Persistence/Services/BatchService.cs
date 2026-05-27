@@ -1677,6 +1677,39 @@ WHERE bb.BatchId=@batchId
                     batch.Boxes.SelectMany(b => b.Orders).ToArray());
             }
         }
+        public async Task PackagePayAsync(int id)
+        {
+            var batch = await GetForPayAndMoveNextAsync(id);
+            if (batch == null)
+            {
+                throw new Exception($"Batch {id} not found");
+            }
+            if (batch.GroupType != BatchGroupType.Package)
+            {
+                throw new Exception($"Batch {batch.Name} is not Package type.");
+            }
+            UserEntity deductFromUser = batch.Recipient;
+            if (deductFromUser == null)
+            {
+                throw new Exception($"Batch {batch.Name} is missing recipient.");
+            }
+
+            if (deductFromUser.Balance + 1 < batch.TotalExpense)
+            {
+                var error = $"User's balance {deductFromUser.Balance} is less than the cost {batch.TotalExpense}";
+                throw new Exception(error);
+            }
+
+            _userService.Transfer(deductFromUser.Id, _session.CurrentUser.Id, batch.TotalExpense, TransactionType.BatchDeduct, id);
+
+            //await MoveNextAsync(batch.Id);
+
+            if (batch.Route.Type == RouteType.Direct && batch.GetOrderState() == OrderState.Done)
+            {
+                await _orderService.AddStatus(OrderStatusType.Paid, _session.CurrentUser.Id,
+                    batch.Boxes.SelectMany(b => b.Orders).ToArray());
+            }
+        }
 
         public async Task SplitByRecipientsAsync(int id)
         {

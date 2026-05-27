@@ -64,6 +64,7 @@ namespace WebUI.Models.ViewModels
         public decimal StorageCost { get; set; }
         public decimal Discount { get; set; }
         public string TransportStatusDescription { get; set; }
+        public string PaymentStatusDescription { get; set; }
         public string PaymentStatus { get; set; }
         public string FinishStatus { get; set; }
 

@@ -104,8 +104,8 @@ namespace Persistence.Services
 
         public async Task<string> GetSystemImageUploadUrl(string propertyName, int companyId)
         {
-            var photoUrl = _storageService.GetAzureUploadUrl("system/images", $"{propertyName}.png");
-            var fileUrl = _storageService.GetFileUrl("system/images", $"{propertyName}.png");
+            var photoUrl = _storageService.GetAzureUploadUrl($"system/{companyId}/images", $"{propertyName}.png");
+            var fileUrl = _storageService.GetFileUrl($"system/{companyId}/images", $"{propertyName}.png");
 
             var property = await _context.CompanyKeyValues.FirstOrDefaultAsync(kv => kv.CompanyId == companyId && kv.Name == propertyName);
             if (property == null)
@@ -130,7 +130,7 @@ namespace Persistence.Services
             BaseAdvert photo;
             if (id == 0)
             {
-                photo = new BaseAdvert() { AdPictureKey = "", CompanyId = companyId };
+                photo = new BaseAdvert() { AdPictureKey = "", CompanyId = companyId, AdType = 26, IsShow = true, IsDel = false };
                 await _context.BaseAdverts.AddAsync(photo);
                 await _context.SaveChangesAsync();
             }
@@ -139,7 +139,14 @@ namespace Persistence.Services
                 photo = await _context.BaseAdverts.FirstAsync(p => p.Id == id);
             }
             var urlList = await _context.BaseAdverts.Where(b => b.IsShow == true && b.IsDel == false && b.AdType == 26).Select(p => p.AdPictureKey).ToListAsync();
-            var nextId = urlList.Select(u => Int32.Parse(u.Split("system/photos/mobile/")[1].Split(".png")[0])).Max() + 1;
+            var nextId = urlList.Select(u =>
+            {
+                var parts = u.Split("system/photos/mobile/");
+                if (parts.Length < 2) return 0;
+                parts = parts[1].Split(".png");
+                if (parts.Length < 2) return 0;
+                return Int32.Parse(parts[0]);
+            }).Max() + 1;
             var uploadUrl = _storageService.GetAzureUploadUrl("system/photos/mobile", $"{nextId}.png");
             var fileUrl = _storageService.GetFileUrl("system/photos/mobile", $"{nextId}.png");
             photo.AdPictureKey = fileUrl;

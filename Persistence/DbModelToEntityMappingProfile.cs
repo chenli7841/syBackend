@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using AutoMapper;
+using Domain;
 using Domain.Entities;
 using Domain.Enums;
 using Domain.Models.Extensions;
@@ -155,6 +156,27 @@ namespace Persistence
             return totalVolume;
         }
 
+        private static string GetToDoItemBatchInfo(TodoItem todoItem)
+        {
+            if (todoItem.Batch == null)
+            {
+                return "";
+            }
+            return Domain.Utils.GetPackageBatchName(todoItem.Batch.Route.Type, todoItem.Batch.Company.Code, todoItem.Batch.Route.Code, todoItem.Batch.PickUpLocation?.Name, todoItem.Batch.RecipientUser.OrderStartNumber, todoItem.Batch.Name);
+        }
+        private static string GetToDoItemCustomerInfo(TodoItem todoItem)
+        {
+            if (todoItem.Batch == null)
+            {
+                return "";
+            }
+            if (todoItem.Batch.RecipientUser == null)
+            {
+                return "";
+            }
+            return todoItem.Batch.RecipientUser.OrderStartNumber;
+        }
+
         public DbModelToEntityMappingProfile()
         {
             CreateMap<User, UserEntity>()
@@ -290,7 +312,9 @@ namespace Persistence
             CreateMap<Area, PickUpLocationAreaEntity>();
             CreateMap<TodoItem, TodoItemEntity>()
                 .ForMember(dest => dest.Assignees, opt => opt.MapFrom(src => src.TodoItemAssignees.Select(a => a.Assignee)))
-                .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.CreatedBy));
+                .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.CreatedBy))
+                .ForMember(dest => dest.BatchInfo, opt => opt.MapFrom(src => GetToDoItemBatchInfo(src)))
+                .ForMember(dest => dest.CustomerInfo, opt => opt.MapFrom(src => GetToDoItemCustomerInfo(src)));
             CreateMap<Company, CompanyEntity>();
         }
 

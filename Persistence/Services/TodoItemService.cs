@@ -36,9 +36,14 @@ namespace Persistence.Services
         {
             var todos = _context.TodoItem
                 .Include(t => t.TodoItemAssignees).ThenInclude(a => a.Assignee).ThenInclude(u => u.Customer)
+                .Include(t => t.Batch).ThenInclude(b => b.Route)
+                .Include(t => t.Batch).ThenInclude(b => b.Company)
+                .Include(t => t.Batch).ThenInclude(b => b.PickUpLocation)
+                .Include(t => t.Batch).ThenInclude(b => b.RecipientUser)
                 .Where(o =>
                     (!filterOptions.CreatedByUserId.HasValue || o.CreatedByUserId == filterOptions.CreatedByUserId.Value) &&
-                    (!filterOptions.AssigneeUserId.HasValue || o.TodoItemAssignees.Any(a => a.UserId == filterOptions.AssigneeUserId))
+                    (!filterOptions.AssigneeUserId.HasValue || o.TodoItemAssignees.Any(a => a.UserId == filterOptions.AssigneeUserId)) &&
+                    (o.Status != (int)TodoItemStatusType.Completed)
                 ) 
                 .Include(t => t.CreatedBy).ThenInclude(u => u.Customer)
                 .Select(t => new TodoItem
@@ -52,6 +57,7 @@ namespace Persistence.Services
                     Status = t.Status,
                     Resolution = t.Resolution,
                     NotifyCustomer = t.NotifyCustomer,
+                    BatchId = t.BatchId,
                     CreatedBy = new User
                     {
                         Id = t.CreatedBy.Id,
@@ -68,7 +74,8 @@ namespace Persistence.Services
                         }
                     }).ToList(),
                     CustomerInfo = t.CustomerInfo,
-                    OrderInfo = t.OrderInfo
+                    OrderInfo = t.OrderInfo,
+                    Batch = t.Batch,
                 })
                 .OrderBy(o => o.Status)
                 .ThenByDescending(o => o.DateCreated);

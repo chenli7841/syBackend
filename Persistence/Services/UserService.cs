@@ -112,12 +112,14 @@ namespace Persistence.Services
                             (string.IsNullOrWhiteSpace(filterOptions.PhoneToSearch) ||
                              u.CanadaPhoneNumber.Contains(filterOptions.PhoneToSearch)) &&
                             (filterOptions.RoleToSearch == null || u.Role == (int)filterOptions.RoleToSearch.Value) && 
-                            (filterOptions.CompanyIds == null && u.CompanyId == Config.COMPANY_ID) || (filterOptions.CompanyIds != null && filterOptions.CompanyIds.Contains(u.CompanyId.Value))
+                            (filterOptions.PickUpLocationIds == null || filterOptions.PickUpLocationIds.Contains((int)u.PickUpLocationId.Value)) &&
+                            ((filterOptions.CompanyIds == null && u.CompanyId == Config.COMPANY_ID) || (filterOptions.CompanyIds != null && filterOptions.CompanyIds.Contains(u.CompanyId.Value)))
                 )
                 .Include(u => u.Customer)
                 .Include(u => u.UserRole)
                 .Include(u => u.BelongsToNavigation)
-                .ThenInclude(b => b.Customer);
+                .ThenInclude(b => b.Customer)
+                .Include(u => u.PickUpLocationNavigation);
             var users = isOrderByCode
                 ? filteredUsers.OrderBy(u => u.OrderStartNumber)
                 : filteredUsers.OrderBy(u => u.UserRole.DisplayOrder).ThenBy(u => u.OrderStartNumber);
@@ -180,7 +182,7 @@ namespace Persistence.Services
         public async Task<IEnumerable<PickUpLocationEntity>> ListPickUpLocationsAsync(int version = 1, int[] companyIds = null)
         {
             var result = await _context.PickUpLocations.Where(l => l.Version == version && 
-                (companyIds == null && l.CompanyId == Config.COMPANY_ID) || (companyIds != null && companyIds.Contains(l.CompanyId.Value))
+                ((companyIds == null && l.CompanyId == Config.COMPANY_ID) || (companyIds != null && companyIds.Contains(l.CompanyId.Value)))
             ).Select(u => _mapper.Map<PickUpLocationEntity>(u)).ToListAsync();
             return result;
         }

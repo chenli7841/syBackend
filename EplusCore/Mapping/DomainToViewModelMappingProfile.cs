@@ -30,7 +30,8 @@ namespace WebUI.Mapping
             CreateMap<UserEntity, UserDetailViewModel>();
             CreateMap<UserEntity, UserInventoryViewModel>()
                 .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role.GetDescription()))
-                .ForMember(dest => dest.BelongsToName, opt => opt.MapFrom(src => src.BelongsTo == null ? "" : src.BelongsTo.Name));
+                .ForMember(dest => dest.BelongsToName, opt => opt.MapFrom(src => src.BelongsTo == null ? "" : src.BelongsTo.Name))
+                .ForMember(dest => dest.PickUpLocation, opt => opt.MapFrom(src => src.SelectedPickUpLocation == null ? "" : src.SelectedPickUpLocation.Name));
         }
 
         private int? GetBaggageCount(IEnumerable<OrderBaggageEntity> baggages)

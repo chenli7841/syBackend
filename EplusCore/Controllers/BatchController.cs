@@ -2,10 +2,6 @@
 using ClosedXML.Excel;
 using ClosedXML.Extensions;
 using Common;
-using DocumentFormat.OpenXml.Drawing.Charts;
-using DocumentFormat.OpenXml.Office2010.Excel;
-using DocumentFormat.OpenXml.Spreadsheet;
-using DocumentFormat.OpenXml.Wordprocessing;
 using Domain;
 using Domain.Entities;
 using Domain.Enums;
@@ -74,11 +70,13 @@ namespace WebUI.Controllers
             _serviceProvider = serviceProvider;
         }
         
-        public async Task<IActionResult> PendingDeliveryInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId)
+        public async Task<IActionResult> PendingDeliveryInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, string companyIds)
         {
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
             var warehouses = (await _warehouseService.ListAsync()).ToList();
-            var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
+            var routes = (await _routeService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).Where(r => !r.IsDeleted).ToList();
             var users = await _userService.ListByBatchesAsync(BatchGroupType.PendingDelivery, routeId, warehouseId);
+            var companies = await _context.Companies.ToListAsync();
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.PendingDelivery,
@@ -88,7 +86,32 @@ namespace WebUI.Controllers
                 Warehouses = warehouses.OrderBy(w => w.DisplaySequence),
                 Users = users,
                 SelectedRecipientUserId = recipientUserId,
-                SelectedBelongsToUserId = belongsToUserId
+                SelectedBelongsToUserId = belongsToUserId,
+                Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c)),
+                CompanyIds = companyIds
+            };
+            return View(result);
+        }
+
+        public async Task<IActionResult> FinishedInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, string companyIds)
+        {
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            var warehouses = (await _warehouseService.ListAsync()).ToList();
+            var routes = (await _routeService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).Where(r => !r.IsDeleted).ToList();
+            var users = await _userService.ListByBatchesAsync(BatchGroupType.Done, routeId, warehouseId);
+            var companies = await _context.Companies.ToListAsync();
+            var result = new BatchInventoryResponse()
+            {
+                GroupType = BatchGroupType.Done,
+                SelectedRouteId = routeId ?? routes.First().Id,
+                Routes = routes.OrderBy(r => r.DisplaySequence),
+                SelectedWarehouseId = (int?)null,
+                Warehouses = warehouses.OrderBy(w => w.DisplaySequence),
+                Users = users,
+                SelectedRecipientUserId = recipientUserId,
+                SelectedBelongsToUserId = belongsToUserId,
+                Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c)),
+                CompanyIds = companyIds
             };
             return View(result);
         }
@@ -112,11 +135,13 @@ namespace WebUI.Controllers
             return View(result);
         }
 
-        public async Task<IActionResult> PickUpLocationInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId)
+        public async Task<IActionResult> PickUpLocationInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, string companyIds)
         {
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
             var warehouses = (await _warehouseService.ListAsync()).ToList();
             var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
             var users = await _userService.ListByBatchesAsync(BatchGroupType.PickUpLocation, routeId, warehouseId);
+            var companies = await _context.Companies.ToListAsync();
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.PickUpLocation,
@@ -126,7 +151,9 @@ namespace WebUI.Controllers
                 Warehouses = warehouses.OrderBy(w => w.DisplaySequence),
                 Users = users,
                 SelectedRecipientUserId = recipientUserId,
-                SelectedBelongsToUserId = belongsToUserId
+                SelectedBelongsToUserId = belongsToUserId,
+                Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c)),
+                CompanyIds = companyIds
             };
             return View(result);
         }
@@ -182,8 +209,10 @@ namespace WebUI.Controllers
             };
             return View(result);
         }
-        public async Task<IActionResult> WarehouseReceiveInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId)
+        public async Task<IActionResult> WarehouseReceiveInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, string companyIds)
         {
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            var companies = await _context.Companies.ToListAsync();
             var warehouses = (await _warehouseService.ListAsync()).ToList();
             var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
             var users = await _userService.ListByBatchesAsync(BatchGroupType.WarehouseReceive, routeId, warehouseId);
@@ -196,7 +225,9 @@ namespace WebUI.Controllers
                 Warehouses = warehouses.OrderBy(w => w.DisplaySequence),
                 Users = users,
                 SelectedRecipientUserId = recipientUserId,
-                SelectedBelongsToUserId = belongsToUserId
+                SelectedBelongsToUserId = belongsToUserId,
+                Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c)),
+                CompanyIds = companyIds
             };
             return View(result);
         }
@@ -255,7 +286,7 @@ namespace WebUI.Controllers
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.Package,
-                SelectedRouteId = (routeId ?? routes.First().Id),
+                SelectedRouteId = (routeId),
                 Routes = routes.OrderBy(r => r.DisplaySequence),
                 SelectedWarehouseId = (int?)null,
                 Warehouses = warehouses.OrderBy(w => w.DisplaySequence),
@@ -384,7 +415,7 @@ namespace WebUI.Controllers
                 }
                 else if (groupType == BatchGroupType.WarehouseReceive)
                 {
-                    data = await _batchService.ListWarehouseReceiveBatchAsync(filter);
+                    data = await _batchService.ListWarehouseReceiveBatchAsync(filter, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
                 }
                 else if (groupType == BatchGroupType.DailyScan || groupType == BatchGroupType.PendingDispatch)
                 {
@@ -595,6 +626,15 @@ namespace WebUI.Controllers
             //await SetEditDropdownOptions(batchEntity);
             return View("EditPackageBatch", batchEntity);
         }
+        public async Task<IActionResult> EditPendingDeliveryBatch(int id)
+        {
+            var batchEntity = await _batchService.GetForEditPackageAsync(id);
+            ViewBag.Routes = await _routeService.ListAsync(new int[] { batchEntity.CompanyId.Value });
+            ViewBag.MasterBatches = (await _batchService.ListMasterBatchesAsync(BatchGroupType.LoadDelivery, batchEntity.RouteId, new int[] { batchEntity.CompanyId.Value }, BatchStageType.Gathering));
+            //await SetEditDropdownOptions(batchEntity);
+            return View("EditPendingDeliveryBatch", batchEntity);
+        }
+
         public async Task<IActionResult> EditWarehouseReceiveBatch(int id)
         {
             var batchEntity = await _batchService.GetForEditAsync(id);
@@ -685,13 +725,14 @@ namespace WebUI.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdatePackageBatchToSealing(int id)
+        public async Task<IActionResult> UpdatePackageBatchToSealing(int id, string batchFullName, string recipientCode)
         {
             try
             {
                 var batch = await _context.Batches.Include(b => b.BatchPackages).Include(b => b.Route)
                     .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
                     .Include(b => b.BatchBoxMaps).ThenInclude(bx => bx.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
+                    .Include(b => b.Route)
                     .FirstAsync(b => b.Id == id);
                 if (batch == null)
                 {
@@ -713,6 +754,7 @@ namespace WebUI.Controllers
                 {
                     throw new Exception($"Batch {batch.Name} is already sealing.");
                 }
+                // 1. 更新批次字段
                 if (batch.BatchPackages.Count == 0)
                 {
                     batch.BatchPackages.Add(new BatchPackage
@@ -724,7 +766,8 @@ namespace WebUI.Controllers
                 {
                     batch.BatchPackages.First().TransportStatus = TransportStatusType.SEALING;
                 }
-                foreach(var order in batch.BatchOrderMaps.Select(bbom => bbom.Order).Union(batch.BatchBoxes.SelectMany(bb => bb.BatchBoxOrderMaps.Select(bbom => bbom.Order))))
+                // 2. 每个运单添加状态
+                foreach(var order in GetBatchOrders(batch))
                 {
                     order.OrderStatuses.Add(new OrderStatus
                     {
@@ -734,6 +777,23 @@ namespace WebUI.Controllers
                     });
                     order.State = (int)OrderState.Dispatched;
                 }
+                // 3. 添加待办事项
+                await _context.TodoItem.AddAsync(new TodoItem
+                {
+                    Message = "扣款",
+                    Status = (int)TodoItemStatusType.PendingProcess,
+                    DateCreated = DateTime.Now,
+                    CustomerInfo = recipientCode,
+                    CreatedByUserId = _session.CurrentUser.Id,
+                    BatchId = id,
+                    TodoItemAssignees = new List<TodoItemAssignee>
+                    {
+                        new TodoItemAssignee
+                        {
+                            UserId = 10414 // 6502-壹嘉密市仓库管理小艺
+                        }
+                    }
+                });
                 await _context.SaveChangesAsync();
                 return Json(new MethodResult<bool>(true));
             }
@@ -1195,14 +1255,30 @@ WHERE BatchId={id}");
                 {
                     throw new Exception($"Batch {batch.Name} is already paid.");
                 }
+                var orders = new List<TransportOrder>();
+                orders.AddRange(batch.BatchBoxes.SelectMany(bb => bb.BatchBoxOrderMaps).Select(bbom => bbom.Order));
+                foreach(var o in batch.BatchBoxMaps.Select(bbm => bbm.BatchBox).SelectMany(bb => bb.BatchBoxOrderMaps).Select(bbom => bbom.Order))
+                {
+                    if (!orders.Any(existing => existing.Id == o.Id))
+                    {
+                        orders.Add(o);
+                    }
+                }
+
+                // 1. 扣款
+                var totalOrderShippingCost = orders.Sum(o => o.ShippingCost);
+
+                var totalShippingCost = totalOrderShippingCost + batch.Duty + batch.StorageCost - batch.Discount;
                 User deductFromUser = batch.RecipientUser;
-                if (deductFromUser.Balance + 1 < batch.TotalExpense)
+                if (deductFromUser.Balance + 1 < totalShippingCost)
                 {
                     var error = $"User's balance {deductFromUser.Balance} is less than the cost {batch.TotalExpense}";
                     throw new Exception(error);
                 }
 
-                _userService.Transfer(deductFromUser.Id, _session.CurrentUser.Id, batch.TotalExpense, TransactionType.BatchDeduct, id);
+                _userService.Transfer(deductFromUser.Id, _session.CurrentUser.Id, totalShippingCost ?? 0, TransactionType.BatchDeduct, id);
+
+                // 2. 更新批次的扣款状态
                 if (batch.BatchPackages.Count == 0)
                 {
                     batch.BatchPackages.Add(new BatchPackage
@@ -1214,9 +1290,17 @@ WHERE BatchId={id}");
                 {
                     batch.BatchPackages.First().PaymentStatus = PaymentStatusType.PAID;
                 }
-                foreach (var order in batch.BatchOrderMaps.Select(bbom => bbom.Order).Union(batch.BatchBoxes.SelectMany(bb => bb.BatchBoxOrderMaps.Select(bbom => bbom.Order))))
+
+                // 3. 更新每个运单的已付款字段
+                foreach (var order in GetBatchOrders(batch))
                 {
                     order.HasPaid = true;
+                }
+
+                // 4. 更新相关待办事项的状态
+                foreach(var todo in _context.TodoItem.Where(t => t.BatchId == id))
+                {
+                    todo.Status = (int)TodoItemStatusType.Completed;
                 }
                 await _context.SaveChangesAsync();
                 return Json(new MethodResult<bool>(true));
@@ -1497,6 +1581,142 @@ WHERE BatchId={id}");
             {
                 return Json(new MethodResult<bool>(new Error() { Text = e.Message }));
             }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> PackageStartDelivery(int id)
+        {
+            try
+            {
+                var batch = await _context.Batches.Include(b => b.BatchPackages).Include(b => b.Route)
+                    .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
+                    .Include(b => b.BatchBoxMaps).ThenInclude(bx => bx.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
+                    .FirstAsync(b => b.Id == id);
+                if (batch == null)
+                {
+                    throw new Exception($"Batch {id} not found.");
+                }
+                if ((BatchGroupType)batch.GroupType != BatchGroupType.Package)
+                {
+                    throw new Exception($"Batch {batch.Name} is not package type.");
+                }
+                // 1. 更新批次类型
+                batch.GroupType = (int)BatchGroupType.PendingDelivery;
+
+                // 2. 更新其中所有运单类型和添加运单状态
+                foreach(var order in GetBatchOrders(batch))
+                {
+                    order.State = (int)OrderState.InDelivery;
+                    order.OrderStatuses.Add(new OrderStatus
+                    {
+                        OrderId = order.Id,
+                        DateCreated = DateTime.Now,
+                        Status = (int)OrderStatusType.PendingDelivery,
+                        UserId = _session.CurrentUser.Id
+                    });
+                }
+                await _context.SaveChangesAsync();
+                return Json(new MethodResult<bool>(true));
+            }
+            catch (Exception e)
+            {
+                return Json(new MethodResult<bool>(new Error() { Text = e.Message }));
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CompleteBatch(int id)
+        {
+            try
+            {
+                var batch = await _context.Batches.Include(b => b.BatchPackages).Include(b => b.Route)
+                    .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
+                    .Include(b => b.BatchBoxMaps).ThenInclude(bx => bx.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
+                    .FirstAsync(b => b.Id == id);
+                if (batch == null)
+                {
+                    throw new Exception($"Batch {id} not found.");
+                }
+                if ((BatchGroupType)batch.GroupType != BatchGroupType.PendingDelivery)
+                {
+                    throw new Exception($"Batch {batch.Name} is not PendingDelivery type.");
+                }
+                // 1. 更新批次类型
+                batch.GroupType = (int)BatchGroupType.Done;
+
+                // 2. 更新其中所有运单类型和添加运单状态
+                foreach (var order in GetBatchOrders(batch))
+                {
+                    order.State = (int)OrderState.Done;
+                    order.OrderStatuses.Add(new OrderStatus
+                    {
+                        OrderId = order.Id,
+                        DateCreated = DateTime.Now,
+                        Status = (int)OrderStatusType.AlreadyDelivered,
+                        UserId = _session.CurrentUser.Id
+                    });
+                    order.OrderStatuses.Add(new OrderStatus
+                    {
+                        OrderId = order.Id,
+                        DateCreated = DateTime.Now.AddSeconds(1),
+                        Status = (int)OrderStatusType.Completed,
+                        UserId = _session.CurrentUser.Id
+                    });
+                }
+                await _context.SaveChangesAsync();
+                return Json(new MethodResult<bool>(true));
+            }
+            catch (Exception e)
+            {
+                return Json(new MethodResult<bool>(new Error() { Text = e.Message }));
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateBatchOrders(int id, OrderState? orderState, OrderStatusType? orderStatus)
+        {
+            try
+            {
+                if (orderState == null && orderStatus == null)
+                {
+                    return Json(new MethodResult<bool>(true));
+                }
+                var batch = await _context.Batches
+                    .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
+                    .Include(b => b.BatchBoxMaps).ThenInclude(bx => bx.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
+                    .FirstAsync(b => b.Id == id);
+                if (batch == null)
+                {
+                    throw new Exception($"Batch {id} not found.");
+                }
+                // 1. 更新其中所有运单类型和添加运单状态
+                foreach (var order in GetBatchOrders(batch))
+                {
+                    if (orderState.HasValue) order.State = (int)orderState.Value;
+                    if (orderStatus.HasValue)
+                    {
+                        order.OrderStatuses.Add(new OrderStatus
+                        {
+                            OrderId = order.Id,
+                            DateCreated = DateTime.Now,
+                            Status = (int)orderStatus.Value,
+                            UserId = _session.CurrentUser.Id
+                        });
+                    }
+                }
+                await _context.SaveChangesAsync();
+                return Json(new MethodResult<bool>(true));
+            }
+            catch (Exception e)
+            {
+                return Json(new MethodResult<bool>(new Error() { Text = e.Message }));
+            }
+        }
+
+        private static IEnumerable<TransportOrder> GetBatchOrders(Batch batch)
+        {
+            return batch.BatchBoxMaps.Select(bbm => bbm.BatchBox).SelectMany(bb => bb.BatchBoxOrderMaps).Select(bbom => bbom.Order)
+                .Union(batch.BatchBoxes.SelectMany(bb => bb.BatchBoxOrderMaps.Select(bbom => bbom.Order)));
         }
     }
 }

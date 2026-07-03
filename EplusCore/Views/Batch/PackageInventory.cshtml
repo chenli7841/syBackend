@@ -117,6 +117,7 @@
             const groupType = '@Model.GroupType';
             const routeId = '@Model.SelectedRouteId';
             const warehouseId = '@Model.SelectedWarehouseId';
+            const companyId = '@Model.CompanyIds';
             $.fn.dataTable.ext.errMode = (e) => {
                 const body = e.jqXHR.responseJSON;
                 if (body.error) {
@@ -229,9 +230,15 @@
             function onSearch() {
                 let location = `/Batch/PackageInventory`;
                 let urlQuery = [];
-                if (routeId && routeId.trim() !== '')
+                const selectedCompanyId = $('#company-select').val();
+                if (selectedCompanyId && selectedCompanyId.trim() !== '')
                 {
-                    urlQuery.push(`routeId=${routeId}`);
+                    urlQuery.push(`companyIds=${selectedCompanyId}`);
+                }
+                const selectedRouteId = $('#route-select').val();
+                if (selectedRouteId && selectedRouteId.trim() !== '')
+                {
+                    urlQuery.push(`routeId=${selectedRouteId}`);
                 }
                 if (warehouseId && warehouseId.trim() !== '')
                 {
@@ -296,9 +303,7 @@
                 document.location = `${document.location.origin}${document.location.pathname}?groupType=Package&companyIds=${$('#company-select').val()}`;
             });
             $('#route-select').val(routeIds);
-            $('#route-select').change(function () {
-                document.location = `${document.location.origin}${document.location.pathname}?groupType=Package&companyIds=${$('#company-select').val()}&routeId=${$('#route-select').val()}`;
-            });
+            $('#route-select').change(() => onSearch());
             $('#recipient-select').change(() => onSearch());
         });
 

@@ -18,6 +18,8 @@ namespace Domain.Entities
         public string Comment { get; set; }
         public string Resolution { get; set; }
         public string OrderInfo { get; set; }
+        public string BatchInfo { get; set; }
+        public int BatchId { get; set; }
         public string CustomerInfo { get; set; }
         public DateTime? DateResolved { get; set; }
         public bool NotifyCustomer { get; set; }

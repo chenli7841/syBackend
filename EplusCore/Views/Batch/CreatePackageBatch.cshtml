@@ -574,7 +574,7 @@
         });
         $('#route-select').change(function () {
             let routeId = parseInt($('#route-select').val());
-            $('#routeId').val(routeId);
+            $('#RouteId').val(routeId);
             let r = global_routes.find(r => r.id === routeId);
             if (!r) return;
             if (r.type === @((int)RouteType.Mixed)) {

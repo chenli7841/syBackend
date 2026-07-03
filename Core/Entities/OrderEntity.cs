@@ -57,6 +57,7 @@ namespace Domain.Entities
         public RouteEntity Route { get; set; }
         public string RecipientAddress { get; set; }
         public OrderScanStatusType ScanStatusType { get; set; }
+        public bool HasPaid { get; set; }
     }
 
     public class OrderBaggageEntity

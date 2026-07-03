@@ -8,7 +8,7 @@ namespace Domain.Services
 {
     public interface IBatchService
     {
-        Task<PagedResult<BatchEntity>> ListWarehouseReceiveBatchAsync(BatchListFilterOptions filterOptions);
+        Task<PagedResult<BatchEntity>> ListWarehouseReceiveBatchAsync(BatchListFilterOptions filterOptions, int[] companyIds);
         Task<PagedResult<BatchEntity>> ListLoadDeliveryBatchAsync(BatchListFilterOptions filterOptions, int[] companyIds);
         Task<PagedResult<BatchEntity>> ListPalletBatchAsync(BatchListFilterOptions filterOptions, int[] companyIds);
         Task<PagedResult<BatchEntity>> ListAsync(BatchListFilterOptions filterOptions, int[] companyIds);

@@ -24,6 +24,7 @@ namespace WebUI.Models.ViewModels
         public string StateText { get; set; }
         public string CargoNumber { get; set; }
         public int? BaggageCount { get; set; }
+        public bool HasPaid { get; set; }
 
         public string DeliveryBatch
         {

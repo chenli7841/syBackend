@@ -1,26 +1,27 @@
-﻿using System;
-using System.Linq;
-using System.Net;
-using System.Net.Mail;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using ClosedXML.Excel;
 using ClosedXML.Extensions;
 using Common;
+using DocumentFormat.OpenXml.Vml;
 using Domain.Entities;
+using Domain.Enums;
 using Domain.Models;
 using Domain.Models.Extensions;
 using Domain.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Persistence.Data;
+using Persistence.Utils;
+using RingCentral;
+using System;
+using System.Linq;
+using System.Net;
+using System.Net.Mail;
+using System.Threading.Tasks;
 using WebUI.Models;
 using WebUI.Models.ApiRequest;
 using WebUI.Models.DataTableRequest;
 using WebUI.Models.ViewModels;
-using Persistence.Utils;
-using Domain.Enums;
-using Persistence.Data;
-using Microsoft.EntityFrameworkCore;
-using DocumentFormat.OpenXml.Vml;
 
 namespace WebUI.Controllers
 {
@@ -115,9 +116,13 @@ namespace WebUI.Controllers
             return Json(new { draw = requestModel.Draw, recordsFiltered = data.Total, recordsTotal = data.Total, data = viewModels });
         }
 
-        public IActionResult Inventory()
+        public async Task<IActionResult> Inventory(string companyIds, string pickUpLocationIds)
         {
-            return View();
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            ViewBag.PickUpLocations = await _userService.ListPickUpLocationsAsync(2, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
+            var companies = await _context.Companies.ToListAsync();
+            ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
+            return View(new { CompanyIds = companyIds, PickUpLocationIds = pickUpLocationIds });
         }
 
         public async Task<IActionResult> GetBalanceSummary()
@@ -137,17 +142,20 @@ namespace WebUI.Controllers
             }
         }
 
-        public async Task<IActionResult> LoadUsers(DataTableRequestModel requestModel)
+        public async Task<IActionResult> LoadUsers(DataTableRequestModel requestModel, string companyIds, string pickUpLocationIds)
         {
             var codeToSearch = requestModel.GetColumnSearchValue("Code").Trim();
             var phoneToSearch = requestModel.GetColumnSearchValue("CanadaPhoneNumber").Trim();
-
+            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            var parsedPickUpLocationIds = (pickUpLocationIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
             var users = await _userService.ListAsync(new UserListFilterOptions()
             {
                 CodeToSearch = codeToSearch,
                 PhoneToSearch = phoneToSearch,
                 Skip = requestModel.Start,
-                PageSize = requestModel.Length
+                PageSize = requestModel.Length,
+                CompanyIds = parsedCompanyIds.Length == 0 ? null : parsedCompanyIds,
+                PickUpLocationIds = parsedPickUpLocationIds.Length == 0 ? null : parsedPickUpLocationIds
             }, false);
 
             var data = new PagedResult<UserInventoryViewModel>()

@@ -201,7 +201,7 @@
             }
             $('#company-select').val(companyIds);
             $('#company-select').change(function () {
-                document.location = `${document.location.origin}${document.location.pathname}?groupType=Pallet&companyIds=${$('#company-select').val()}`;
+                document.location = `${document.location.origin}${document.location.pathname}?companyIds=${$('#company-select').val()}`;
             });
             $('#recipient-select').select2({data: users});
             $('.select2-selection').css('height', '32px');

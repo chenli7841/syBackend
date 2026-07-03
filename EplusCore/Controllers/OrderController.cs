@@ -478,5 +478,33 @@ namespace WebUI.Controllers
             await _orderService.ReturnCompleteAsync(id);
             return RedirectToAction(nameof(Inventory), new {orderState});
         }
+
+        [HttpPost]
+        public async Task<IActionResult> AddStatus(int id, OrderStatusType orderStatus)
+        {
+            try
+            {
+                var order = await _context.TransportOrders.FirstAsync(o => o.Id == id);
+                if (order == null)
+                {
+                    throw new Exception($"Order {id} not found.");
+                }
+                // 1. 添加运单状态
+                order.OrderStatuses.Add(new OrderStatus
+                {
+                    OrderId = order.Id,
+                    DateCreated = DateTime.Now,
+                    Status = (int)orderStatus,
+                    UserId = _session.CurrentUser.Id
+                });                    
+                await _context.SaveChangesAsync();
+                return Json(new MethodResult<bool>(true));
+            }
+            catch (Exception e)
+            {
+                return Json(new MethodResult<bool>(new Error() { Text = e.Message }));
+            }
+        }
+
     }
 }

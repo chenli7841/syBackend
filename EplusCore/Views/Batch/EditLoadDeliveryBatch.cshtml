@@ -173,6 +173,9 @@
                             @Html.ActionLink("刷新", "Refresh", "Batch", new { id = Model.Id }, new { @class = "btn btn-primary" })
                         </div>
                         <div>
+                            <button id="batch_update_order_btn" type="button" class="btn btn-primary" data-toggle="modal" data-target="#updateOrderModal">更新运单</button>
+                        </div>
+                        <div>
                             @Html.ActionLink("取消", "Inventory", "Batch", new { groupType = Model.GroupType, routeId = Model.RouteId, warehouseId = Model.WarehouseId }, new { @class = "btn btn-secondary" })
                         </div>
                     </div>
@@ -201,6 +204,39 @@
                             <div class="modal-footer">
                                 <button type="button" id="batch-edit-sms-submit-btn" class="btn btn-success">Submit</button>
                                 <button type="button" id="batch-edit-sms-cancel-btn" class="btn btn-light" data-dismiss="modal">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="updateOrderModal" tabindex="-1" role="dialog" aria-labelledby="updateOrderModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-body">
+                                <div class="row mb-3">
+                                    <label class="col-form-label col-4">更新运单类型到：</label>
+                                    <select class="form-select col-8" id="order-update-state-select">
+                                        <option></option>
+                                        @foreach (var orderState in Enum.GetValues<OrderState>().Where(g => g != OrderState.None))
+                                        {
+                                            <option value="@orderState">@orderState.GetDescription()</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="row">
+                                    <label class="col-form-label col-4">添加运单状态：</label>
+                                    <select class="form-select col-8" id="order-add-status-select">
+                                        <option></option>
+                                        @foreach (var orderStatus in Enum.GetValues<OrderStatusType>().Where(g => !string.IsNullOrEmpty(g.GetDescription())))
+                                        {
+                                            <option value="@orderStatus">@orderStatus.GetDescription()</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" id="update-order-submit-btn" class="btn btn-success">Submit</button>
+                                <button type="button" id="update-order-cancel-btn" class="btn btn-light" data-dismiss="modal">Cancel</button>
                             </div>
                         </div>
                     </div>
@@ -319,6 +355,32 @@
             $('#Stage').val(this.value);
         });
 
+        $("#update-order-submit-btn").click(function() {
+            const orderState = $('#order-update-state-select').val();
+            const orderStatus = $('#order-add-status-select').val();
+            const req = {id: @Model.Id };
+            if (orderState) req.orderState = orderState;
+            if (orderStatus) req.orderStatus = orderStatus;
+            $.post('@Url.Action("UpdateBatchOrders")', req, function(result) {
+                if (result.error) {
+                    $.toast({
+                        heading: result.error.text,
+                        position: 'mid-center',
+                        icon: 'error'
+                    });
+                } else {
+                    $.toast({
+                        heading: 'Success',
+                        text: '操作成功',
+                        showHideTransition: 'slide',
+                        icon: 'success',
+                        loaderBg: '#f2a654',
+                        position: 'mid-center'
+                    });
+                }
+            });
+
+        });
         $("#batch-edit-sms-submit-btn").click(function () {
             const location = $('#batch-edit-pick-up-location-input').val();
             const time = $('#batch-edit-pick-up-time-input').val();

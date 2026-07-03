@@ -98,13 +98,12 @@ namespace Persistence.Services
         }
 
 
-        public async Task<PagedResult<BatchEntity>> ListWarehouseReceiveBatchAsync(BatchListFilterOptions filterOptions)
+        public async Task<PagedResult<BatchEntity>> ListWarehouseReceiveBatchAsync(BatchListFilterOptions filterOptions, int[] companyIds)
         {
             var batchesFiltered = _context.Batches
                 .Include(b => b.BatchWarehouseReceives)
-                .Where(b => b.BatchWarehouseReceives.Count > 0 && b.BatchWarehouseReceives.First().WarehouseId == filterOptions.WarehouseId
-                    && (filterOptions.GroupType == BatchGroupType.WarehouseReceive)
-                    && (!filterOptions.Ids.Any() || filterOptions.Ids.Contains(b.Id)) && b.CompanyId == Config.COMPANY_ID)
+                .Where(b => (filterOptions.GroupType == BatchGroupType.WarehouseReceive)
+                    && (!filterOptions.Ids.Any() || filterOptions.Ids.Contains(b.Id)) && (companyIds == null ? (b.CompanyId == Config.COMPANY_ID) : companyIds.Contains(b.CompanyId.Value)))
                 .Include(b => b.BatchBoxes)
                     .ThenInclude(bx => bx.BatchBoxOrderMaps)
                         .ThenInclude(m => m.Order)
@@ -249,7 +248,8 @@ namespace Persistence.Services
                         .ThenInclude(m => m.Order)
                             .ThenInclude(o => o.CreatedBy)
                                 .ThenInclude(o => o.BelongsToNavigation)
-                .Include(b => b.MasterBatch);
+                .Include(b => b.MasterBatch)
+                .Where(b => b.Route != null);
 
             IOrderedQueryable<Batch> batches;
             if (filterOptions.GroupType.HasValue)
@@ -933,6 +933,13 @@ WHERE bb.BatchId=@batchId
         {
             // Need batchId, batch.GroupType, batch.RouteId, otherOrders, box.Number, count box.order, total box.order.WeightKg
             // batch.Route.Type, batch.Stage
+            var batchSQL = _context.Batches.Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps)
+                .ThenInclude(m => m.Order)
+                .Include(b => b.BatchOtherOrders)
+                .Include(b => b.Route)
+                .Include(b => b.LoadDeliveryBatches)
+                .Include(b => b.BatchBoxMaps).ThenInclude(bx => bx.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order).ToQueryString();
+
             var batch = await _context.Batches.Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps)
                 .ThenInclude(m => m.Order)
                 .Include(b => b.BatchOtherOrders)
@@ -940,7 +947,9 @@ WHERE bb.BatchId=@batchId
                 .Include(b => b.LoadDeliveryBatches)
                 .Include(b => b.BatchBoxMaps).ThenInclude(bx => bx.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
                 .FirstAsync(b => b.Id == id);
-            foreach(var b in batch.BatchBoxes)
+
+            
+            foreach (var b in batch.BatchBoxes)
             {
                 b.BatchBoxOrderMaps = b.BatchBoxOrderMaps.Where(bbom => companyIds == null ? bbom.Order.CompanyId == Config.COMPANY_ID : companyIds.Contains(bbom.Order.CompanyId.Value)).ToList();
             }
@@ -2111,9 +2120,23 @@ WHERE bb.BatchId=@batchId
             var boxes = await _context.BatchBoxes.Where(bx => bx.BatchId == id).ToListAsync();
             var boxIds = boxes.Select(bx => bx.Id).ToList();
             var maps = await _context.BatchBoxOrderMaps.Where(m => boxIds.Contains(m.BatchBoxId)).ToListAsync();
-
+            var otherOrders = await _context.BatchOtherOrders.Where(boo => boo.BatchId == id).ToListAsync();
             _context.BatchBoxOrderMaps.RemoveRange(maps);
             _context.BatchBoxes.RemoveRange(boxes);
+            _context.BatchOtherOrders.RemoveRange(otherOrders);
+            if (batch.GroupType == (int)BatchGroupType.WarehouseReceive)
+            {
+                var warehouseReceiveBatches = await _context.BatchWarehouseReceives.Where(b => b.BatchId == id).ToListAsync();
+                _context.BatchWarehouseReceives.RemoveRange(warehouseReceiveBatches);
+            } else if (batch.GroupType == (int)BatchGroupType.Package)
+            {
+                var packageBatches = await _context.BatchPackages.Where(b => b.BatchId == id).ToListAsync();
+                _context.BatchPackages.RemoveRange(packageBatches);
+            } else if (batch.GroupType == (int)BatchGroupType.Pallet)
+            {
+                var palletBatches = await _context.BatchPallets.Where(b => b.BatchId == id).ToListAsync();
+                _context.BatchPallets.RemoveRange(palletBatches);
+            }
             _context.Batches.Remove(batch);
 
             await _context.SaveChangesAsync();

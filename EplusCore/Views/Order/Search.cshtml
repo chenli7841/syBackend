@@ -58,6 +58,7 @@
                                 <th data-searchable="true">所属船号/航空号</th>
                                 <th data-searchable="state">当前状态</th>
                                 <th data-searchable="true">用户</th>
+                                <th>付款状态</th>
                                 <th>详情</th>
                                 <th>删除</th>
                                 <th>打印</th>
@@ -144,6 +145,7 @@
                     { "data": "cargoNumber", "name": "CargoNumber", "autoWidth": true },
                     { "data": "stateText", "name": "stateText", "autoWidth": true },
                     { "data": "creator.name", "name": "Creator", "autoWidth": true },
+                    { "render": (data, type, full, meta) => full.hasPaid ? '已付款' : '未付款' },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("Edit")?id=${full.id}'><i class="fa fa-edit fa-lg"></i></a>` },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("Delete")?id=${full.id}'><i class="fa fa-trash-o fa-lg" style="color: red"></i></a>` },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("PrintBarcode")?id=${full.id}' target="_blank"><i class="fa fa-print fa-lg"></i></a>` },

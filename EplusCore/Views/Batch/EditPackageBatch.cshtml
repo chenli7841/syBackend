@@ -346,8 +346,9 @@
                                 <button disabled class="btn btn-primary">已付款</button>
                             </div>
                         }
-
-                        
+                        <div>
+                            <button id="start-delivery" type="button" class="btn btn-primary">开始派送</button>
+                        </div>
                     </div>
                 }
 
@@ -540,9 +541,38 @@
                             icon: 'success'
                         });
 
-                        setTimeout(() => { window.location.reload(); }, 2 * 1000);
+                        setTimeout(() => {
+                            document.location = `/batch/edit?id=@Model.Id`;
+                        }, 2 * 1000);
                     }
                 });
+        });
+
+        $('#start-delivery').click(function() {
+            $.post('@Url.Action("PackageStartDelivery")',
+                {
+                    id: @Model.Id,
+                },
+                function (result) {
+                    if (result.error) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        $.toast({
+                            heading: 'Success',
+                            text: '操作成功',
+                            showHideTransition: 'slide',
+                            icon: 'success',
+                            loaderBg: '#f2a654',
+                            position: 'mid-center'
+                        });
+                        setTimeout(() => { window.location.reload(); }, 2 * 1000);
+                    }
+                }
+            );
         });
 
         $('#update-to-paid').click(function () {

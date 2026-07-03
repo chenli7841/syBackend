@@ -592,6 +592,10 @@ namespace Persistence.Services
                 order.OrderNumber = GenerateOrderNumber(entity.Creator, route);
                 order.Route = route.Name;
             }
+            if (entity.State != 0)
+            {
+                order.State = (int)entity.State;
+            }
             order.DomesticNumber = entity.DomesticNumber;
             order.DomesticCarrier = entity.DomesticCarrier;
             order.WeightKg = entity.WeightKg;

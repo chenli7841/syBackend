@@ -26,36 +26,47 @@
     <div class="col-md-12 grid-margin">
         <div class="card">
             <div class="card-body">
-                <h4 class="card-title">@Model.GroupType.GetDescription()</h4>
-                <ul class="nav nav-tabs tab-solid tab-solid-danger" role="tablist">
-                    @if (Model.GroupType == BatchGroupType.DailyScan || Model.GroupType == BatchGroupType.DailyReturn)
-                    {
-                        foreach (var warehouse in Model.Warehouses)
-                        {
-                            <li class="nav-item">
-                                @Html.ActionLink(warehouse.Name, "Inventory", new { groupType = Model.GroupType, warehouseId = warehouse.Id }, new { @class = "nav-link " + (warehouse.Id == Model.SelectedWarehouseId ? "active" : "") })
-                            </li>
-                        }
-                    }
-                    else
-                    {
-                        foreach (var route in Model.Routes)
-                        {
-                            <li class="nav-item">
-                                <a href="@Url.Action("Inventory", new {groupType = Model.GroupType, routeId = route.Id})" class="nav-link @(route.Id == Model.SelectedRouteId ? "active" : "")" id='@($"route{route.Id}")'>@route.Name (<i class='fa fa-spinner fa-spin'></i>)</a>
-                                @*@Html.ActionLink(route.Name + "(<i class='fas fa - cog fa - spin'></i>)", "Inventory", new {groupType = Model.GroupType, routeId = route.Id}, new {@class = "nav-link " + (route.Id == Model.SelectedRouteId ? "active" : ""), @id = $"route{route.Id}"})*@
-                            </li>
-                        }
-                    }
-                </ul>
+                <div class="row" style="margin: 0; margin-bottom: 12px; gap: 20px; align-items: center;">
+                    <h4 class="card-title" style="margin-bottom: 0">@Model.GroupType.GetDescription()</h4>
+                    <div style="display: flex; gap: 4px; height: 32px; flex: 1;">
+                        <select class="form-control" id="company-select">
+                            @{
+                                var companies = Model.Companies.ToList();
+                                for (int i = 0; i < companies.Count; i++)
+                                {
+                                    var c = companies[i];
+                                    <option value="@c.Id">@c.Name</option>
+                                    if (i == companies.Count - 1)
+                                    {
+                                        var allCompanyIds = string.Join(",", companies.Select(c => c.Id));
+                                        <option value="@allCompanyIds">All</option>
+                                    }
+                                }
+                            }
+
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 4px; height: 32px; flex: 1;">
+                        <select class="form-control" id="route-select">
+                            @{
+                                var routes = Model.Routes.ToList();
+                                for (int i = 0; i < routes.Count; i++)
+                                {
+                                    var c = routes[i];
+                                    <option value="@c.Id">@c.Name</option>
+                                    if (i == routes.Count - 1)
+                                    {
+                                        var allRouteIds = string.Join(",", routes.Select(c => c.Id));
+                                        <option value="@allRouteIds">All</option>
+                                    }
+                                }
+                            }
+
+                        </select>
+                    </div>
+                </div>
                 <div class="tab-content tab-content-solid">
                     <div class="tab-pane fade show active" id="home-5-1" role="tabpanel" aria-labelledby="tab-5-1">
-                        <div style="display: flex; gap: 4px; height: 32px;">
-                            @if (Model.GroupType == BatchGroupType.DailyScan || Model.GroupType == BatchGroupType.DailyReturn)
-                            {
-                                @Html.ActionLink($"添加{Model.GroupType.GetDescription()}", "CreateDailyBatchPerWarehouse", null, new { groupType = Model.GroupType }, new { @class = "btn btn-primary" })
-                            }
-                        </div>
                         <div class="table-responsive">
                             <table id="batch-listing" class="table table-striped">
                                 <thead>
@@ -73,8 +84,6 @@
                             </table>
                         </div>
                     </div>
-                    <div class="tab-pane fade" id="profile-5-2" role="tabpanel" aria-labelledby="tab-5-2"> Lorem ipsum dolor sit amet, consectetur adipisicing elit. Deleniti eveniet, sapiente corrupti, vitae excepturi nulla soluta esse in ex, dignissimos velit rerum maiores asperiores! </div>
-                    <div class="tab-pane fade" id="contact-5-3" role="tabpanel" aria-labelledby="tab-5-3"> Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam officia mollitia repudiandae, tempore provident omnis magnam deleniti obcaecati, non atque asperiores maiores sint! Officiis rerum quaerat perferendis adipisci aut pariatur. </div>
                 </div>
             </div>
         </div>
@@ -116,7 +125,7 @@
                 "searchPanes": true,
                 "ajax": {
                     "url":
-                        '@Html.Raw(Url.Action("LoadData", new {groupType = Model.GroupType, routeId = Model.SelectedRouteId, recipientUserId=Model.SelectedRecipientUserId, belongsToUserId=Model.SelectedBelongsToUserId, warehouseId = Model.SelectedWarehouseId}))',
+                        '@Html.Raw(Url.Action("LoadData", new { groupType = Model.GroupType, routeId = Model.SelectedRouteId, recipientUserId = Model.SelectedRecipientUserId, belongsToUserId = Model.SelectedBelongsToUserId, warehouseId = Model.SelectedWarehouseId, companyIds = Model.CompanyIds }))',
                     "type": "POST",
                     "datatype": "json"
                 },
@@ -136,7 +145,7 @@
                     { "data": "totalWeightKg", "autoWidth": true },
                     { "data": "totalShippingCost", "autoWidth": true },
                     {
-                        "render": (data, type, full, meta) => `<a href='@Url.Action("Edit")?id=${full.id
+                        "render": (data, type, full, meta) => `<a href='@Url.Action("EditPendingDeliveryBatch")?id=${full.id
                             }'><i class="fa fa-edit fa-lg"></i></a>`
                     },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("Export")?id=${full.id}' target="_blank"><i class="fa fa-table fa-lg"></i></a>` },
@@ -150,6 +159,26 @@
                         "next": "下一页"
                     },
                 },
+            });
+
+            let companyIds = '', routeIds = '';
+            let search = document.location.search;
+            if (search.includes("?")) {
+                search = search.replace("?", "");
+                let companyPart = search.split("&").find(p => p.split("=")[0].toLowerCase() === "companyids");
+                if (!companyPart) companyIds = "";
+                else companyIds = companyPart.split("=")[1];
+                let routePart = search.split("&").find(p => p.split("=")[0].toLowerCase() === "routeid");
+                if (!routePart) routeIds = "";
+                else routeIds = routePart.split("=")[1];
+            }
+            $('#company-select').val(companyIds);
+            $('#company-select').change(function () {
+                document.location = `${document.location.origin}${document.location.pathname}?companyIds=${$('#company-select').val()}`;
+            });
+            $('#route-select').val(routeIds);
+            $('#route-select').change(function () {
+                document.location = `${document.location.origin}${document.location.pathname}?companyIds=${$('#company-select').val()}&routeId=${$('#route-select').val()}`;
             });
 
             let users = @Html.Raw(Json.Serialize(Model.Users));

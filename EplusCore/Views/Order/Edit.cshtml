@@ -1,4 +1,5 @@
-﻿@using WebUI.Models
+﻿@using Domain.Enums
+@using WebUI.Models
 @using WebUI.Models.ViewModels
 @using Domain.Models.Extensions
 @model WebUI.Models.ViewModels.OrderDetailEditModel
@@ -33,7 +34,23 @@
                     @Html.HiddenFor(r => r.Id)
                     @Html.HiddenFor(r => r.Creator.Id)
 
-                    <p>运单信息-@Model.State.GetDescription()</p>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.State, "运单类型", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.State, new { hidden = "hidden" })
+                                    <select class="form-control" id="state-select">
+                                        <option></option>
+                                        @foreach (var orderState in Enum.GetValues<OrderState>().Where(g => g != OrderState.None))
+                                        {
+                                            <option value="@orderState">@orderState.GetDescription()</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="row">
                         <div class="col-md-4">
@@ -216,6 +233,28 @@
                     </div>
                 }
 
+                <div class="modal fade" id="addStatusModal" tabindex="-1" role="dialog" aria-labelledby="addStatusModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-body">
+                                <div class="row">
+                                    <label class="col-form-label col-4">添加运单状态：</label>
+                                    <select class="form-select col-8" id="order-add-status-select">
+                                        <option></option>
+                                        @foreach (var orderStatus in Enum.GetValues<OrderStatusType>().Where(g => !string.IsNullOrEmpty(g.GetDescription())))
+                                        {
+                                            <option value="@orderStatus">@orderStatus.GetDescription()</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" id="add-status-submit-btn" class="btn btn-success">Submit</button>
+                                <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 @if (Model.Id > 0)
                 {
                     <hr />
@@ -267,7 +306,10 @@
                     </div>
 
                     <hr />
-                    <p>系统运单轨迹记录</p>
+                    <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 1rem;">
+                        <div style="font-size: 0.875rem">系统运单轨迹记录</div>
+                        <button id="order_edit_add_status_button" class="btn btn-primary" type="button" data-toggle="modal" data-target="#addStatusModal">添加状态</button>
+                    </div>
                     <table id="status" class="table table-striped">
                         <thead>
                             <tr>
@@ -349,6 +391,43 @@
                         }
                     });
                 return false;
+            });
+            $('#state-select').val($('#State').val());
+
+            $('#state-select').change(function () {
+                $('#State').val(this.value);
+            });
+            $('#add-status-submit-btn').click(function() {
+                const orderStatus = $('#order-add-status-select').val();
+                const req = {id: @Model.Id };
+                if (!orderStatus) {
+                    $.toast({
+                        heading: "请选择要添加的状态",
+                        position: 'mid-center',
+                        icon: 'error'
+                    });
+                    return
+                }
+                req.orderStatus = orderStatus;
+                $.post('@Url.Action("AddStatus")', req, function(result) {
+                    if (result.error) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        $.toast({
+                            heading: 'Success',
+                            text: '操作成功',
+                            showHideTransition: 'slide',
+                            icon: 'success',
+                            loaderBg: '#f2a654',
+                            position: 'mid-center'
+                        });
+                        setTimeout(() => { window.location.reload(); }, 2 * 1000);
+                    }
+                });
             });
             $('#order_edit_upload_section').hide();
             $('.order-edit-photo').click(function(e) {

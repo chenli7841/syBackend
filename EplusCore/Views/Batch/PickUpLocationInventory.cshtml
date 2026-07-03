@@ -26,15 +26,29 @@
     <div class="col-md-12 grid-margin">
         <div class="card">
             <div class="card-body">
-                <h4 class="card-title">@Model.GroupType.GetDescription()</h4>
+                <div class="row" style="margin: 0; margin-bottom: 12px; gap: 20px; align-items: center;">
+                    <h4 class="card-title" style="margin-bottom: 0">@Model.GroupType.GetDescription()</h4>
+                    <div style="display: flex; gap: 4px; height: 32px; flex: 1;">
+                        <select class="form-control" id="company-select">
+                            @{
+                                var companies = Model.Companies.ToList();
+                                for (int i = 0; i < companies.Count; i++)
+                                {
+                                    var c = companies[i];
+                                    <option value="@c.Id">@c.Name</option>
+                                    if (i == companies.Count - 1)
+                                    {
+                                        var allCompanyIds = string.Join(",", companies.Select(c => c.Id));
+                                        <option value="@allCompanyIds">All</option>
+                                    }
+                                }
+                            }
+
+                        </select>
+                    </div>
+                </div>
                 <div class="tab-content tab-content-solid">
                     <div class="tab-pane fade show active" id="home-5-1" role="tabpanel" aria-labelledby="tab-5-1">
-                        <div style="display: flex; gap: 4px; height: 32px;">
-                            @if (Model.GroupType == BatchGroupType.DailyScan || Model.GroupType == BatchGroupType.DailyReturn)
-                            {
-                                @Html.ActionLink($"添加{Model.GroupType.GetDescription()}", "CreateDailyBatchPerWarehouse", null, new { groupType = Model.GroupType }, new { @class = "btn btn-primary" })
-                            }
-                        </div>
                         <div class="table-responsive">
                             <table id="batch-listing" class="table table-striped">
                                 <thead>
@@ -97,7 +111,7 @@
                 "searchPanes": true,
                 "ajax": {
                     "url":
-                        '@Html.Raw(Url.Action("LoadData", new {groupType = Model.GroupType, recipientUserId=Model.SelectedRecipientUserId, belongsToUserId=Model.SelectedBelongsToUserId, warehouseId = Model.SelectedWarehouseId}))',
+                        '@Html.Raw(Url.Action("LoadData", new { groupType = Model.GroupType, recipientUserId = Model.SelectedRecipientUserId, belongsToUserId = Model.SelectedBelongsToUserId, warehouseId = Model.SelectedWarehouseId, companyIds = Model.CompanyIds }))',
                     "type": "POST",
                     "datatype": "json"
                 },
@@ -136,6 +150,19 @@
                         "next": "下一页"
                     },
                 },
+            });
+
+            let companyIds = '';
+            let search = document.location.search;
+            if (search.includes("?")) {
+                search = search.replace("?", "");
+                let companyPart = search.split("&").find(p => p.split("=")[0].toLowerCase() === "companyids");
+                if (!companyPart) companyIds = "";
+                else companyIds = companyPart.split("=")[1];
+            }
+            $('#company-select').val(companyIds);
+            $('#company-select').change(function () {
+                document.location = `${document.location.origin}${document.location.pathname}?companyIds=${$('#company-select').val()}`;
             });
 
             let users = @Html.Raw(Json.Serialize(Model.Users));

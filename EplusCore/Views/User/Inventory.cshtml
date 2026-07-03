@@ -1,4 +1,5 @@
-﻿@{
+﻿@using Domain.Entities
+@{
     ViewData["Title"] = "用户管理";
 }
 
@@ -20,12 +21,58 @@
     </style>
 }
 
+@{
+    var pickUpLocations = ((IEnumerable<PickUpLocationEntity>)ViewBag.PickUpLocations).ToList();
+    var companies = ((IEnumerable<CompanyEntity>)ViewBag.Companies).ToList();
+}
+
 <div class="row">
     <div class="col-md-12 grid-margin">
         <div class="card">
             <div class="card-body order-card-body">
                 <div class="table-responsive">
-                    @Html.ActionLink("导出", "Export", null, null, new { @class = "btn btn-primary" })
+
+
+                    <div class="row" style="margin: 0; margin-bottom: 12px; gap: 20px; align-items: center;">
+                        @Html.ActionLink("导出", "Export", null, null, new { @class = "btn btn-primary" })
+                        <div style="display: flex; gap: 4px; height: 32px; flex: 1;">
+                            <select class="form-control" id="company-select">
+                                @{
+                                    for (int i = 0; i < companies.Count; i++)
+                                    {
+                                        var c = companies[i];
+                                        <option value="@c.Id">@c.Name</option>
+                                        if (i == companies.Count - 1)
+                                        {
+                                            var allCompanyIds = string.Join(",", companies.Select(c => c.Id));
+                                            <option value="@allCompanyIds">All</option>
+                                        }
+                                    }
+                                }
+
+                            </select>
+                            <select class="form-control" id="pickuplocation-select">
+                                @{
+                                    for (int i = 0; i < pickUpLocations.Count; i++)
+                                    {
+                                        var c = pickUpLocations[i];
+                                        <option value="@c.Id">@c.Name</option>
+                                        if (i == pickUpLocations.Count - 1)
+                                        {
+                                            var allPickUpLocationIds = string.Join(",", pickUpLocations.Select(c => c.Id));
+                                            <option value="@allPickUpLocationIds">All</option>
+                                        }
+                                    }
+                                }
+
+                            </select>
+                        </div>
+                    </div>
+
+
+
+
+                    
 
                     <table id="user-listing" class="table table-striped">
                         <thead>
@@ -106,6 +153,26 @@
         }
 
         $(document).ready(() => {
+            let companyIds = '', pickuplocationIds = '';
+            let search = document.location.search;
+            if (search.includes("?")) {
+                search = search.replace("?", "");
+                let companyPart = search.split("&").find(p => p.split("=")[0].toLowerCase() === "companyids");
+                if (!companyPart) companyIds = "";
+                else companyIds = companyPart.split("=")[1];
+                let pickuplocationPart = search.split("&").find(p => p.split("=")[0].toLowerCase() === "pickuplocationids");
+                if (!pickuplocationPart) pickuplocationIds = "";
+                else pickuplocationIds = pickuplocationPart.split("=")[1];
+            }
+            $('#company-select').val(companyIds);
+            $('#company-select').change(function () {
+                document.location = `${document.location.origin}${document.location.pathname}?companyIds=${$('#company-select').val()}&pickuplocationIds=${pickuplocationIds}`;
+            });
+            $('#pickuplocation-select').val(pickuplocationIds);
+            $('#pickuplocation-select').change(function() {
+                document.location = `${document.location.origin}${document.location.pathname}?companyIds=${companyIds}&pickuplocationIds=${$('#pickuplocation-select').val()}`;
+            });
+
             $('#user-listing thead tr').clone(true).appendTo('#user-listing thead');
             $(`#user-listing thead tr:eq(1) th`).each(function(i) {
                 if (!$(this).data('searchable')) {
@@ -137,7 +204,7 @@
                 "stateSave": false,
                 "lengthChange": false, // for show entries dropdown
                 "ajax": {
-                    "url": '@Url.Action("LoadUsers")',
+                    "url": '@Html.Raw(Url.Action("LoadUsers", new { companyIds = Model.CompanyIds, pickUpLocationIds = Model.PickUpLocationIds }))',
                     "type": "POST",
                     "datatype": "json"
                 },

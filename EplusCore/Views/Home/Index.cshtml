@@ -71,7 +71,7 @@
                                     <th>处理结果</th>
                                     <th>客户信息</th>
                                     <th>经办人</th>
-                                    <th>运单信息</th>
+                                    <th>批次信息</th>
                                     @if (Model.CanDelete)
                                     {
                                         <th>删除</th>
@@ -293,7 +293,14 @@
                 },
                 { "data": "customerInfo", "name": "customerInfo", "autoWidth": true },
                 { "data": "assignees", "name": "Assignees", "render": (data, type, full, meta) => `${full.assignees.map(a => a.name).join(', ')}` },
-                { "data": "orderInfo", "name": "orderInfo", "autoWidth": true },
+                {
+                    "data": "batchInfo",
+                    "name": "batchInfo",
+                    "render": (data, type, full, meta) => {
+                        return `<a href="/Batch/EditPackageBatch?id=${full.batchId}">${full.batchInfo}</a>`;
+                    },
+                    "autoWidth": true
+                },
 
             ];
 

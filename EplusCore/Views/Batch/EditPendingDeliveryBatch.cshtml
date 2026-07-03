@@ -1,0 +1,695 @@
+﻿@using Domain.Entities
+@using Domain.Enums
+@using Domain.Models.Extensions
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model Domain.Entities.PackageBatchEntity
+
+@{
+    ViewData["Title"] = "批次详情";
+}
+
+@section Styles
+{
+    <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
+    <style>
+        #totalShippingCostBtn {
+            border: none;
+            background: transparent;
+            color: #6200EE;
+            padding-left: 0;
+            cursor: pointer;
+        }
+
+        .link {
+            color: #007bff;
+            border: none;
+            background: transparent;
+        }
+    </style>
+}
+
+@{
+    var masterBatches = ((IEnumerable<BatchEntity>)ViewBag.MasterBatches).ToList();
+    var routes = ((IEnumerable<RouteEntity>)ViewBag.Routes).ToList();
+}
+
+<div class="row">
+    <div class="col-md-12 grid-margin">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">修改批次 待派送</h4>
+                @using (Html.BeginForm("SavePackageBatch", "Batch", FormMethod.Post, new { @class = "" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.TextBoxFor(b => b.Id, new { hidden = "hidden" })
+                    @Html.TextBoxFor(b => b.GroupType, new { hidden = "hidden" })
+
+                    <div class="row">
+                        <div class="col-md-1">
+                            <label class="col-form-label">基础信息</label>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Name, "名称", new { @class = "col-sm-2 col-form-label" })
+                                <div class="col-sm-10">
+                                    <div class="input-group">
+                                        @Html.TextBoxFor(r => r.Name, new { hidden = "hidden" })
+                                        @Html.TextBoxFor(r => r.CustomName, new { @class = "form-control" })
+                                        <span class="input-group-text" id="formatted-name"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Name, "国际运单号", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.IntNumber, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Name, "转运公司", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.IntCarrier, new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-1">
+                            <label class="col-form-label">线路归属</label>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.RecipientCodeName, "客户", new { @class = "col-sm-3 col-form-label" })
+                                <div class="col-sm-9">
+                                    @Html.TextBoxFor(r => r.RecipientId, new { hidden = "hidden" })
+                                    @Html.TextBoxFor(r => r.RecipientCodeName, new { @class = "form-control", disabled = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.RouteId, "线路", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.RouteId, new { hidden = "hidden" })
+                                    <select class="form-control" id="route-select">
+                                        @{
+                                            for (int i = 0; i < routes.Count; i++)
+                                            {
+                                                var r = routes[i];
+                                                <option value="@r.Id">@r.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.PickUpLocationName, "取货点", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.PickUpLocationName, new { @class = "form-control", disabled = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Destination, "目的地", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.Destination, new { @class = "form-control", disabled = true })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-1">
+                            <label class="col-form-label">位置信息</label>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.MasterBatchId, "装车发货", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.MasterBatchId, new { hidden = "hidden" })
+                                    <select class="form-control" id="master-batch-select">
+                                        @{
+                                            for (int i = 0; i < masterBatches.Count; i++)
+                                            {
+                                                var b = masterBatches[i];
+                                                <option value="@b.Id">@b.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.ShipFlightNumber, "船号", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.ShipFlightNumber, new { @class = "form-control", disabled = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.LoadDeliveryStage, "批次状态", new { @class = "col-sm-4 col-form-label" })
+                                <div class="col-sm-8">
+                                    @Html.TextBoxFor(r => r.LoadDeliveryStage, new { @class = "form-control", disabled = true })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-1 col-md-1">
+                            <label class="col-form-label">基础数据</label>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.TotalOrders, "总单数", new { @class = "col-sm-6 col-form-label" })
+                                <div class="col-sm-6">
+                                    @Html.TextBoxFor(r => r.TotalOrders, new { @class = "form-control", disabled = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.TotalWeightKg, "总重量", new { @class = "col-sm-6 col-form-label" })
+                                <div class="col-sm-6">
+                                    @Html.TextBoxFor(r => r.TotalWeightKg, new { @class = "form-control", disabled = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.TotalVolume, "总体积", new { @class = "col-sm-6 col-form-label" })
+                                <div class="col-sm-6">
+                                    @Html.TextBoxFor(r => r.TotalVolume, new { @class = "form-control", disabled = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Boxes.Count, "总箱数", new { @class = "col-sm-6 col-form-label" })
+                                <div class="col-sm-6">
+                                    @Html.TextBoxFor(r => r.Boxes.Count, new { @class = "form-control", disabled = true })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.TotalChargedWeightKg, "总收费重量", new { @class = "col-sm-6 col-form-label" })
+                                <div class="col-sm-6">
+                                    @Html.TextBoxFor(r => r.TotalChargedWeightKg, new { @class = "form-control", disabled = true })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-1 col-md-1">
+                            <label class="col-form-label">费用列表</label>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.BaseShippingCost, "基础运费", new { @class = "col-sm-6 col-form-label" })
+                                <div class="col-sm-6">
+                                    @Html.TextBoxFor(r => r.BaseShippingCost, "{0:0.00}", new { @class = "form-control", disabled = true, type = "number" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.AddOnCost, "操作费", new { @class = "col-sm-6 col-form-label" })
+                                <div class="col-sm-6">
+                                    @Html.TextBoxFor(r => r.AddOnCost, "{0:0.00}", new { @class = "form-control", disabled = true, type = "number" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Duty, "关税", new { @class = "col-sm-6 col-form-label" })
+                                <div class="col-sm-6">
+                                    @Html.TextBoxFor(r => r.Duty, "{0:0.00}", new { @class = "form-control", disabled = true, type = "number" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.DeliveryCost, "派送费", new { @class = "col-sm-6 col-form-label" })
+                                <div class="col-sm-6">
+                                    @Html.TextBoxFor(r => r.DeliveryCost, "{0:0.00}", new { @class = "form-control", type = "number", step = "0.01" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.InsuranceFee, "保险费用", new { @class = "col-sm-6 col-form-label" })
+                                <div class="col-sm-6">
+                                    @Html.TextBoxFor(r => r.InsuranceFee, "{0:0.00}", new { @class = "form-control", disabled = true, type = "number" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-1 col-md-1">
+                            <label class="col-form-label"></label>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.RecipientCredit, "客户信用", new { @class = "col-sm-6 col-form-label" })
+                                <div class="col-sm-6">
+                                    @Html.TextBoxFor(r => r.RecipientCredit, "{0:0.00}", new { @class = "form-control", disabled = true, type = "number" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.RecipientBalance, "客户余额", new { @class = "col-sm-6 col-form-label" })
+                                <div class="col-sm-6">
+                                    @Html.TextBoxFor(r => r.RecipientBalance, "{0:0.00}", new { @class = "form-control", disabled = true, type = "number" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.StorageCost, "仓库附加费", new { @class = "col-sm-6 col-form-label" })
+                                <div class="col-sm-6">
+                                    @Html.TextBoxFor(r => r.StorageCost, "{0:0.00}", new { @class = "form-control", type = "number", step = "0.01" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Discount, "折扣", new { @class = "col-sm-6 col-form-label" })
+                                <div class="col-sm-6">
+                                    @Html.TextBoxFor(r => r.Discount, "{0:0.00}", new { @class = "form-control", type = "number", step = "0.01" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.Note, "仓库备注", new { @class = "col-sm-1 col-form-label" })
+                                @Html.TextAreaFor(r => r.Note, new { @class = "col-sm-11 form-control" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group row">
+                                @Html.LabelFor(r => r.TotalExpense, "总费用", new { @class = "col-sm-1 col-form-label" })
+                                <div class="col-sm-2">
+                                    @Html.TextBoxFor(r => r.TotalExpense, "{0:0.00}", new { @class = "form-control", disabled = true, type = "number" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="row" style="gap: 20px;">
+                        <div>
+                            <button type="submit" id="save-btn" class="btn btn-success">保存</button>
+                        </div>
+                        @*@if (Model.Id > 0)
+                    {
+                    <div class="col-md-1">
+                    <button class="btn btn-primary" id="send-message">发消息</button>
+                    </div>
+                    }*@
+
+                        <div>
+                            <button id="finish" type="button" class="btn btn-primary">完成</button>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.Id > 0)
+                {
+                    <div class="form-group row mt-4">
+                        <label class="col-form-label col-1">从批次:</label>
+                        <input class="form-control col-3" id="targetBatch" />
+                        <button class="btn btn-primary ml-3" id="merge">合并</button>
+                        <button class="btn btn-primary ml-3" id="acceptBox">加入包裹</button>
+                        <button class="btn btn-primary ml-3" id="acceptOrder">加入运单</button>
+                    </div>
+                }
+
+                @if (Model.Id > 0)
+                {
+                    <div class="table-responsive">
+                        <table id="box-listing" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>箱号</th>
+                                    <th>总单数</th>
+                                    <th>包裹总重量(kg)</th>
+                                    <th>长(cm)</th>
+                                    <th>宽(cm)</th>
+                                    <th>高(cm)</th>
+                                    <th>实际重量(kg)</th>
+                                    <th>编号</th>
+                                    <th>打印</th>
+                                    <th>保存</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var box in Model.Boxes)
+                                {
+                                    <tr>
+                                        <td>@Html.ActionLink((string.IsNullOrWhiteSpace(box.Name) ? ($"{Model.Id} - {box.Number}") : box.Name), "PackageEditBox", new { boxId = box.Id })</td>
+                                        <td>@box.Orders.Count()</td>
+                                        <td>@box.Orders.Sum(o => o.WeightKg)</td>
+                                        <td><input id="length_@(box.Id)_input" type="number" class="form-control" value="@box.Length" /></td>
+                                        <td><input id="width_@(box.Id)_input" type="number" class="form-control" value="@box.Width" /></td>
+                                        <td><input id="height_@(box.Id)_input" type="number" class="form-control" value="@box.Height" /></td>
+                                        <td><input id="actualWeight_@(box.Id)_input" type="number" class="form-control" value="@box.ActualWeightKg" /></td>
+                                        <td><a href='@Url.Action("PrintBatchBox")?id=@box.Id' target="_blank"><i class="fa fa-print fa-lg"></i></a></td>
+                                        <td><button class="link" onclick="UpdateBatchBox(@box.Id)"><i class="fa fa-save fa-lg"></i></button></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h5 class="mt-2">其他单</h5>
+                    <div class="row">
+                        @foreach (var otherOrder in Model.OtherOrders)
+                        {
+                            <div class="col-2">@otherOrder</div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
+    <script>
+        let global_routes = @Html.Raw(Json.Serialize(ViewBag.Routes));
+        function UpdateBatchBox(batchBoxId) {
+            let length = parseFloat($(`#length_${batchBoxId}_input`).val()) || undefined;
+            let width = parseFloat($(`#width_${batchBoxId}_input`).val()) || undefined;
+            let height = parseFloat($(`#height_${batchBoxId}_input`).val()) || undefined;
+            let actualWeightKg = parseFloat($(`#actualWeight_${batchBoxId}_input`).val()) || undefined;
+            $.post('@Url.Action("UpdateBatchBox")',
+                {
+                    boxId: batchBoxId,
+                    length, width, height, actualWeightKg,
+                },
+                function (result) {
+                    if (result.error) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        $.toast({
+                            heading: 'Success',
+                            text: '操作成功',
+                            showHideTransition: 'slide',
+                            icon: 'success',
+                            loaderBg: '#f2a654',
+                            position: 'mid-center'
+                        });
+                    }
+                }
+            );
+        }
+
+        function updateTotalExpense() {
+            let baseShippingCost = parseFloat($('#BaseShippingCost').val()) || 0;
+            let operationCost = parseFloat($('#OperationCost').val()) || 0;
+            let duty = parseFloat($('#Duty').val()) || 0;
+            let deliveryCost = parseFloat($('#DeliveryCost').val()) || 0;
+            let insuranceFee = parseFloat($('#InsuranceFee').val()) || 0;
+            let storageCost = parseFloat($('#StorageCost').val()) || 0;
+            let discount = parseFloat($('#Discount').val()) || 0;
+            let totalExpense = baseShippingCost + operationCost + duty + deliveryCost + insuranceFee + storageCost - discount;
+            $('#TotalExpense').val(totalExpense.toFixed(2));
+        }
+
+        function updateFormattedName() {
+            let companyCode = '@Model.CompanyCode';
+            let routeId = parseInt($('#route-select').val());
+            let route = global_routes.find(r => r.id === routeId);
+            let locationName = '@Html.Raw(Model.PickUpLocationName)';
+            if (route.type === @((int)RouteType.Mixed)) {
+                $('#formatted-name').text(`${companyCode}-${route.code}-${locationName}-装箱打包`);
+            } else if (route.type === @((int)RouteType.Direct)) {
+                if (!('@Model.RecipientCode') || ('@Model.RecipientCode' === '')) {
+                    $('#formatted-name').text(`${companyCode}-${route.code}-装箱打包`);
+                } else {
+                    $('#formatted-name').text(`${companyCode}-${route.code}-@Model.RecipientCode-装箱打包`);
+                }
+            }
+            updateName();
+        }
+
+        function updateName() {
+            $('#Name').val(`${$('#CustomName').val()}-${$('#formatted-name').text()}`);
+        }
+
+        $('#CustomName').change(function() {
+            updateName();
+        });
+
+        $('#DeliveryCost').change(function() {
+            updateTotalExpense();
+        });
+
+        $('#StorageCost').change(function() {
+            updateTotalExpense();
+        });
+
+        $('#Discount').change(function() {
+            updateTotalExpense();
+        });
+
+        $('#route-select').val($('#RouteId').val());
+
+        $('#master-batch-select').val($('#MasterBatchId').val());
+
+        $('#master-batch-select').change(function () {
+            $('#MasterBatchId').val(this.value);
+        });
+
+        $('#route-select').change(function () {
+            let routeId = parseInt($('#route-select').val());
+            let newRoute = global_routes.find(r => r.id === routeId);
+            let originalRouteId = parseInt($('#RouteId').val());
+            let originalRoute = global_routes.find(r => r.id === originalRouteId);
+            if (newRoute.type !== @((int)RouteType.Mixed) || originalRoute.type !== @((int)RouteType.Direct)) {
+                $('#route-select').val(originalRouteId);
+                $.toast({
+                    heading: "只允许从直邮改为集运",
+                    position: 'mid-center',
+                    icon: 'error'
+                });
+                return;
+            }
+            $('#RouteId').val(routeId);
+        });
+
+        $('#update-to-dispatched').click(function () {
+            $.post('@Url.Action("UpdatePackageBatchToSealing")',
+                {id: @Model.Id },
+                function (result) {
+                    if (result.error && result.error.text) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        $.toast({
+                            heading: '更新成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+
+                        setTimeout(() => {
+                            document.location = `/batch/edit?id=@Model.Id`;
+                        }, 2 * 1000);
+                    }
+                });
+        });
+
+        $('#finish').click(function() {
+            $.post('@Url.Action("CompleteBatch")',
+                {
+                    id: @Model.Id,
+                },
+                function (result) {
+                    if (result.error) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        $.toast({
+                            heading: 'Success',
+                            text: '操作成功',
+                            showHideTransition: 'slide',
+                            icon: 'success',
+                            loaderBg: '#f2a654',
+                            position: 'mid-center'
+                        });
+                        setTimeout(() => { window.location.reload(); }, 2 * 1000);
+                    }
+                }
+            );
+        });
+
+        $('#update-to-paid').click(function () {
+            $.post('@Url.Action("PackagePay")',
+                {id: @Model.Id },
+                function (result) {
+                    if (result.error && result.error.text) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        $.toast({
+                            heading: '更新成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+
+                        setTimeout(() => { window.location.reload(); }, 2 * 1000);
+                    }
+                });
+        });
+
+        $('#merge').click(function () {
+            const sourceBatchAndBox = $('#targetBatch').val();
+            const targetBatchId = @Model.Id;
+            if (sourceBatchAndBox === '') {
+                alert('请填写从批次');
+                return false;
+            }
+
+            document.getElementById("site-overlay").style.display = "block";
+            const sourceBatchId = sourceBatchAndBox.split('-')[0].trim();
+            const sourceBoxNumber = (sourceBatchAndBox.split('-')[1] || '').trim();
+
+            $.post('@Url.Action("Merge")',
+                {
+                    targetBatchId,
+                    sourceBatchId,
+                    sourceBoxNumber
+                },
+                function (result) {
+                    document.getElementById("site-overlay").style.display = "none";
+
+                    if (result.error && result.error.text) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        $.toast({
+                            heading: '合并成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+
+                        setTimeout(() => { window.location.reload(); }, 2 * 1000);
+                    }
+                });
+        });
+
+        $('#acceptBox').click(function () {
+            const sourceBatchAndBox = $('#targetBatch').val();
+            const targetBatchId = @Model.Id;
+            if (sourceBatchAndBox === '') {
+                alert('请填写从批次');
+                return false;
+            }
+
+            document.getElementById("site-overlay").style.display = "block";
+            const sourceBatchId = sourceBatchAndBox.split('-')[0].trim();
+            const sourceBoxNumber = (sourceBatchAndBox.split('-')[1] || '').trim();
+
+            $.post('@Url.Action("AcceptBox")',
+                {
+                    targetBatchId,
+                    sourceBatchId,
+                    sourceBoxNumber
+                },
+                function (result) {
+                    document.getElementById("site-overlay").style.display = "none";
+
+                    if (result.error && result.error.text) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        $.toast({
+                            heading: '合并成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+
+                        setTimeout(() => { window.location.reload(); }, 2 * 1000);
+                    }
+                });
+        });
+
+        $('#acceptOrder').click(function () {
+            const sourceOrderNumberOrDomesticNumber = $('#targetBatch').val().trim();
+            const targetBatchId = @Model.Id;
+            if (sourceOrderNumberOrDomesticNumber === '') {
+                alert('请填写运单号或国内单号');
+                return false;
+            }
+
+            document.getElementById("site-overlay").style.display = "block";
+
+            $.post('@Url.Action("AcceptOrder")',
+                {
+                    targetBatchId,
+                    orderOrDomesticNumber: sourceOrderNumberOrDomesticNumber,
+                },
+                function (result) {
+                    document.getElementById("site-overlay").style.display = "none";
+
+                    if (result.error && result.error.text) {
+                        $.toast({
+                            heading: result.error.text,
+                            position: 'mid-center',
+                            icon: 'error'
+                        });
+                    } else {
+                        $.toast({
+                            heading: '添加运单成功',
+                            position: 'mid-center',
+                            icon: 'success'
+                        });
+
+                        setTimeout(() => { window.location.reload(); }, 2 * 1000);
+                    }
+                });
+        });
+
+
+
+
+        $(document).ready(() => {
+            updateFormattedName();
+            updateTotalExpense();
+        })
+    </script>
+}

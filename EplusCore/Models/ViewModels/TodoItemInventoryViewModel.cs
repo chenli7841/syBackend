@@ -13,12 +13,14 @@ namespace WebUI.Models.ViewModels
         public string Comment { get; set; }
         public string Resolution { get; set; }
         public string OrderInfo { get; set; }
+        public string BatchInfo { get; set; }
         public string CustomerInfo { get; set; }
         public DateTime DateCreated { get; set; }
         public DateTime? DateResolved { get; set; }
         public string DateCreatedDisplay => DateCreated.ToString("yyyy-MM-dd HH:mm:ss");
         public string DateResolvedDisplay => DateResolved?.ToString("yyyy-MM-dd HH:mm:ss");
         public int CreatedByUserId { get; set; }
+        public int BatchId { get; set; }
         public string CreatedByUserName { get; set; }
         public IList<TodoItemAssigneeEntity> Assignees { get; set; }
         public IList<TodoItemCustomerEntity> Customers { get; set; }

@@ -13,7 +13,7 @@ namespace Persistence.Utils
         private const string CUSTOMER_SERVICE_PHONE = "6476702288";
         public static string GetBatchNotificationMessage(SmsUserInfo userInfo, string pickUpLocation, string pickUpTime)
         {
-            return $@"这里是壹嘉国际，您{userInfo.BatchName.Split(" ")[0]}的{userInfo.OrderCount}件包裹已分拣完毕
+            return $@"这里是舒誉，您{userInfo.BatchName.Split(" ")[0]}的{userInfo.OrderCount}件包裹已分拣完毕
 该批次总运费为{Math.Round(userInfo.ShippingCost, 1)} 当前余额{Math.Round(userInfo.Balance, 1)}
 取货地点：{pickUpLocation}
 取货时间：{pickUpTime}";
@@ -30,7 +30,7 @@ namespace Persistence.Utils
         public static string GetBatchNotificationEmailBody(string batchName, decimal userBalance, string pickUpLocation, string pickUpTime, string locationPhone, List<TransportOrder> orderList)
         {
             decimal totalShippingCost = orderList.Sum(o => o.ShippingCost ?? 0);
-            var text = new StringBuilder($"<p>尊敬的客人您好，这里是壹嘉国际，您{batchName.Split(" ")[0]}的包裹已分拣完毕</p>");
+            var text = new StringBuilder($"<p>尊敬的客人您好，这里是舒誉，您{batchName.Split(" ")[0]}的包裹已分拣完毕</p>");
             text.Append("<table><thead><tr><th></th><th style='text-align: left'>运单号</th><th style='text-align: right'>运费(加元)</th><th style='text-align: left'>取货点</th></tr></thead><tbody>");
             for (int i = 0; i < orderList.Count; i++)
             {
@@ -57,18 +57,18 @@ namespace Persistence.Utils
         {
             if (transferType == "deposit")
             {
-                return $@"壹嘉国际提醒您：您账户内收到加币：{amount}，交易类型：{transactionType}，当前余额为：{balance}";
+                return $@"舒誉提醒您：您账户内收到加币：{amount}，交易类型：{transactionType}，当前余额为：{balance}";
             }
             if (transferType == "deduct")
             {
-                return $@"壹嘉国际提醒您：您账户内被扣掉加币：{amount}，交易类型：{transactionType}，当前余额为：{balance}";
+                return $@"舒誉提醒您：您账户内被扣掉加币：{amount}，交易类型：{transactionType}，当前余额为：{balance}";
             }
             return "";
         }
 
         public static string GetParcelDispatchMessage(string batchName, decimal totalWeight, decimal totalCost)
         {
-            return $@"壹嘉国际提醒您：批次号 {batchName.Substring(0, 4)} 的和包包裹已称重计费。
+            return $@"舒誉提醒您：批次号 {batchName.Substring(0, 4)} 的和包包裹已称重计费。
 总重量 {Math.Round(totalWeight, 2)} kg, 总费用 {Math.Round(totalCost, 1)}。
 请在系统内确认运费：{MOBILE_SITE}，包裹将在确认后尽快发出";
         }
@@ -82,14 +82,14 @@ namespace Persistence.Utils
 
         public static string GetParcelDispatchEmailBody(string batchName, decimal totalWeight, decimal totalCost)
         {
-            return $@"壹嘉国际提醒您：批次号 {batchName.Substring(0, 4)} 的和包包裹已称重计费。
+            return $@"舒誉提醒您：批次号 {batchName.Substring(0, 4)} 的和包包裹已称重计费。
 总重量 {Math.Round(totalWeight, 2)} kg, 总费用 {Math.Round(totalCost, 1)}。
 请在系统内确认运费：{MOBILE_SITE}，包裹将在确认后尽快发出";            
         }
 
         public static string GetLoadDeliveryMessage(string internationOrderNumber, string carrier, string recipientAddress, string recipient, string recipientPhone)
         {
-            return $@"壹嘉国际提醒您：你的包裹已发出，
+            return $@"舒誉提醒您：你的包裹已发出，
 国际运单号：{internationOrderNumber}
 承运公司：{carrier}
 收件地址：{recipientAddress}
@@ -106,7 +106,7 @@ More information please login your email";
 
         public static string GetOrderPendingConfirmationMessage(string domesticNumber, string actionReason)
         {
-            return $@"壹嘉国际提醒您：您的包裹 {domesticNumber} {actionReason}
+            return $@"舒誉提醒您：您的包裹 {domesticNumber} {actionReason}
 请您在系统内查看详情http://expressh5.epluscanada.com
 如有问题可联系官方客服";
         }
@@ -123,7 +123,7 @@ More information please login your email";
 
         public static string GetOrderPendingConfirmationEmailBody(string domesticNumber, string actionReason)
         {
-            return $@"壹嘉国际提醒您：您的包裹 {domesticNumber} {actionReason}
+            return $@"舒誉提醒您：您的包裹 {domesticNumber} {actionReason}
 请您在系统内查看详情http://www.epluscanada.com
 如有问题可联系官方客服";
         }

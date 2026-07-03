@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Common;
 using DocumentFormat.OpenXml.Office2010.Excel;
+using Domain;
 using Domain.Entities;
 using Domain.Enums;
 using Domain.Models;
@@ -83,7 +84,7 @@ namespace WebUI.Controllers
 
         public async Task<IActionResult> Search(string companyIds)
         {
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             OrderSearchViewModel model = new OrderSearchViewModel();
             model.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
 
@@ -257,7 +258,7 @@ namespace WebUI.Controllers
             });
             var locations = await _userService.ListPickUpLocationsAsync(2, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
 
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             return View("Draft", new OrderDraftViewModel() {
                 Users = users.Items, Routes = routes,
                 OrderState = orderState,

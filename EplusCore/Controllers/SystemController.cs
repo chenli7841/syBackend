@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DocumentFormat.OpenXml.Wordprocessing;
+using Domain;
 using Domain.Entities;
 using Domain.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -29,7 +30,7 @@ namespace WebUI.Controllers
 
         public async Task<IActionResult> Index(int? companyIds)
         {
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
             var settings = await _systemService.GetSettingsAsync();
             var photos = (await _systemService.ListPhotosAsync(companyIds)).ToList();
@@ -119,7 +120,7 @@ namespace WebUI.Controllers
 
         public async Task<IActionResult> ContactUs(int? companyIds)
         {
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
             if (!companyIds.HasValue)
             {
@@ -132,7 +133,7 @@ namespace WebUI.Controllers
 
         public async Task<IActionResult> TransportRules(int? companyIds)
         {
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
             if (!companyIds.HasValue)
             {

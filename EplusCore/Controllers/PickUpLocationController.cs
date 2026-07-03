@@ -41,7 +41,7 @@ namespace WebUI.Controllers
         {
             try
             {
-                var companies = await _context.Companies.ToListAsync();
+                var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
                 ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
                 var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
                 var viewModel = new PickUpLocationInventoryViewModel();

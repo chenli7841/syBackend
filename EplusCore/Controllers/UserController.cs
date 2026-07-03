@@ -3,6 +3,7 @@ using ClosedXML.Excel;
 using ClosedXML.Extensions;
 using Common;
 using DocumentFormat.OpenXml.Vml;
+using Domain;
 using Domain.Entities;
 using Domain.Enums;
 using Domain.Models;
@@ -120,7 +121,7 @@ namespace WebUI.Controllers
         {
             var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
             ViewBag.PickUpLocations = await _userService.ListPickUpLocationsAsync(2, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
             return View(new { CompanyIds = companyIds, PickUpLocationIds = pickUpLocationIds });
         }

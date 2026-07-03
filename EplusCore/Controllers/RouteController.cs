@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Domain;
 using Domain.Entities;
 using Domain.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -32,7 +33,7 @@ namespace WebUI.Controllers
 
         public async Task<IActionResult> Inventory(string companyIds)
         {
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
             int parsed;
             var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
@@ -43,7 +44,7 @@ namespace WebUI.Controllers
         public async Task<IActionResult> Edit(int id)
         {
             ViewBag.Warehouses = await _warehouseService.ListAsync();
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             ViewBag.Companies = companies.Select(c => new SelectListItem
             {
                 Value = c.Id.ToString(),
@@ -57,7 +58,7 @@ namespace WebUI.Controllers
         public async Task<IActionResult> Create()
         {
             ViewBag.Warehouses = await _warehouseService.ListAsync();
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             ViewBag.Companies = companies.Select(c => new SelectListItem
             {
                 Value = c.Id.ToString(),

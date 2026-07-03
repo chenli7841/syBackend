@@ -76,7 +76,7 @@ namespace WebUI.Controllers
             var warehouses = (await _warehouseService.ListAsync()).ToList();
             var routes = (await _routeService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).Where(r => !r.IsDeleted).ToList();
             var users = await _userService.ListByBatchesAsync(BatchGroupType.PendingDelivery, routeId, warehouseId);
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.PendingDelivery,
@@ -99,7 +99,7 @@ namespace WebUI.Controllers
             var warehouses = (await _warehouseService.ListAsync()).ToList();
             var routes = (await _routeService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).Where(r => !r.IsDeleted).ToList();
             var users = await _userService.ListByBatchesAsync(BatchGroupType.Done, routeId, warehouseId);
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.Done,
@@ -141,7 +141,7 @@ namespace WebUI.Controllers
             var warehouses = (await _warehouseService.ListAsync()).ToList();
             var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
             var users = await _userService.ListByBatchesAsync(BatchGroupType.PickUpLocation, routeId, warehouseId);
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.PickUpLocation,
@@ -164,7 +164,7 @@ namespace WebUI.Controllers
             var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
             var isDisplayByWarehouse = groupType == BatchGroupType.DailyScan || groupType == BatchGroupType.DailyReturn;
             var users = await _userService.ListByBatchesAsync(groupType, routeId, warehouseId);
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             var result = new BatchInventoryResponse()
             {
                 GroupType = groupType,
@@ -193,7 +193,7 @@ namespace WebUI.Controllers
         }
         public async Task<IActionResult> PendingDispatchInventory(string companyIds, int? recipientUserId, int? belongsToUserId)
         {
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.PendingDispatch,
@@ -212,7 +212,7 @@ namespace WebUI.Controllers
         public async Task<IActionResult> WarehouseReceiveInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, string companyIds)
         {
             var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             var warehouses = (await _warehouseService.ListAsync()).ToList();
             var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
             var users = await _userService.ListByBatchesAsync(BatchGroupType.WarehouseReceive, routeId, warehouseId);
@@ -238,7 +238,7 @@ namespace WebUI.Controllers
             var warehouses = (await _warehouseService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).ToList();
             var routes = (await _routeService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).Where(r => !r.IsDeleted).ToList();
             var users = await _userService.ListByBatchesAsync(BatchGroupType.LoadDelivery, routeId, warehouseId, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.LoadDelivery,
@@ -260,7 +260,7 @@ namespace WebUI.Controllers
             var warehouses = (await _warehouseService.ListAsync()).ToList();
             var routes = (await _routeService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).Where(r => !r.IsDeleted).ToList();
             var users = await _userService.ListByBatchesAsync(BatchGroupType.Pallet, routeId, warehouseId, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.Pallet,
@@ -282,7 +282,7 @@ namespace WebUI.Controllers
             var warehouses = (await _warehouseService.ListAsync()).ToList();
             var routes = (await _routeService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).Where(r => !r.IsDeleted).ToList();
             var users = await _userService.ListByBatchesAsync(BatchGroupType.Package, routeId, warehouseId, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.Package,
@@ -328,7 +328,7 @@ namespace WebUI.Controllers
         public async Task<IActionResult> OtherOrder(string companyIds)
         {
             OrderInventoryResponse model = new OrderInventoryResponse();
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             model.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
             model.CompanyIds = companyIds;
             return View(model);
@@ -566,7 +566,7 @@ namespace WebUI.Controllers
             };
             var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
             if (parsedCompanyIds.Length == 0) parsedCompanyIds = null;
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
             ViewBag.Routes = (await _routeService.ListAsync(parsedCompanyIds)).Where(r => !r.IsDeleted);
             ViewBag.MasterBatches = (await _batchService.ListMasterBatchesAsync(BatchGroupType.LoadDelivery, batch.RouteId, parsedCompanyIds, BatchStageType.Gathering));
@@ -585,7 +585,7 @@ namespace WebUI.Controllers
             if (parsedCompanyIds.Length == 0) parsedCompanyIds = null;
             var warehouses = await _warehouseService.ListAsync(parsedCompanyIds);
             batch.Warehouses = warehouses;
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
             return View("CreateLoadDeliveryBatch", batch);
         }
@@ -612,7 +612,7 @@ namespace WebUI.Controllers
             batch.Warehouses = warehouses;
             var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
             if (parsedCompanyIds.Length == 0) parsedCompanyIds = null;
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
             ViewBag.MasterBatches = (await _batchService.ListMasterBatchesAsync(BatchGroupType.LoadDelivery, batch.RouteId, parsedCompanyIds, BatchStageType.Gathering));
             return View("CreatePalletBatch", batch);
@@ -699,7 +699,7 @@ namespace WebUI.Controllers
                 Skip = 0,
                 PageSize = int.MaxValue
             });
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             ViewBag.Recipients = recipients.Items;
             ViewBag.Agents = await _userService.ListAgentsAsync();
             ViewBag.PickUpLocations = await _userService.ListPickUpLocationsAsync(2);
@@ -888,7 +888,7 @@ namespace WebUI.Controllers
                     }
                 }
             }
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _context.Companies.Where(c => Config.COMPANY_IDS.Contains(c.Id)).ToListAsync();
             batchEntity.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
             ViewData["BoxId"] = boxId;
             return View(batchEntity);

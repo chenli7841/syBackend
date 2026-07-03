@@ -27,7 +27,7 @@ namespace Infrastructure
                 TwilioClient.Init(AccountSid, AuthToken);
 
                 await MessageResource.CreateAsync(
-                    body: $"【壹嘉国际】您好，这里是壹嘉国际物流。{message}。操作员:{senderName}。客服电话：1-647-891-7666,微信yz890713，我们的网站：www.eplus-ex.com。",
+                    body: $"【舒誉】您好，这里是舒誉物流。{message}。操作员:{senderName}。客服电话：1-647-891-7666,微信yz890713，我们的网站：www.eplus-ex.com。",
                     from: new Twilio.Types.PhoneNumber(EplusPhoneNumber),
                     to: new Twilio.Types.PhoneNumber($"+1{phoneNumber}")
                 );

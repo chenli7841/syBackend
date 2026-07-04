@@ -93,6 +93,13 @@
                             </tr>
                         </thead>
                     </table>
+
+                    <div id="user-listing-goto-page" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+                        <span>跳转到</span>
+                        <input type="number" id="user-listing-goto-page-input" class="form-control form-control-sm" min="1" step="1" style="width: 70px;" />
+                        <span>页 / 共 <span id="user-listing-total-pages">1</span> 页</span>
+                        <button id="user-listing-goto-page-btn" class="btn btn-sm btn-primary">跳转</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -237,6 +244,46 @@
                         "next": "下一页"
                     },
                 },
+                "drawCallback": function() {
+                    const pageInfo = usersTable.page.info();
+                    const totalPages = pageInfo.pages || 1;
+                    $('#user-listing-total-pages').text(totalPages);
+                    $('#user-listing-goto-page-input').attr('max', totalPages);
+                    $('#user-listing-goto-page-input').val(pageInfo.page + 1);
+                },
+            });
+
+            function goToUserListingPage() {
+                const pageInfo = usersTable.page.info();
+                const totalPages = pageInfo.pages || 1;
+                const input = $('#user-listing-goto-page-input');
+                const requestedPage = parseInt(input.val(), 10);
+
+                if (!requestedPage || requestedPage < 1 || requestedPage > totalPages) {
+                    $.toast({
+                        heading: 'Danger',
+                        text: `请输入 1 到 ${totalPages} 之间的页码`,
+                        showHideTransition: 'slide',
+                        icon: 'error',
+                        loaderBg: '#f2a654',
+                        position: 'mid-center',
+                        hideAfter: 2000,
+                    });
+                    input.val(pageInfo.page + 1);
+                    return;
+                }
+
+                usersTable.page(requestedPage - 1).draw('page');
+            }
+
+            $('#user-listing-goto-page-btn').click(function() {
+                goToUserListingPage();
+            });
+
+            $('#user-listing-goto-page-input').on('keyup', function(event) {
+                if (event.key === 'Enter') {
+                    goToUserListingPage();
+                }
             });
             $('#user-sms-send-btn').click(function() {
                 $('#user-sms-send-btn').attr('disabled', true);

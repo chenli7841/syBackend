@@ -367,10 +367,11 @@
                 return;
             }
             let note = $('#create-location-note-input').val();
+            let companyId = $('#company-select').val();
             $.ajax({
                 type: "POST",
                 url: '@Url.Action("Create")',
-                data: {name, address, districtAdditionalRate, sequence, version: 2, latAndLng, areaId, belongsToId, note},
+                data: {name, address, districtAdditionalRate, sequence, version: 2, latAndLng, areaId, belongsToId, note, companyId},
                 success: function (result) {
                     if (result.error) {
                         $.toast({

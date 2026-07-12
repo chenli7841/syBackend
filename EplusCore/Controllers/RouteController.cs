@@ -21,21 +21,21 @@ namespace WebUI.Controllers
         private readonly IWarehouseService _warehouseService;
         private readonly IMapper _mapper;
         private readonly EplusDbContext _context;
+        private readonly ISystemService _systemService;
 
-        public RouteController(IRouteService routeService, IWarehouseService warehouseService, IMapper mapper, EplusDbContext context)
+        public RouteController(IRouteService routeService, IWarehouseService warehouseService, IMapper mapper, EplusDbContext context, ISystemService systemService)
         {
             _routeService = routeService;
             _warehouseService = warehouseService;
             _mapper = mapper;
             _context = context;
+            _systemService = systemService;
         }
 
         public async Task<IActionResult> Inventory(string companyIds)
         {
-            var companies = await _context.Companies.ToListAsync();
-            ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
-            int parsed;
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
+            ViewBag.Companies = await _systemService.GetSelectableCompaniesAsync();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
             var routes = (await _routeService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).OrderBy(r => r.DisplaySequence);
             return View(routes);
         }
@@ -43,7 +43,7 @@ namespace WebUI.Controllers
         public async Task<IActionResult> Edit(int id)
         {
             ViewBag.Warehouses = await _warehouseService.ListAsync();
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _systemService.GetSelectableCompaniesAsync();
             ViewBag.Companies = companies.Select(c => new SelectListItem
             {
                 Value = c.Id.ToString(),
@@ -51,19 +51,29 @@ namespace WebUI.Controllers
             });
             var route = await _routeService.GetAsync(id, false);
             var result = _mapper.Map<RouteViewModel>(route);
+            var lockedCompanyId = (await _systemService.GetSettingsAsync()).LockedCompanyId;
+            if (lockedCompanyId.HasValue)
+            {
+                result.CompanyId = lockedCompanyId.Value;
+            }
             return View(result);
         }
 
         public async Task<IActionResult> Create()
         {
             ViewBag.Warehouses = await _warehouseService.ListAsync();
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _systemService.GetSelectableCompaniesAsync();
             ViewBag.Companies = companies.Select(c => new SelectListItem
             {
                 Value = c.Id.ToString(),
                 Text = c.Name
             });
             var result = _mapper.Map<RouteViewModel>(new RouteEntity());
+            var lockedCompanyId = (await _systemService.GetSettingsAsync()).LockedCompanyId;
+            if (lockedCompanyId.HasValue)
+            {
+                result.CompanyId = lockedCompanyId.Value;
+            }
             return View("Edit", result);
         }
 

@@ -1,4 +1,5 @@
 ﻿@using Domain.Entities
+@using System.Linq
 @model WebUI.Models.ViewModels.RouteViewModel
 
 @{
@@ -13,6 +14,7 @@
 @{
     var warehouses = (IList<WarehouseEntity>)ViewBag.Warehouses;
     var companies = (IEnumerable<SelectListItem>)ViewBag.Companies;
+    var isCompanyLocked = companies.Count() == 1;
 }
 
 <div class="row">
@@ -30,13 +32,23 @@
                             <div class="form-group row">
                                 @Html.LabelFor(r => r.CompanyId, "公司", new { @class = "col-sm-4 col-form-label" })
                                 <div class="col-sm-8">
-                                    @Html.DropDownListFor(
-                                        m => m.CompanyId,
-                                        companies,
-                                        "请选择公司",
-                                        new { @class = "form-control" }
-
-                                    )
+                                    @if (isCompanyLocked)
+                                    {
+                                        @Html.DropDownListFor(
+                                            m => m.CompanyId,
+                                            companies,
+                                            new { @class = "form-control" }
+                                        )
+                                    }
+                                    else
+                                    {
+                                        @Html.DropDownListFor(
+                                            m => m.CompanyId,
+                                            companies,
+                                            "请选择公司",
+                                            new { @class = "form-control" }
+                                        )
+                                    }
                                 </div>
                             </div>
                         </div>

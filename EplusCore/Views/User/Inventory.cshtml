@@ -17,6 +17,16 @@
             background: transparent;
             color: #6200EE;
             cursor: pointer;
+            padding: 0;
+            margin: 0;
+            font: inherit;
+            text-align: left;
+        }
+        #user-listing th,
+        #user-listing td {
+            text-align: left;
+            vertical-align: middle;
+            white-space: nowrap;
         }
     </style>
 }
@@ -84,9 +94,9 @@
                                 <th data-searchable="true">电话</th>
                                 <th>邮箱</th>
                                 <th>微信</th>
-                                <th style="display: none;">群主</th>
+                                <th>群主</th>
                                 <th>取货点</th>
-                                <th style="display: none;"><button class='userInventoryBalanceTitleBtn' onclick="initializeBalanceSummaryModal()" data-toggle="modal" data-target="#userBalanceSummaryModal">余额</button></th>
+                                <th><button class='userInventoryBalanceTitleBtn' onclick="initializeBalanceSummaryModal()" data-toggle="modal" data-target="#userBalanceSummaryModal">余额</button></th>
                                 <th>账单</th>
                                 <th>详情</th>
                                 <th>密码</th>
@@ -217,6 +227,7 @@
                 },
                 "columnDefs": [
                     { "targets": [0], "visible": false, "searchable": false },
+                    { "targets": [7], "visible": false, "searchable": false },
                 ],
                 "columns": [
                     { "data": "id", "name": "Id", "autoWidth": true },
@@ -226,9 +237,9 @@
                     { "data": "canadaPhoneNumber", "name": "CanadaPhoneNumber", "render": (data, type, full, meta) => `${full.canadaPhoneNumber} <button style="display: none;" class='iconBtn' onclick='openSMS(${full.id}, "${full.name}", "${full.canadaPhoneNumber}")'><i class="fa fa-whatsapp fa-lg"></i></button>` },
                     { "data": "mailbox", "name": "Mailbox", "render": (data, type, full, meta) => `${full.mailbox ?? "<span style='color: #888'>未设定</span>"} ${GetSendEmailButtonHTML(full.id, full.name, full.mailbox)}` },
                     { "data": "weChat", "name": "weChat", "autoWidth": true },
-                    //{ "data": "belongsToName", "name": "BelongsToName", "autoWidth": true },
+                    { "data": "belongsToName", "name": "BelongsToName", "autoWidth": true },
                     { "data": "pickUpLocation", "name": "pickUpLocation", "autoWidth": true },
-                    //{ "render": (data, type, full, meta) => `<a href='@Url.Action("BalanceTransfer")?touserid=${full.id}'>${full.balance}</a>` },
+                    { "render": (data, type, full, meta) => `<a href='@Url.Action("BalanceTransfer")?touserid=${full.id}'>${(full.balance ?? 0).toFixed(2)}</a>` },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("Transactions")?userid=${full.id}'>账单</a>` },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("Edit")?id=${full.id}'><i class="fa fa-edit fa-lg"></i></a>` },
                     { "render": (data, type, full, meta) => `<a href='@Url.Action("ChangePassword")?id=${full.id}'><i class="fa fa-key fa-lg"></i></a>` },

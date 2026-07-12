@@ -56,7 +56,7 @@
                                 <th data-searchable="true">单号</th>
                                 <th data-searchable="true">国内单号</th>
                                 <th>创建时间</th>
-                                <th data-searchable="true">所属船号/航空号</th>
+                                <th data-searchable="true">所属装车发货批次</th>
                                 <th data-searchable="state">当前状态</th>
                                 <th data-searchable="true">用户</th>
                                 <th>付款状态</th>
@@ -151,7 +151,7 @@
                     { "data": "orderNumber", "name": "OrderNumber", "autoWidth": true },
                     { "data": "domesticNumber", "name": "DomesticNumber", "autoWidth": true },
                     { "data": "dateCreatedDisplay", "name": "dateCreatedDisplay", "autoWidth": true },
-                    { "data": "cargoNumber", "name": "CargoNumber", "autoWidth": true },
+                    { "data": "loadDeliveryBatchName", "name": "LoadDeliveryBatchName", "autoWidth": true },
                     { "data": "stateText", "name": "stateText", "autoWidth": true },
                     { "data": "creator.name", "name": "Creator", "autoWidth": true },
                     { "render": (data, type, full, meta) => full.hasPaid ? '已付款' : '未付款' },

@@ -47,6 +47,14 @@
                         </select>
                     </div>
                 </div>
+                <ul class="nav nav-tabs tab-solid tab-solid-danger" role="tablist">
+                    @for (var i = 0; i < Model.Warehouses.Count(); i++)
+                    {
+                        <li class="nav-item">
+                            @Html.ActionLink(Model.Warehouses.ToArray()[i].Name, "WarehouseReceiveInventory", new { warehouseId = Model.Warehouses.ToArray()[i].Id, companyIds = Model.CompanyIds }, new { @class = "nav-link " + (Model.Warehouses.ToArray()[i].Id == Model.SelectedWarehouseId || (!Model.SelectedWarehouseId.HasValue && i == 0) ? "active" : "") })
+                        </li>
+                    }
+                </ul>
                 <div class="tab-content tab-content-solid">
                     <div class="tab-pane fade show active" id="home-5-1" role="tabpanel" aria-labelledby="tab-5-1">
                         <div style="display: flex; gap: 4px; height: 32px;">
@@ -133,7 +141,7 @@
                 "searchPanes": true,
                 "ajax": {
                     "url":
-                        '@Html.Raw(Url.Action("LoadData", new { groupType = Model.GroupType, warehouseId = Model.SelectedWarehouseId, recipientUserId = Model.SelectedRecipientUserId, belongsToUserId = Model.SelectedBelongsToUserId, companyIds = Model.CompanyIds }))',
+                        '@Html.Raw(Url.Action("LoadData", new { groupType = Model.GroupType, warehouseId = Model.SelectedWarehouseId ?? Model.Warehouses.First().Id, recipientUserId = Model.SelectedRecipientUserId, belongsToUserId = Model.SelectedBelongsToUserId, companyIds = Model.CompanyIds }))',
                     "type": "POST",
                     "datatype": "json"
                 },

@@ -23,6 +23,12 @@ namespace Persistence
             return batch.LoadDeliveryBatches.First().CargoNumber;
         }
 
+        private string GetLoadDeliveryBatchName(TransportOrder src)
+        {
+            var batch = src.BatchBoxOrderMaps.Select(bbom => bbom.BatchBox).Select(box => box.Batch).FirstOrDefault(b => b != null && b.LoadDeliveryBatches != null && b.LoadDeliveryBatches.Count > 0);
+            return batch?.Name ?? "";
+        }
+
         public static List<TransportOrder> GetOrders(Batch batch)
         {
             var orders = new List<TransportOrder>();
@@ -216,7 +222,8 @@ namespace Persistence
                 .ForMember(dest => dest.InternalStatus, opt => opt.MapFrom(src => src.OrderInternalStatuses))
                 .ForMember(dest => dest.PickUpLocation, opt => opt.MapFrom(src => src.PickUpLocation))
                 .ForMember(dest => dest.CompanyId, opt => opt.MapFrom(src => src.CompanyId))
-                .ForMember(dest => dest.CargoNumber, opt => opt.MapFrom(src => GetCargoNumber(src)));
+                .ForMember(dest => dest.CargoNumber, opt => opt.MapFrom(src => GetCargoNumber(src)))
+                .ForMember(dest => dest.LoadDeliveryBatchName, opt => opt.MapFrom(src => GetLoadDeliveryBatchName(src)));
 
             // TODO: use IDateTime
             CreateMap<OrderStatusInternal, OrderStatusEntity>()

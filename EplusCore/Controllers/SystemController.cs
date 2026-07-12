@@ -27,11 +27,25 @@ namespace WebUI.Controllers
             _mapper = mapper;
         }
 
-        public async Task<IActionResult> Index(int? companyIds)
+        public async Task<IActionResult> Index()
         {
+            // Unfiltered on purpose: this page hosts the "锁定公司" control itself, so the
+            // dropdown must always be able to see every company regardless of the current lock.
             var companies = await _context.Companies.ToListAsync();
             ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
             var settings = await _systemService.GetSettingsAsync();
+
+            var result = new SystemViewModel()
+            {
+                Settings = settings,
+            };
+
+            return View(result);
+        }
+
+        public async Task<IActionResult> ImageManagement(int? companyIds)
+        {
+            ViewBag.Companies = await _systemService.GetSelectableCompaniesAsync();
             var photos = (await _systemService.ListPhotosAsync(companyIds)).ToList();
             var mobilePhotos = (await _systemService.ListMobilePhotosAsync(companyIds)).ToList();
 
@@ -46,7 +60,6 @@ namespace WebUI.Controllers
 
             var result = new SystemViewModel()
             {
-                Settings = settings,
                 Photos = photos,
                 MobilePhotos = mobilePhotos,
             };
@@ -119,8 +132,12 @@ namespace WebUI.Controllers
 
         public async Task<IActionResult> ContactUs(int? companyIds)
         {
-            var companies = await _context.Companies.ToListAsync();
-            ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
+            ViewBag.Companies = await _systemService.GetSelectableCompaniesAsync();
+            var lockedCompanyId = (await _systemService.GetSettingsAsync()).LockedCompanyId;
+            if (lockedCompanyId.HasValue)
+            {
+                companyIds = lockedCompanyId;
+            }
             if (!companyIds.HasValue)
             {
                 return View(new SystemContactUsViewModel());
@@ -132,8 +149,12 @@ namespace WebUI.Controllers
 
         public async Task<IActionResult> TransportRules(int? companyIds)
         {
-            var companies = await _context.Companies.ToListAsync();
-            ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
+            ViewBag.Companies = await _systemService.GetSelectableCompaniesAsync();
+            var lockedCompanyId = (await _systemService.GetSettingsAsync()).LockedCompanyId;
+            if (lockedCompanyId.HasValue)
+            {
+                companyIds = lockedCompanyId;
+            }
             if (!companyIds.HasValue)
             {
                 return View(new SystemContactUsViewModel());

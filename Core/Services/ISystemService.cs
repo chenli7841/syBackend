@@ -18,5 +18,8 @@ namespace Domain.Services
         Task UpdateCompanyKeyValue(List<Tuple<string, string>> keyValuePairs);
         Task<List<Tuple<string, string>>> GetCompanyKeyValue(List<string> keys, int companyId);
         Task SaveSystemPropertyImages(string name, string rawData);
+        Task<IEnumerable<CompanyEntity>> GetSelectableCompaniesAsync();
+        Task<int[]> ResolveCompanyIdsAsync(string requestedCompanyIds);
+        Task<int?> GetLockedCompanyIdAsync();
     }
 }

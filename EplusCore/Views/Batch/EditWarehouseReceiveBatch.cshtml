@@ -280,6 +280,8 @@
                     </div>
                     @Html.ActionLink("添加", "AddBox", null, new { id = Model.Id, boxNumber = Model.Boxes.Count + 1 }, new { @class = "btn btn-primary" })
 
+                    @await Html.PartialAsync("_DuplicateOrderCheck", Model)
+
                     <h5 class="mt-2">其他单</h5>
                     <div class="row">
                         @foreach (var otherOrder in Model.OtherOrders)
@@ -324,6 +326,7 @@
 @section Scripts
     {
     <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
+    <script src="~/js/shared/duplicate-order-check.js" asp-append-version="true"></script>
     <script>
         $('#recipient-select').val($('#RecipientId').val());
 

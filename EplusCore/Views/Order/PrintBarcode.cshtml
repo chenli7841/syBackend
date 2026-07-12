@@ -1,8 +1,16 @@
-﻿@model Domain.Entities.OrderEntity
+@model Domain.Entities.OrderEntity
+@using System
 
 @{
     Layout = null;
     ViewBag.Title = "Barcode";
+
+    // 客户号字号在服务端按字符数直接算好，不依赖 JS 量尺寸/收缩。
+    var customerCode = Model.Creator?.Code ?? "";
+    var cellWidthPx = 540.0;
+    var estCharWidthRatio = 0.62;
+    var fontSizeByWidth = customerCode.Length > 0 ? cellWidthPx / (customerCode.Length * estCharWidthRatio) : 60.0;
+    var customerCodeFontSize = Math.Max(20.0, Math.Min(fontSizeByWidth, 60.0));
 }
 
 <!DOCTYPE html>
@@ -15,325 +23,142 @@
     <meta http-equiv="expires" content="0">
     <meta http-equiv="description" content="">
     <style type="text/css">
-        body {
-            margin-top: 8px;
+        @@page {
+            size: 150mm 100mm;
+            margin: 0;
         }
 
-        tr {
-            font-size: 12px;
-            font-family: "微软雅黑"
-        }
-
-        .box {
-            width: 143mm;
-            overflow: hidden
-        }
-
-        .main {
-            border: 1px solid #000;
-        }
-
-        .linebottom {
-            border-bottom: 1px solid #000;
-        }
-
-        .maintxt {
-            font-weight: bold;
-        }
-
-        .pad8 {
-            padding: 8px
-        }
-
-        .pad2 {
-            padding: 2px
-        }
-
-        .maintxt2 {
-            font-size: 14px;
-            color: #000;
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 150mm;
+            height: 100mm;
             font-family: "微软雅黑";
         }
 
-        .border {
-            width: 100%;
+        body {
+            box-sizing: border-box;
+            padding-top: 2mm;
+            padding-bottom: 2mm;
+        }
+
+        .row {
+            box-sizing: border-box;
+            width: 150mm;
             border: 1px solid #000;
+            padding: 1mm 2mm;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
         }
 
-        .border5 {
-            border: 10px solid #000
+        #row-barcode1, #row-barcode2 {
+            height: 19mm;
         }
 
-        .notopborder {
-            border-top: none
+        #row-customer {
+            height: 19mm;
         }
 
-        .noleftborder {
-            border-left: none
+        #customer-code-text {
+            font-weight: bold;
+            white-space: nowrap;
         }
 
-        .norightborder {
-            border-right: none
+        #row-route {
+            height: 14mm;
         }
 
-        .nobottomborder {
-            border-bottom: none
-        }
-
-        .font34 {
-            font-size: 20px
-        }
-
-        .font16 {
-            font-size: 20px
-        }
-
-        .font50 {
-            font-size: 20px
-        }
-
-        .font30 {
-            font-size: 20px
-        }
-
-        .font18 {
-            font-size: 18px
-        }
-
-        .font22 {
-            font-size: 20px
-        }
-
-        .font28 {
-            font-size: 20px
-        }
-
-        .font10 {
-            font-size: 10px
-        }
-
-        .font14 {
-            font-size: 14px
-        }
-
-        .aa {
-            width: 36mm;
-            height: 25mm;
-            overflow: hidden
-        }
-
-        .info tr td {
+        #row-route > div {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
             font-size: 20px;
         }
 
-        #belongs {
-            font-size: 50px;
-            font-weight: bold;
+        #row-address {
+            height: 14mm;
+            flex-direction: column;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        #row-time {
+            height: 6mm;
+            font-size: 11px;
+        }
+
+        .barcode-wrap {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
-    <title>壹嘉国际</title>
 </head>
 <body>
-    @{
-        <table border="0" align="center" cellpadding="0" cellspacing="0" class="box">
-            <tbody>
-                <tr>
-                    <td valign="top">
-                        <table border="0" align="center" cellpadding="0" cellspacing="0" class="border">
-                            <tbody>
-                                <tr>
-                                    <td height="170" align="left" valign="top">
-                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                                            <tbody>
-                                                <tr>
-                                                    <td height="87" align="center">
-                                                        <div class="barcode" data-barcode="@Model.OrderNumber"></div>
-                                                    </td>
-                                                </tr>
+    <!-- 第一行：运单号条形码，左右拉伸铺满 -->
+    <div class="row" id="row-barcode1">
+        <div class="barcode-wrap">
+            <div class="barcode" data-barcode="@Model.OrderNumber"></div>
+        </div>
+    </div>
 
-                                            </tbody>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+    <!-- 第二行：客户号，加粗 -->
+    <div class="row" id="row-customer">
+        <div id="customer-code-text" style="font-size: @(customerCodeFontSize.ToString("0"))px;">@customerCode</div>
+    </div>
 
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+    <!-- 第三行：线路 / 取货点名称，字体缩小 -->
+    <div class="row" id="row-route">
+        <div>@Model.Route?.Code</div>
+        <div>@Model.PickUpLocation?.Name</div>
+    </div>
 
-        <table border="0" align="center" cellpadding="0" cellspacing="0" class="box">
-            <tbody>
-                <tr>
-                    <td valign="top">
-                        <table border="0" align="center" cellpadding="0" cellspacing="0" class="border">
-                            <tbody>
-                                <tr>
-                                    <td height="170" align="left" valign="top">
-                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                                            <tbody>
-                                                <tr>
-                                                    <td height="87" align="center">
-                                                        <div class="barcode" data-barcode="@Model.DomesticNumber"></div>
-                                                    </td>
-                                                </tr>
+    <!-- 第四行：地址，字体缩小 -->
+    <div class="row" id="row-address">
+        <div>@Model.Creator.ShippingAddress?.DetailArea</div>
+        <div>@Model.Creator.ShippingAddress?.City @Model.Creator.ShippingAddress?.Province @Model.Creator.ShippingAddress?.PostalCode</div>
+        <div>@Model.Creator.Name @Model.Creator.ShippingAddress?.Mobile</div>
+    </div>
 
-                                            </tbody>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+    <!-- 第五行：创建时间，字体再缩小 -->
+    <div class="row" id="row-time">
+        创建时间: @Model.DateCreated.ToString("yyyy-MM-dd HH:mm")
+    </div>
 
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-
-        <table border="0" align="center" cellpadding="0" cellspacing="0" class="box info">
-            <tbody>
-            <tr>
-                <td valign="top">
-                    <table border="0" align="center" cellpadding="0" cellspacing="0" class="border">
-                        <tbody>
-                        <tr>
-                            <td align="left" valign="top">
-                                <table width="100%" border="0" cellspacing="0" cellpadding="0" style="height: 75px">
-                                    <tbody>
-                                    <tr>
-                                        <td rowspan="3">
-                                            <div style="text-align: center; font-size: 75px">@Model.Route?.Code</div>
-                                        </td>
-                                        <td rowspan="3" id="belongs">
-                                            <div style="text-align: center; margin-left: 20px">@Model.PickUpLocation?.Number</div>
-                                        </td>
-                                    </tr>
-                                    </tbody>
-                                </table>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-
-                </td>
-            </tr>
-            </tbody>
-        </table>
-
-        <table border="0" align="center" cellpadding="0" cellspacing="0" class="box info">
-            <tbody>
-            <tr>
-                <td valign="top">
-                    <table border="0" align="center" cellpadding="0" cellspacing="0" class="border">
-                        <tbody>
-                        <tr>
-                            <td align="left" valign="top">
-                                <table width="100%" border="0" cellspacing="0" cellpadding="0" style="height: 75px">
-                                    <tbody>
-                                    <tr>
-                                        <td rowspan="3">
-                                            <div style="text-align: center; font-size: 45px">@Model.PickUpLocation?.Name</div>
-                                        </td>
-                                    </tr>
-                                    </tbody>
-                                </table>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-
-                </td>
-            </tr>
-            </tbody>
-        </table>
-
-        <table border="0" align="center" cellpadding="0" cellspacing="0" class="box info">
-            <tbody>
-                <tr>
-                    <td valign="top">
-                        <table border="0" align="center" cellpadding="0" cellspacing="0" class="border">
-                            <tbody>
-                                <tr>
-                                    <td align="left" valign="top">
-                                        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="height: 75px">
-                                            <tbody>
-                                                <tr>
-                                                    <td align="center">
-                                                        @Model.Creator.ShippingAddress?.DetailArea
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td align="center">
-                                                        @Model.Creator.ShippingAddress?.City @Model.Creator.ShippingAddress?.Province @Model.Creator.ShippingAddress?.PostalCode
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td align="center">
-                                                        @Model.Creator.Name @Model.Creator.ShippingAddress?.Mobile
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-
-        <table border="0" align="center" cellpadding="0" cellspacing="0" class="box info">
-            <tbody>
-                <tr>
-                    <td valign="top">
-                        <table border="0" align="center" cellpadding="0" cellspacing="0" class="border">
-                            <tbody>
-                                <tr>
-                                    <td align="left" valign="top">
-                                        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="height: 75px">
-                                            <tbody>
-                                                <tr>
-                                                    <td>
-                                                        <div style="text-align: center; font-size: 75px">@Model.Creator.Code</div>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    }
+    <!-- 第六行：国内单号条形码，左右拉伸铺满 -->
+    <div class="row" id="row-barcode2">
+        <div class="barcode-wrap">
+            <div class="barcode" data-barcode="@Model.DomesticNumber"></div>
+        </div>
+    </div>
 
     <script src="~/vendors/js/vendor.bundle.base.js"></script>
-    <!-- endinject -->
-    <!-- Plugin js for this page -->
-<script src="~/vendors/jquery-barcode/jquery-barcode.min.js"></script>
-    <!-- End plugin js for this page -->
-    
+    <script src="~/vendors/jquery-barcode/jquery-barcode.min.js"></script>
     <script>
         $(document).ready(function () {
-            $('nav').remove();
-            $('hr').remove();
-            $('footer').remove();
-
             var barcodes = $('.barcode');
+            var targetWidthMm = 145;
+            var targetWidthPx = targetWidthMm * 96 / 25.4;
             for (i = 0, il = barcodes.length; i < il; i++) {
                 var barcode = $(barcodes[i]);
-                barcode.barcode(barcode.data('barcode') + '', 'code128', { barWidth: 3, barHeight: 123 });
-            }
+                barcode.barcode(barcode.data('barcode') + '', 'code128', { barWidth: 1, barHeight: 60 });
 
-            $('.barcode div:last-child').css('font-size', 25);
+                // 拉伸条形码，左右铺满
+                var naturalWidth = barcode.width();
+                if (naturalWidth > 0) {
+                    var scale = targetWidthPx / naturalWidth;
+                    barcode.css({
+                        'transform': 'scaleX(' + scale + ')',
+                        'transform-origin': 'center center'
+                    });
+                }
+            }
         });
     </script>
 </body>
+</html>

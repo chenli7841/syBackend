@@ -1,0 +1,22 @@
+@model Domain.Entities.BatchEntity
+
+@if (Model.Id > 0)
+{
+    <h5 class="mt-4">查重</h5>
+    <div class="mt-2">
+        <button type="button" id="check-duplicate-orders-btn" class="btn btn-warning" data-batch-id="@Model.Id">检查重复运单</button>
+        <div id="duplicate-orders-result" class="mt-2" style="display: none;">
+            <table class="table table-sm table-bordered">
+                <thead>
+                    <tr>
+                        <th>运单号</th>
+                        <th>国内单号</th>
+                        <th>出现位置</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="duplicate-orders-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+}

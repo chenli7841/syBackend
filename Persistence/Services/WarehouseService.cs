@@ -38,7 +38,7 @@ namespace Persistence.Services
 
         public async Task<WarehouseEntity> GetAsync(int id)
         {
-            var route = await _context.Warehouses.FirstAsync(r => r.Id == id && r.CompanyId == Config.COMPANY_ID);
+            var route = await _context.Warehouses.FirstAsync(r => r.Id == id);
             return _mapper.Map<WarehouseEntity>(route);
         }
 
@@ -95,7 +95,7 @@ namespace Persistence.Services
 
         public async Task DeleteAsync(int id)
         {
-            var warehouse = _context.Warehouses.First(r => r.Id == id && r.CompanyId == Config.COMPANY_ID);
+            var warehouse = _context.Warehouses.First(r => r.Id == id);
             _context.Warehouses.Remove(warehouse);
             await _context.SaveChangesAsync();
         }

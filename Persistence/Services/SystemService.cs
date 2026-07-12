@@ -182,6 +182,7 @@ namespace Persistence.Services
             result.DeliveryOversizedHandlingCost = GetFromBaseSetting(dbSettings, "record_freight_oversized_handling_cost");
             result.DeliveryDistanceAdditionalCost = GetFromBaseSetting(dbSettings, "record_freight_distance_additional_cost");
             result.CostStorageTimeout = GetFromBaseSetting(dbSettings, "record_order_cost_storage_timeout");
+            result.LockedCompanyId = await GetLockedCompanyIdAsync();
 
             return result;
         }
@@ -238,6 +239,7 @@ namespace Persistence.Services
             await PersistToBaseSetting(model.DeliveryOversizedHandlingCost, "record_freight_oversized_handling_cost");
             await PersistToBaseSetting(model.DeliveryDistanceAdditionalCost, "record_freight_distance_additional_cost");
             await PersistToBaseSetting(model.CostStorageTimeout, "record_order_cost_storage_timeout");
+            await SetLockedCompanyIdAsync(model.LockedCompanyId);
 
             await _context.SaveChangesAsync();
         }
@@ -252,6 +254,70 @@ namespace Persistence.Services
         {
             var dbRecord = await _context.BaseSetings.FirstAsync(b => b.SetKey == costName);
             dbRecord.SetValue = value.ToString(CultureInfo.InvariantCulture);
+        }
+
+        private const string LockedCompanyIdKey = "record_locked_company_id";
+
+        public async Task<int?> GetLockedCompanyIdAsync()
+        {
+            var dbRecord = await _context.BaseSetings.FirstOrDefaultAsync(b => b.SetKey == LockedCompanyIdKey);
+            if (dbRecord == null || string.IsNullOrWhiteSpace(dbRecord.SetValue))
+            {
+                return null;
+            }
+            if (!int.TryParse(dbRecord.SetValue, out var parsed) || parsed == 0)
+            {
+                return null;
+            }
+            return parsed;
+        }
+
+        private async Task SetLockedCompanyIdAsync(int? companyId)
+        {
+            var value = companyId.HasValue ? companyId.Value.ToString(CultureInfo.InvariantCulture) : "0";
+            var dbRecord = await _context.BaseSetings.FirstOrDefaultAsync(b => b.SetKey == LockedCompanyIdKey);
+            if (dbRecord == null)
+            {
+                await _context.BaseSetings.AddAsync(new BaseSeting
+                {
+                    SetKey = LockedCompanyIdKey,
+                    SetValue = value,
+                    ValueType = false,
+                    Type = "int",
+                    Remark = "锁定公司:非0时,后台所有公司选择下拉菜单强制只显示/选择该公司",
+                    CreateTime = DateTime.UtcNow,
+                });
+            }
+            else
+            {
+                dbRecord.SetValue = value;
+                dbRecord.UpdateTime = DateTime.UtcNow;
+            }
+        }
+
+        public async Task<IEnumerable<CompanyEntity>> GetSelectableCompaniesAsync()
+        {
+            var all = await _context.Companies.ToListAsync();
+            var lockedCompanyId = await GetLockedCompanyIdAsync();
+            if (lockedCompanyId.HasValue)
+            {
+                var locked = all.Where(c => c.Id == lockedCompanyId.Value).ToList();
+                if (locked.Count > 0)
+                {
+                    return locked.Select(c => _mapper.Map<CompanyEntity>(c));
+                }
+            }
+            return all.Select(c => _mapper.Map<CompanyEntity>(c));
+        }
+
+        public async Task<int[]> ResolveCompanyIdsAsync(string requestedCompanyIds)
+        {
+            var lockedCompanyId = await GetLockedCompanyIdAsync();
+            if (lockedCompanyId.HasValue)
+            {
+                return new[] { lockedCompanyId.Value };
+            }
+            return (requestedCompanyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
         }
     }
 }

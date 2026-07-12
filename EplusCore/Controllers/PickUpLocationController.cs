@@ -20,6 +20,7 @@ namespace WebUI.Controllers
         private readonly ILocationService _locationService;
         private readonly EplusDbContext _context;
         private readonly IMapper _mapper;
+        private readonly ISystemService _systemService;
 
         const int LARGE_PAGE_SIZE = 999;
 
@@ -28,22 +29,23 @@ namespace WebUI.Controllers
             IMapper mapper,
             IStatService statService,
             ILocationService locationService,
-            EplusDbContext context)
+            EplusDbContext context,
+            ISystemService systemService)
         {
             _userService = userService;
             _statService = statService;
             _locationService = locationService;
             _mapper = mapper;
             _context = context;
+            _systemService = systemService;
         }
 
         public async Task<IActionResult> Inventory(int numberOfMonths = 3, int version = 1, string companyIds = null)
         {
             try
             {
-                var companies = await _context.Companies.ToListAsync();
-                ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
-                var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+                ViewBag.Companies = await _systemService.GetSelectableCompaniesAsync();
+                var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
                 var viewModel = new PickUpLocationInventoryViewModel();
                 var locations = (await _userService.ListPickUpLocationsAsync(version, companyIds: parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).OrderBy(r => r.Number);
                 var areas = await _locationService.ListAreas();
@@ -120,10 +122,11 @@ namespace WebUI.Controllers
         }
 
         [HttpPost("create")]
-        public async Task<IActionResult> Create(string name, string address, decimal districtAdditionalRate, int sequence, int version, string latAndLng, int areaId, int? belongsToId, string note)
+        public async Task<IActionResult> Create(string name, string address, decimal districtAdditionalRate, int sequence, int version, string latAndLng, int areaId, int? belongsToId, string note, int? companyId)
         {
             try
             {
+                var lockedCompanyId = (await _systemService.GetSettingsAsync()).LockedCompanyId;
                 await _locationService.CreateAsync(new Domain.Entities.PickUpLocationEntity
                 {
                     Name = name,
@@ -134,7 +137,7 @@ namespace WebUI.Controllers
                     LatAndLng = latAndLng,
                     AreaId = areaId,
                     Note = note,
-                    CompanyId = Config.COMPANY_ID,
+                    CompanyId = lockedCompanyId ?? companyId ?? Config.COMPANY_ID,
                 },
                 belongsToId);
                 return Json(new MethodResult<bool>(true));
@@ -151,10 +154,11 @@ namespace WebUI.Controllers
         }
 
         [HttpPost("new")]
-        public async Task<IActionResult> New(string name, string address, decimal districtAdditionalRate, int sequence, int version, string latAndLng, int areaId, int? belongsToId, string note)
+        public async Task<IActionResult> New(string name, string address, decimal districtAdditionalRate, int sequence, int version, string latAndLng, int areaId, int? belongsToId, string note, int? companyId)
         {
             try
             {
+                var lockedCompanyId = (await _systemService.GetSettingsAsync()).LockedCompanyId;
                 await _locationService.CreateAsync(new Domain.Entities.PickUpLocationEntity
                 {
                     Name = name,
@@ -165,7 +169,7 @@ namespace WebUI.Controllers
                     LatAndLng = latAndLng,
                     AreaId = areaId,
                     Note = note,
-                    CompanyId = Config.COMPANY_ID,
+                    CompanyId = lockedCompanyId ?? companyId ?? Config.COMPANY_ID,
                 },
                 belongsToId);
                 return Json(new MethodResult<bool>(true));

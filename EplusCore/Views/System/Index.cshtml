@@ -1,41 +1,20 @@
-﻿@using Domain.Entities
+@using Domain.Entities
 @model WebUI.Models.ViewModels.SystemViewModel
 
 @{
     ViewData["Title"] = "系统设置";
 }
 
-@section Styles
-{
-    <link rel="stylesheet" href="~/vendors/jquery-toast-plugin/jquery.toast.min.css">
-}
-
 @{
     var companies = ((IEnumerable<CompanyEntity>)ViewBag.Companies).ToList();
 }
-
 
 <div class="row">
     <div class="col-lg-12 grid-margin stretch-card">
         <div class="card">
             <div class="card-body">
-                <h4 style="display: none;" class="card-title">系统设置</h4>
-                <div class="form-group row">
-                    <select class="form-control" id="company-select">
-                        @{
-                            for (int i = 0; i < companies.Count; i++)
-                            {
-                                if (i == 0)
-                                {
-                                    <option value="">请选择公司</option>
-                                }
-                                var c = companies[i];
-                                <option value="@c.Id">@c.Name</option>
-                            }
-                        }
-                    </select>
-                </div>
-                @using (Html.BeginForm("Save", "System", FormMethod.Post, new { @class = "", id = "system", style = "display: none;" }))
+                <h4 class="card-title">系统设置</h4>
+                @using (Html.BeginForm("Save", "System", FormMethod.Post, new { @class = "", id = "system" }))
                 {
                     @Html.AntiForgeryToken()
 
@@ -113,240 +92,36 @@
                     </div>
 
                     <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label" for="LockedCompanyId">锁定公司</label>
+                                <div class="col-sm-8">
+                                    <select class="form-control" id="LockedCompanyId" name="LockedCompanyId">
+                                        <option value="">不限制</option>
+                                        @foreach (var c in companies)
+                                        {
+                                            if (Model.Settings.LockedCompanyId.HasValue && Model.Settings.LockedCompanyId.Value == c.Id)
+                                            {
+                                                <option value="@c.Id" selected="selected">@c.Name</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@c.Id">@c.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
                         <div class="col-md-1">
                             <button type="submit" class="btn btn-success mr-2">保存</button>
                         </div>
                     </div>
                 }
-
-                <div class="row mt-4">
-                    <h4 class="mb-3">更新PC主页图片</h4>
-                    @for (int i = 0; i < 4; i++)
-                    {
-                        <div class="col-md-12">
-                            <div style="display: flex; gap: 24px; align-items: center;" class="pc-photo-uploader mb-3" data-photoid="@Model.Photos[i].Id" data-photourl='@(Model.Photos[i].Url + "?t=" + DateTime.UtcNow.Second)'>
-                                <!-- This is where the preview image is displayed -->
-                                <div class="cropit-preview" style="display: none; height: 450px; border: 1px #999 dashed; line-height: 100px; color: #666;"></div>
-
-                                <!-- This range input controls zoom -->
-                                <!-- You can add additional elements here, e.g. the image icons -->
-                                <input type="range" class="cropit-image-zoom-input" style="display: none; margin-top: 30px" />
-
-                                <!-- This is where user selects new image -->
-                                <input type="file" class="cropit-image-input" style="display: none" />
-                                <div>图片 @(i + 1):</div>
-
-                                <button class="btn btn-info select">选择</button>
-                                <button class="btn btn-primary upload">上传</button>
-
-                                <!-- The cropit- classes above are needed so cropit can identify these elements -->
-                            </div>
-                            <div class="mb-5"><img src="@(Model.Photos[i].Url)" style="width: 100%" /></div>
-                        </div>
-                    }
-                </div>
-                <div class="row mt-4">
-                    <h4 class="mb-3">更新手机主页图片</h4>
-                    @for (int i = 0; i < 4; i++)
-                    {
-                        <div class="col-md-12">
-                            <div style="display: flex; gap: 24px; align-items: center;" class="mobile-photo-uploader mb-3" data-photoid="@Model.MobilePhotos[i].Id" data-photourl='@(Model.MobilePhotos[i].Url + "?t=" + DateTime.UtcNow.Second)'>
-                                <!-- This is where the preview image is displayed -->
-                                <div class="cropit-preview" style="display: none; height: 450px; border: 1px #999 dashed; line-height: 100px; color: #666;"></div>
-
-                                <!-- This range input controls zoom -->
-                                <!-- You can add additional elements here, e.g. the image icons -->
-                                <input type="range" class="cropit-image-zoom-input" style="display: none; margin-top: 30px" />
-
-                                <!-- This is where user selects new image -->
-                                <input type="file" class="cropit-image-input" style="display: none" />
-                                <div>图片 @(i + 1):</div>
-
-                                <button class="btn btn-info select">选择</button>
-                                <button class="btn btn-primary upload">上传</button>
-
-                                <!-- The cropit- classes above are needed so cropit can identify these elements -->
-                            </div>
-                            <div class="mb-5"><img src="@(Model.MobilePhotos[i].Url)" style="width: 100%" /></div>
-                        </div>
-                    }
-                </div>
             </div>
         </div>
     </div>
 </div>
-
-<a href="https://drive.google.com/drive/u/0/folders/178sveEFp3tEg72yejktlWwsoKsr8z954">Google文件夹</a>
-
-@section Scripts
-{
-    <script src="~/vendors/jquery-toast-plugin/jquery.toast.min.js"></script>
-    <script type="text/javascript">
-        $(document).ready(function () {
-            let companyIds = '';
-            let search = document.location.search;
-            if (search.includes("?")) {
-                search = search.replace("?", "");
-                let part = search.split("&").find(p => p.split("=")[0].toLowerCase() === "companyids");
-                if (!part) companyIds = "";
-                else companyIds = part.split("=")[1];
-            }
-            $('#company-select').val(companyIds);
-            $('#company-select').change(function () {
-                document.location = `${document.location.origin}${document.location.pathname}?companyIds=${$('#company-select').val()}`;
-            });
-
-            const uploadPhotoUrl = '@Url.Action("GetPhotoUploadUrl")'; // '@Url.Action("UploadPhoto")';
-            const pcuploaders = $('.pc-photo-uploader');
-            for (let i = 0, il = pcuploaders.length; i < il; i++) {
-                /*
-                const uploader = $(pcuploaders[i]);
-                uploader.cropit({
-                    imageState: { src: uploader.data('photourl') },
-                    imageBackground: true,
-                    imageBackgroundBorderWidth: 15,
-                    smallImage: 'allow',
-                    allowDragNDrop: false,
-                });
-                */
-            }
-
-            $('.pc-photo-uploader .select').click(function() {
-                $(this).closest('.pc-photo-uploader').find('.cropit-image-input').click();
-
-                return false;
-            });
-
-            $('.pc-photo-uploader .upload').click(function () {
-                const uploader = $(this).closest('.pc-photo-uploader');
-                let photoData = ''; //uploader.cropit('export');
-                const photoId = uploader.data('photoid');
-                var myFile = $(this).closest('.pc-photo-uploader').find('.cropit-image-input').prop('files')[0];
-                let reader = new FileReader();
-                reader.addEventListener("load", () => {
-                    // convert image file to base64 string
-                    photoData = reader.result;
-                    $.post(uploadPhotoUrl,
-                    {
-                        photoId,
-                        platform: "pc",
-                        companyId: companyIds || 1,
-                        //photoData: photoData,
-                    },
-                    function(result) {
-                        if (result.error && result.error.text) {
-                            $.toast({
-                                heading: 'Danger',
-                                text: result.error.text,
-                                showHideTransition: 'slide',
-                                icon: 'error',
-                                loaderBg: '#f2a654',
-                                position: 'mid-center'
-                            });
-                        } else {
-                            $.toast({
-                                heading: '成功',
-                                showHideTransition: 'slide',
-                                icon: 'success',
-                                loaderBg: '#f2a654',
-                                position: 'mid-center'
-                            });
-                            
-                            fetch(result.data.url, {
-                                method: 'PUT',
-                                headers: {
-                                    'Content-Type': 'png',
-                                    'x-ms-blob-type': 'BlockBlob',
-                                },
-                                body: myFile
-                            });
-                            
-
-                            //uploader.data('photoid', data.id);
-                            //uploader.data('photourl', data.url);
-                        }
-                    });
-                }, false);
-                reader.readAsDataURL(myFile);
-                return false;
-            });
-
-
-
-
-            const mobileuploaders = $('.mobile-photo-uploader');
-            for (let i = 0, il = mobileuploaders.length; i < il; i++) {
-                /*
-                const uploader = $(mobileuploaders[i]);
-                uploader.cropit({
-                    imageState: { src: uploader.data('photourl') },
-                    imageBackground: true,
-                    imageBackgroundBorderWidth: 15,
-                    smallImage: 'allow',
-                    allowDragNDrop: false,
-                });
-                */
-            }
-
-            $('.mobile-photo-uploader .select').click(function() {
-                $(this).closest('.mobile-photo-uploader').find('.cropit-image-input').click();
-
-                return false;
-            });
-
-            $('.mobile-photo-uploader .upload').click(function () {
-                const uploader = $(this).closest('.mobile-photo-uploader');
-                let photoData = ''; //uploader.cropit('export');
-                const photoId = uploader.data('photoid');
-                var myFile = $(this).closest('.mobile-photo-uploader').find('.cropit-image-input').prop('files')[0];
-                let reader = new FileReader();
-                reader.addEventListener("load", () => {
-                    // convert image file to base64 string
-                    photoData = reader.result;
-                    $.post(uploadPhotoUrl,
-                    {
-                        photoId,
-                        platform: "mobile",
-                        companyId: companyIds || 1,
-                        //photoData: photoData,
-                    },
-                    function(result) {
-                        if (result.error && result.error.text) {
-                            $.toast({
-                                heading: 'Danger',
-                                text: result.error.text,
-                                showHideTransition: 'slide',
-                                icon: 'error',
-                                loaderBg: '#f2a654',
-                                position: 'mid-center'
-                            });
-                        } else {
-                            $.toast({
-                                heading: '成功',
-                                showHideTransition: 'slide',
-                                icon: 'success',
-                                loaderBg: '#f2a654',
-                                position: 'mid-center'
-                            });
-
-                            fetch(result.data.url, {
-                                method: 'PUT',
-                                headers: {
-                                    'Content-Type': 'png',
-                                    'x-ms-blob-type': 'BlockBlob',
-                                },
-                                body: myFile
-                            });
-
-
-                            //uploader.data('photoid', data.id);
-                            //uploader.data('photourl', data.url);
-                        }
-                    });
-                }, false);
-                reader.readAsDataURL(myFile);
-                return false;
-            });
-        });
-    </script>
-}

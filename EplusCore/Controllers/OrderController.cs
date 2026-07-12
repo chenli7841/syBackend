@@ -41,8 +41,9 @@ namespace WebUI.Controllers
         private readonly EplusDbContext _context;
         private readonly ICouponService _couponService;
         private readonly ISystemSession _session;
+        private readonly ISystemService _systemService;
 
-        public OrderController(IOrderService orderService, ISystemSession systemSession, ILogger<OrderController> logger, IMapper mapper, IRouteService routeService, IUserService userService, IBatchService batchService, EplusDbContext context, ICouponService couponService, ISystemSession session)
+        public OrderController(IOrderService orderService, ISystemSession systemSession, ILogger<OrderController> logger, IMapper mapper, IRouteService routeService, IUserService userService, IBatchService batchService, EplusDbContext context, ICouponService couponService, ISystemSession session, ISystemService systemService)
         {
             _orderService = orderService;
             _systemSession = systemSession;
@@ -54,6 +55,7 @@ namespace WebUI.Controllers
             _context = context;
             _couponService = couponService;
             _session = session;
+            _systemService = systemService;
         }
 
         public IActionResult Inventory(OrderState orderState)
@@ -83,12 +85,10 @@ namespace WebUI.Controllers
 
         public async Task<IActionResult> Search(string companyIds)
         {
-            var companies = await _context.Companies.ToListAsync();
             OrderSearchViewModel model = new OrderSearchViewModel();
-            model.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
+            model.Companies = await _systemService.GetSelectableCompaniesAsync();
 
-            int parsed;
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
             var orderStateList = await _orderService.ListOrderStatesAsync(parsedCompanyIds);
             model.AllOrderStates = orderStateList;
 
@@ -103,11 +103,12 @@ namespace WebUI.Controllers
             {
                 ids = companyIds.Replace("[", "").Replace("]", "").Split(",").Where(c => c.Trim() != "").Select(c => int.Parse(c)).ToArray();
             }
+            ids = await _systemService.ResolveCompanyIdsAsync(string.Join(",", ids));
             var orderNumberToSearch = requestModel.GetColumnSearchValue("OrderNumber");
             var domesticNumberToSearch = requestModel.GetColumnSearchValue("DomesticNumber");
             var creatorToSearch = requestModel.GetColumnSearchValue("Creator");
             var stateToSearch = requestModel.GetColumnSearchValue("stateText");
-            var cargoNumberToSearch = requestModel.GetColumnSearchValue("CargoNumber");
+            var loadDeliveryBatchNameToSearch = requestModel.GetColumnSearchValue("LoadDeliveryBatchName");
             OrderState orderStateFilter;
             PagedResult<OrderEntity> orders;
             if (Enum.TryParse<OrderState>(stateToSearch, out orderStateFilter))
@@ -118,7 +119,7 @@ namespace WebUI.Controllers
                     DomesticNumberToSearch = domesticNumberToSearch,
                     OrderState = orderStateFilter,
                     CreatorToSearch = creatorToSearch,
-                    CargoNumberToSearch = cargoNumberToSearch,
+                    LoadDeliveryBatchNameToSearch = loadDeliveryBatchNameToSearch,
                     PageSize = requestModel.Length,
                     Skip = requestModel.Start,
                     CompanyIds = ids
@@ -132,7 +133,7 @@ namespace WebUI.Controllers
                     DomesticNumberToSearch = domesticNumberToSearch,
                     OrderState = orderState,
                     CreatorToSearch = creatorToSearch,
-                    CargoNumberToSearch = cargoNumberToSearch,
+                    LoadDeliveryBatchNameToSearch = loadDeliveryBatchNameToSearch,
                     PageSize = requestModel.Length,
                     Skip = requestModel.Start,
                     CompanyIds = ids
@@ -151,8 +152,7 @@ namespace WebUI.Controllers
 
         public async Task<IActionResult> SearchOrderToAddByDomesticNumber(string companyIds, string searchText, int pageSize)
         {
-            int parsed;
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
             var orders = await _orderService.ListSummaryAsync(new OrderListFilterOptions()
             {
                 DomesticNumberToSearch = searchText,
@@ -247,8 +247,7 @@ namespace WebUI.Controllers
 
         public async Task<IActionResult> Create(OrderState orderState, string companyIds)
         {
-            int parsed;
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
             var routes = await _routeService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
             var users = await _userService.ListAsync(new UserListFilterOptions()
             {
@@ -257,12 +256,12 @@ namespace WebUI.Controllers
             });
             var locations = await _userService.ListPickUpLocationsAsync(2, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
 
-            var companies = await _context.Companies.ToListAsync();
+            var companies = await _systemService.GetSelectableCompaniesAsync();
             return View("Draft", new OrderDraftViewModel() {
                 Users = users.Items, Routes = routes,
                 OrderState = orderState,
                 PickupLocations = locations,
-                Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c))
+                Companies = companies
             });
         }
 

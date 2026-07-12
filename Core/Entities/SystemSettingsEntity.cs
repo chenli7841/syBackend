@@ -10,6 +10,7 @@
         public decimal DeliveryDistanceAdditionalCost { get; set; }
         public decimal CostStorageTimeout { get; set; }
         public decimal WeChatServiceChat { get; set; }
+        public int? LockedCompanyId { get; set; }
     }
 
     public class SystemPhotoEntity

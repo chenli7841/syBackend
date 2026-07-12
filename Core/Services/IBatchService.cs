@@ -15,7 +15,7 @@ namespace Domain.Services
         Task<PagedResult<PackageBatchEntity>> ListPackageBatchAsync(BatchListFilterOptions filterOptions, int[] companyIds);
         Task<PagedResult<PendingDispatchBatchEntity>> ListPendingDispatchAsync(BatchListFilterOptions filterOptions, int[] companyIds);
         Task<PagedResult<BatchEntity>> ListPalletAsync(BatchListFilterOptions filterOptions, int[] companyIds);
-        Task<IEnumerable<BatchEntity>> ListMasterBatchesAsync(BatchGroupType groupType, int? routeId, int[] companyIds = null, BatchStageType? stage = null);
+        Task<IEnumerable<BatchEntity>> ListMasterBatchesAsync(BatchGroupType groupType, int? routeId, int[] companyIds = null, BatchStageType? stage = null, int? warehouseId = null, BatchStageType[] stages = null);
         Task<PagedResult<BatchOtherOrderEntity>> ListOtherOrderAsync(BatchListOtherOrderFilterOptions filterOptions);
         Task<IEnumerable<RouteBatchCount>> GetBatchCountByRouteAsync(BatchGroupType groupType, int[] companyIds);
         Task<IEnumerable<BatchEntity>> GetByOrderAsync(int orderId);

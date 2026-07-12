@@ -1,4 +1,19 @@
-﻿<!DOCTYPE html>
+﻿@using Domain.Services
+@inject ISystemService LayoutSystemService
+@{
+    // Defensive: this runs on every single page. A transient DB/connection issue here
+    // (elsewhere in the same request) must never take down an otherwise-working page,
+    // so fall back to "not locked" rather than letting the exception propagate.
+    int? lockedCompanyId = null;
+    try
+    {
+        lockedCompanyId = await LayoutSystemService.GetLockedCompanyIdAsync();
+    }
+    catch
+    {
+    }
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -28,6 +43,9 @@
 
     <link rel="stylesheet" href="~/css/site.css" />
     @Html.Raw(JavaScriptSnippet.FullScript)
+    <script>
+        window.__lockedCompanyId = @(lockedCompanyId.HasValue ? lockedCompanyId.Value.ToString() : "null");
+    </script>
 </head>
 <body>
     <div id="site-overlay">
@@ -105,6 +123,7 @@
     <script src="~/js/shared/misc.js"></script>
     <script src="~/js/shared/settings.js"></script>
     <script src="~/js/shared/todolist.js"></script>
+    <script src="~/js/shared/company-lock.js" asp-append-version="true"></script>
     <!-- endinject -->
     <!-- Custom js for this page -->
     <script src="~/js/demo_1/dashboard.js"></script>

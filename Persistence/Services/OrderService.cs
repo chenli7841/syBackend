@@ -64,9 +64,17 @@ namespace Persistence.Services
             })
             .ToList();
             List<OrderStateEntity> selectedStates = new List<OrderStateEntity>();
-            using (var conn = _context.Database.GetDbConnection())
+            // Note: _context.Database.GetDbConnection() returns the DbContext's own shared connection.
+            // It must not be wrapped in `using`/Disposed here, or the DbContext becomes unusable for
+            // any further queries in the same request (ObjectDisposedException on MySqlConnection).
+            var conn = _context.Database.GetDbConnection();
+            var wasClosed = conn.State != System.Data.ConnectionState.Open;
+            if (wasClosed)
             {
-                conn.Open();
+                await conn.OpenAsync();
+            }
+            try
+            {
                 using (var command = conn.CreateCommand())
                 {
                     if (companyIds.Length == 0)
@@ -89,7 +97,13 @@ namespace Persistence.Services
                     }
                     await result.CloseAsync();
                 }
-                conn.Close();
+            }
+            finally
+            {
+                if (wasClosed)
+                {
+                    conn.Close();
+                }
             }
             return selectedStates;
         }
@@ -111,13 +125,14 @@ namespace Persistence.Services
                             && (!filterOptions.OrderState.HasValue || o.State == (int)filterOptions.OrderState.Value)
                             && (string.IsNullOrEmpty(filterOptions.OrderNumberToSearch) || o.OrderNumber.Contains(filterOptions.OrderNumberToSearch))
                             && (string.IsNullOrEmpty(filterOptions.DomesticNumberToSearch) || o.DomesticNumber.Contains(filterOptions.DomesticNumberToSearch))
-                            && (string.IsNullOrEmpty(filterOptions.CargoNumberToSearch) || o.BatchBoxOrderMaps.Any(bbom => bbom.BatchBox.Batch.LoadDeliveryBatches.Any(lb => lb.CargoNumber.Contains(filterOptions.CargoNumberToSearch))))
+                            && (string.IsNullOrEmpty(filterOptions.LoadDeliveryBatchNameToSearch) || o.BatchBoxOrderMaps.Any(bbom => bbom.BatchBox.Batch.LoadDeliveryBatches.Any() && bbom.BatchBox.Batch.Name.Contains(filterOptions.LoadDeliveryBatchNameToSearch)))
                             && (string.IsNullOrEmpty(filterOptions.CreatorToSearch) || o.CreatedBy.OrderStartNumber.Equals(filterOptions.CreatorToSearch) || o.CreatedBy.Customer.Name.Equals(filterOptions.CreatorToSearch))
                 )
                 .Include(o => o.BatchBoxOrderMaps).ThenInclude(m => m.BatchBox).ThenInclude(box => box.Batch).ThenInclude(batch => batch.LoadDeliveryBatches)
                 .Include(o => o.OrderStatuses).ThenInclude(os => os.User).ThenInclude(u => u.Customer)
                 .Include(o => o.PickUpLocation).ThenInclude(o => o.BelongsTo)
                 .Include(o => o.CreatedBy).ThenInclude(u => u.Customer)
+                .AsSplitQuery()
                 .OrderByDescending(o => o.DateCreated);
 
             var total = await orders.CountAsync();
@@ -263,7 +278,7 @@ namespace Persistence.Services
                 .Include(o => o.OrderActionHistories).Include(o => o.OrderBaggages)
                 .Include(o => o.BatchBoxOrderMaps)
                 .Include(o => o.OrderPhotos)
-                .First(o => o.Id == id && o.CompanyId == Config.COMPANY_ID);
+                .First(o => o.Id == id);
 
             foreach (var photo in order.OrderPhotos)
             {
@@ -539,7 +554,7 @@ namespace Persistence.Services
             order.DomesticNumber = entity.DomesticNumber;
             order.DomesticCarrier = entity.DomesticCarrier;
             order.WeightKg = entity.WeightKg;
-            order.CompanyId = Config.COMPANY_ID;
+            order.CompanyId = entity.CompanyId ?? Config.COMPANY_ID;
             if (entity.WeightKg > 0 && entity.PickUpLocationId.HasValue)
             {
                 var pickUp = await _context.PickUpLocations.FirstOrDefaultAsync(p => p.Id == entity.PickUpLocationId);
@@ -584,7 +599,7 @@ namespace Persistence.Services
 
         private async Task<TransportOrder> UpdateAsync(OrderEntity entity)
         {
-            var order = await _context.TransportOrders.FirstAsync(o => o.Id == entity.Id && o.CompanyId == Config.COMPANY_ID);
+            var order = await _context.TransportOrders.FirstAsync(o => o.Id == entity.Id);
 
             if (entity.RouteId.HasValue && order.RouteId != entity.RouteId)
             {

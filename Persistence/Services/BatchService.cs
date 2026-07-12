@@ -73,7 +73,17 @@ namespace Persistence.Services
                     .ThenInclude(bx => bx.BatchBoxOrderMaps)
                         .ThenInclude(m => m.Order)
                             .ThenInclude(o => o.CreatedBy)
-                                .ThenInclude(o => o.BelongsToNavigation);
+                                .ThenInclude(o => o.BelongsToNavigation)
+                .Include(b => b.BatchBoxMaps)
+                    .ThenInclude(m => m.BatchBox)
+                        .ThenInclude(bx => bx.BatchBoxOrderMaps)
+                            .ThenInclude(m => m.Order)
+                                .ThenInclude(o => o.CreatedBy)
+                                    .ThenInclude(o => o.BelongsToNavigation)
+                // Two sibling deep collection includes (BatchBoxes and BatchBoxMaps) on the same query
+                // make EF Core's default single-query join multiply rows together (cartesian blowup),
+                // which times out once a warehouse has a few hundred batches. Split into separate queries.
+                .AsSplitQuery();
 
             IOrderedQueryable<Batch> batches = batchesFiltered.OrderByDescending(b => b.DateCreated);
 
@@ -102,13 +112,23 @@ namespace Persistence.Services
         {
             var batchesFiltered = _context.Batches
                 .Include(b => b.BatchWarehouseReceives)
-                .Where(b => (filterOptions.GroupType == BatchGroupType.WarehouseReceive)
+                .Where(b => (b.GroupType == (int)BatchGroupType.WarehouseReceive)
+                    && (!filterOptions.WarehouseId.HasValue || (b.BatchWarehouseReceives.Any() && b.BatchWarehouseReceives.First().WarehouseId == filterOptions.WarehouseId))
                     && (!filterOptions.Ids.Any() || filterOptions.Ids.Contains(b.Id)) && (companyIds == null ? (b.CompanyId == Config.COMPANY_ID) : companyIds.Contains(b.CompanyId.Value)))
                 .Include(b => b.BatchBoxes)
                     .ThenInclude(bx => bx.BatchBoxOrderMaps)
                         .ThenInclude(m => m.Order)
                             .ThenInclude(o => o.CreatedBy)
-                                .ThenInclude(o => o.BelongsToNavigation);
+                                .ThenInclude(o => o.BelongsToNavigation)
+                // Boxes accepted/merged into this batch from elsewhere; GetOrders() reads this navigation
+                // directly and without it the batch's "总单数" silently omits those orders.
+                .Include(b => b.BatchBoxMaps)
+                    .ThenInclude(m => m.BatchBox)
+                        .ThenInclude(bx => bx.BatchBoxOrderMaps)
+                            .ThenInclude(m => m.Order)
+                                .ThenInclude(o => o.CreatedBy)
+                                    .ThenInclude(o => o.BelongsToNavigation)
+                .AsSplitQuery();
 
             IOrderedQueryable<Batch> batches = batchesFiltered.OrderByDescending(b => b.DateCreated);
 
@@ -141,7 +161,8 @@ namespace Persistence.Services
                     && (filterOptions.GroupType == BatchGroupType.Pallet)
                     && (!filterOptions.Ids.Any() || filterOptions.Ids.Contains(b.Id)) && (companyIds == null ? (b.CompanyId == Config.COMPANY_ID) : companyIds.Contains(b.CompanyId.Value)))
                 .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order).ThenInclude(o => o.CreatedBy).ThenInclude(o => o.BelongsToNavigation)
-                .Include(b => b.BatchBoxMaps).ThenInclude(m => m.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order);
+                .Include(b => b.BatchBoxMaps).ThenInclude(m => m.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
+                .AsSplitQuery();
 
             IOrderedQueryable<Batch> batches = batchesFiltered.OrderByDescending(b => b.DateCreated);
             
@@ -182,7 +203,14 @@ namespace Persistence.Services
                         .ThenInclude(m => m.Order)
                             .ThenInclude(o => o.CreatedBy)
                                 .ThenInclude(o => o.BelongsToNavigation)
-                .Include(b => b.LoadDeliveryBatches);
+                .Include(b => b.BatchBoxMaps)
+                    .ThenInclude(m => m.BatchBox)
+                        .ThenInclude(bx => bx.BatchBoxOrderMaps)
+                            .ThenInclude(m => m.Order)
+                                .ThenInclude(o => o.CreatedBy)
+                                    .ThenInclude(o => o.BelongsToNavigation)
+                .Include(b => b.LoadDeliveryBatches)
+                .AsSplitQuery();
             
             IOrderedQueryable<Batch> batches;
             if (filterOptions.GroupType.HasValue)
@@ -212,7 +240,7 @@ namespace Persistence.Services
             {
                 foreach (var box in b.BatchBoxes)
                 {
-                    box.BatchBoxOrderMaps = box.BatchBoxOrderMaps.Where(bbom => companyIds == null ? (bbom.Order.CompanyId == Config.COMPANY_ID) : companyIds.Contains(bbom.Order.CompanyId.Value)).ToList();
+                    box.BatchBoxOrderMaps = box.BatchBoxOrderMaps.Where(bbom => companyIds == null ? (bbom.Order.CompanyId == b.CompanyId) : companyIds.Contains(bbom.Order.CompanyId.Value)).ToList();
                 }
             }
 
@@ -249,7 +277,8 @@ namespace Persistence.Services
                             .ThenInclude(o => o.CreatedBy)
                                 .ThenInclude(o => o.BelongsToNavigation)
                 .Include(b => b.MasterBatch)
-                .Where(b => b.Route != null);
+                .Where(b => b.Route != null)
+                .AsSplitQuery();
 
             IOrderedQueryable<Batch> batches;
             if (filterOptions.GroupType.HasValue)
@@ -279,7 +308,7 @@ namespace Persistence.Services
             {
                 foreach (var box in b.BatchBoxes)
                 {
-                    box.BatchBoxOrderMaps = box.BatchBoxOrderMaps.Where(bbom => companyIds == null ? (bbom.Order.CompanyId == Config.COMPANY_ID) : companyIds.Contains(bbom.Order.CompanyId.Value)).ToList();
+                    box.BatchBoxOrderMaps = box.BatchBoxOrderMaps.Where(bbom => companyIds == null ? (bbom.Order.CompanyId == b.CompanyId) : companyIds.Contains(bbom.Order.CompanyId.Value)).ToList();
                 }
             }
 
@@ -333,7 +362,7 @@ namespace Persistence.Services
             {
                 foreach (var box in b.BatchBoxes)
                 {
-                    box.BatchBoxOrderMaps = box.BatchBoxOrderMaps.Where(bbom => companyIds == null ? (bbom.Order.CompanyId == Config.COMPANY_ID) : companyIds.Contains(bbom.Order.CompanyId.Value)).ToList();
+                    box.BatchBoxOrderMaps = box.BatchBoxOrderMaps.Where(bbom => companyIds == null ? (bbom.Order.CompanyId == b.CompanyId) : companyIds.Contains(bbom.Order.CompanyId.Value)).ToList();
                 }
             }
 
@@ -395,9 +424,17 @@ ORDER BY totalOrdersInBatch DESC
                 AddParameter(command, "@skip", DbType.Int32, filterOptions.Skip);
                 AddParameter(command, "@pageSize", DbType.Int32, filterOptions.PageSize);
             };
-            using (var conn = _context.Database.GetDbConnection())
+            // Note: _context.Database.GetDbConnection() returns the DbContext's own shared connection.
+            // It must not be wrapped in `using`/Disposed here, or the DbContext becomes unusable for
+            // any further queries in the same request (ObjectDisposedException on MySqlConnection).
+            var conn = _context.Database.GetDbConnection();
+            var wasClosed = conn.State != ConnectionState.Open;
+            if (wasClosed)
             {
-                conn.Open();
+                await conn.OpenAsync();
+            }
+            try
+            {
                 using (var command = conn.CreateCommand())
                 {
                     command.CommandText = $"SELECT COUNT(1) FROM ({getQuery(companyIdsPlaceholders, true)}) t; {getQuery(companyIdsPlaceholders, false)}";
@@ -436,16 +473,24 @@ ORDER BY totalOrdersInBatch DESC
                     return result;
                 }
             }
-
+            finally
+            {
+                if (wasClosed)
+                {
+                    conn.Close();
+                }
+            }
         }
 
-        public async Task<IEnumerable<BatchEntity>> ListMasterBatchesAsync(BatchGroupType groupType, int? routeId, int[] companyIds = null, BatchStageType? stage = null)
+        public async Task<IEnumerable<BatchEntity>> ListMasterBatchesAsync(BatchGroupType groupType, int? routeId, int[] companyIds = null, BatchStageType? stage = null, int? warehouseId = null, BatchStageType[] stages = null)
         {
             var batches = await _context.Batches
             .Where(b => b.IsFromChina
                 && ((int)groupType == b.GroupType)
                 && (companyIds == null ? b.CompanyId == Config.COMPANY_ID : companyIds.Contains(b.CompanyId.Value))
                 && (stage == null || b.Stage == (int)stage)
+                && (stages == null || stages.Select(s => (int)s).Contains(b.Stage))
+                && (warehouseId == null || (b.LoadDeliveryBatches.Any() && b.LoadDeliveryBatches.First().WarehouseId == warehouseId))
             )
             .Select(b => new Batch
             {
@@ -627,7 +672,7 @@ WHERE bb.BatchId=@batchId
                 .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps)
                     .ThenInclude(m => m.Order).ThenInclude(o => o.PickUpLocation).ThenInclude(p => p.BelongsTo)
                 .Include(b => b.Route);
-            var batch = await batchSQL.FirstAsync(b => b.Id == id && b.CompanyId == Config.COMPANY_ID);
+            var batch = await batchSQL.FirstAsync(b => b.Id == id);
             var result = _mapper.Map<BatchEntity>(batch);
             return result;
         }
@@ -640,7 +685,7 @@ WHERE bb.BatchId=@batchId
                 .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps)
                     .ThenInclude(m => m.Order).ThenInclude(o => o.PickUpLocation).ThenInclude(p => p.BelongsTo)
                 .Include(b => b.Route)
-                .Where(b => b.Id == id && b.CompanyId == Config.COMPANY_ID)
+                .Where(b => b.Id == id)
                 .Select(b => new Batch
                 {
                     Id = b.Id,
@@ -665,7 +710,7 @@ WHERE bb.BatchId=@batchId
                                 PickUpLocationId = m.Order.PickUpLocationId,
                                 PickUpLocation = m.Order.PickUpLocation
                             }
-                        }).ToList() 
+                        }).ToList()
                     }).ToList()
                 });
             var batch = await batchSQL.FirstAsync();
@@ -711,7 +756,7 @@ WHERE bb.BatchId=@batchId
                         }).ToList()
                     }).ToList()
                 });
-            var batch = await batchSQL.FirstAsync(b => b.Id == id && b.CompanyId == Config.COMPANY_ID);
+            var batch = await batchSQL.FirstAsync(b => b.Id == id);
             var result = _mapper.Map<BatchEntity>(batch);
             return result;
         }
@@ -724,7 +769,7 @@ WHERE bb.BatchId=@batchId
                 .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps)
                     .ThenInclude(m => m.Order).ThenInclude(o => o.PickUpLocation).ThenInclude(p => p.BelongsTo)
                 .Include(b => b.Route)
-                .Where(b => b.Id == id && b.CompanyId == Config.COMPANY_ID)
+                .Where(b => b.Id == id)
                 .Select(b => new Batch
                 {
                     Id = b.Id,
@@ -796,7 +841,7 @@ WHERE bb.BatchId=@batchId
                         }).ToList() 
                     }).ToList()
                 });
-            var batch = await batchSQL.FirstAsync(b => b.Id == id && b.CompanyId == Config.COMPANY_ID);
+            var batch = await batchSQL.FirstAsync(b => b.Id == id);
             var result = _mapper.Map<BatchEntity>(batch);
             return result;
         }
@@ -808,7 +853,7 @@ WHERE bb.BatchId=@batchId
             var batch = await _context.Batches
                 .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order).ThenInclude(o => o.OrderStatuses)
                 .Include(b => b.Route)
-                .FirstAsync(b => b.Id == id && b.CompanyId == Config.COMPANY_ID);
+                .FirstAsync(b => b.Id == id);
             return _mapper.Map<BatchEntity>(batch);
         }
 
@@ -830,10 +875,29 @@ WHERE bb.BatchId=@batchId
                     .ThenInclude(m => m.Order).ThenInclude(o => o.OrderStatuses)
                     .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps)
                     .ThenInclude(m => m.Order).ThenInclude(o => o.OrderBaggages)
+                    // BatchBoxMaps: boxes accepted/merged into this batch from elsewhere (via AcceptBox/Merge).
+                    // GetOrders()/GetAllBatchBoxes() in the mapping profile read this navigation directly;
+                    // without these includes it's null there, so those orders are silently missing from
+                    // both the "总单数" count and any export built from this entity.
+                    .Include(b => b.BatchBoxMaps).ThenInclude(m => m.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps)
+                    .ThenInclude(m => m.Order).ThenInclude(o => o.CreatedBy).ThenInclude(u => u.BelongsToNavigation).ThenInclude(u => u.Customer)
+                    .Include(b => b.BatchBoxMaps).ThenInclude(m => m.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps)
+                    .ThenInclude(m => m.Order).ThenInclude(o => o.CreatedBy).ThenInclude(u => u.Customer)
+                    .Include(b => b.BatchBoxMaps).ThenInclude(m => m.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps)
+                    .ThenInclude(m => m.Order).ThenInclude(o => o.CreatedBy).ThenInclude(u => u.PickUpLocationNavigation).ThenInclude(u => u.BelongsTo)
+                    .Include(b => b.BatchBoxMaps).ThenInclude(m => m.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps)
+                    .ThenInclude(m => m.Order).ThenInclude(o => o.PickUpLocation).ThenInclude(p => p.BelongsTo)
+                    .Include(b => b.BatchBoxMaps).ThenInclude(m => m.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps)
+                    .ThenInclude(m => m.Order).ThenInclude(o => o.ChinaItems)
+                    .Include(b => b.BatchBoxMaps).ThenInclude(m => m.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps)
+                    .ThenInclude(m => m.Order).ThenInclude(o => o.OrderStatuses)
+                    .Include(b => b.BatchBoxMaps).ThenInclude(m => m.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps)
+                    .ThenInclude(m => m.Order).ThenInclude(o => o.OrderBaggages)
                     .Include(b => b.MasterBatch).ThenInclude(m => m.Progress).ThenInclude(p => p.Route)
                     .Include(b => b.Route)
                     .Include(b => b.User).ThenInclude(u => u.Customer)
                     .Include(b => b.BatchOtherOrders)
+                    .AsSplitQuery()
                     .FirstAsync(b => b.Id == id);
 
                 result = _mapper.Map<BatchEntity>(batch);
@@ -933,27 +997,32 @@ WHERE bb.BatchId=@batchId
         {
             // Need batchId, batch.GroupType, batch.RouteId, otherOrders, box.Number, count box.order, total box.order.WeightKg
             // batch.Route.Type, batch.Stage
-            var batchSQL = _context.Batches.Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps)
-                .ThenInclude(m => m.Order)
-                .Include(b => b.BatchOtherOrders)
-                .Include(b => b.Route)
-                .Include(b => b.LoadDeliveryBatches)
-                .Include(b => b.BatchBoxMaps).ThenInclude(bx => bx.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order).ToQueryString();
-
             var batch = await _context.Batches.Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps)
                 .ThenInclude(m => m.Order)
                 .Include(b => b.BatchOtherOrders)
                 .Include(b => b.Route)
                 .Include(b => b.LoadDeliveryBatches)
+                .Include(b => b.BatchWarehouseReceives)
                 .Include(b => b.BatchBoxMaps).ThenInclude(bx => bx.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order)
+                .AsSplitQuery()
                 .FirstAsync(b => b.Id == id);
 
-            
+
+            // 按批次自己的公司过滤，而不是按调用方传入/默认的公司——批次本身属于哪个公司是唯一
+            // 权威依据，用外部默认公司（Config.COMPANY_ID）过滤会在批次实际公司不是默认公司时，
+            // 把所有运单错误地过滤掉，导致编辑页"总单数"显示为空/0。
             foreach (var b in batch.BatchBoxes)
             {
-                b.BatchBoxOrderMaps = b.BatchBoxOrderMaps.Where(bbom => companyIds == null ? bbom.Order.CompanyId == Config.COMPANY_ID : companyIds.Contains(bbom.Order.CompanyId.Value)).ToList();
+                b.BatchBoxOrderMaps = b.BatchBoxOrderMaps.Where(bbom => bbom.Order.CompanyId == batch.CompanyId).ToList();
             }
             var result = _mapper.Map<BatchEntity>(batch);
+            // 仓库收货/装车发货批次的仓库信息实际存在各自的子表（BatchWarehouseReceives/LoadDeliveryBatches）里，
+            // 而不是 Batch 表自身的 WarehouseId 列（创建时未写入该列），需要在这里兜底补上。
+            if (!result.WarehouseId.HasValue)
+            {
+                result.WarehouseId = batch.BatchWarehouseReceives?.FirstOrDefault()?.WarehouseId
+                    ?? batch.LoadDeliveryBatches?.FirstOrDefault()?.WarehouseId;
+            }
             return result;
         }
 
@@ -1016,7 +1085,7 @@ WHERE bb.BatchId=@batchId
 
         public async Task UpdateOrdersLoadDeliveryProperties(int batchId)
         {
-            var batch = await _context.Batches.Select(b => new Batch{Id = b.Id, GroupType = b.GroupType}).FirstOrDefaultAsync(b => b.Id == batchId && b.CompanyId == Config.COMPANY_ID);
+            var batch = await _context.Batches.Select(b => new Batch{Id = b.Id, GroupType = b.GroupType}).FirstOrDefaultAsync(b => b.Id == batchId);
             if (batch == null)
             {
                 throw new Exception("批次号 " + batchId + " 不存在");
@@ -1499,10 +1568,9 @@ WHERE bb.BatchId=@batchId
             }
 
             _context.BatchBoxOrderMaps.Remove(box);
-
-            // TODO: add hard refresh
-            //_memoryCache.Remove($"batch-{box.BatchBox.BatchId}");
             await _context.SaveChangesAsync();
+
+            _memoryCache.Remove($"batch-{box.BatchBox.BatchId}");
         }
 
         public async Task CreateDailyBatchPerWarehouseAsync(BatchGroupType groupType)
@@ -1619,7 +1687,7 @@ WHERE bb.BatchId=@batchId
 
             foreach (var order in batch.Boxes.SelectMany(b => b.Orders))
             {
-                var orderToUpdate = await _context.TransportOrders.FirstAsync(o => o.Id == order.Id && o.CompanyId == Config.COMPANY_ID);
+                var orderToUpdate = await _context.TransportOrders.FirstAsync(o => o.Id == order.Id);
                 orderToUpdate.State = (int)orderState;
             }
 
@@ -2681,7 +2749,7 @@ WHERE bb.BatchId=@batchId
                         WarehouseId = model.WarehouseId,
                     },
                 },
-                CompanyId = Config.COMPANY_ID,
+                CompanyId = model.CompanyId ?? Config.COMPANY_ID,
             };
 
             var batchBox = new BatchBox() { Number = 1 };

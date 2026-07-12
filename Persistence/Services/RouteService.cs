@@ -39,7 +39,7 @@ namespace Persistence.Services
         public async Task<RouteEntity> GetAsync(int id, bool checkCompany = true, int? companyId = null)
         {
             var route = await _context.Routes.FirstAsync(r => r.Id == id && (!checkCompany ||
-                (companyId == null && r.CompanyId == Config.COMPANY_ID) || (companyId != null && r.CompanyId == companyId)
+                companyId == null || r.CompanyId == companyId
             ));
             var result = _mapper.Map<RouteEntity>(route);
             

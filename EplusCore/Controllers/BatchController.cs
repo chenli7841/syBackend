@@ -37,6 +37,7 @@ namespace WebUI.Controllers
         private readonly ICouponService _couponService;
         private readonly IEmailService _emailService;
         private readonly IServiceProvider _serviceProvider;
+        private readonly ISystemService _systemService;
 
         public BatchController(
             IBatchService batchService,
@@ -52,7 +53,8 @@ namespace WebUI.Controllers
             EplusDbContext context,
             ICouponService couponService,
             IEmailService emailService,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            ISystemService systemService)
         {
             _batchService = batchService;
             _mapper = mapper;
@@ -68,15 +70,16 @@ namespace WebUI.Controllers
             _couponService = couponService;
             _emailService = emailService;
             _serviceProvider = serviceProvider;
+            _systemService = systemService;
         }
         
         public async Task<IActionResult> PendingDeliveryInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, string companyIds)
         {
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
             var warehouses = (await _warehouseService.ListAsync()).ToList();
             var routes = (await _routeService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).Where(r => !r.IsDeleted).ToList();
             var users = await _userService.ListByBatchesAsync(BatchGroupType.PendingDelivery, routeId, warehouseId);
-            var companies = await _context.Companies.ToListAsync();
+            var companies = (await _systemService.GetSelectableCompaniesAsync()).ToList();
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.PendingDelivery,
@@ -87,7 +90,7 @@ namespace WebUI.Controllers
                 Users = users,
                 SelectedRecipientUserId = recipientUserId,
                 SelectedBelongsToUserId = belongsToUserId,
-                Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c)),
+                Companies = companies,
                 CompanyIds = companyIds
             };
             return View(result);
@@ -95,11 +98,11 @@ namespace WebUI.Controllers
 
         public async Task<IActionResult> FinishedInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, string companyIds)
         {
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
             var warehouses = (await _warehouseService.ListAsync()).ToList();
             var routes = (await _routeService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).Where(r => !r.IsDeleted).ToList();
             var users = await _userService.ListByBatchesAsync(BatchGroupType.Done, routeId, warehouseId);
-            var companies = await _context.Companies.ToListAsync();
+            var companies = (await _systemService.GetSelectableCompaniesAsync()).ToList();
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.Done,
@@ -110,7 +113,7 @@ namespace WebUI.Controllers
                 Users = users,
                 SelectedRecipientUserId = recipientUserId,
                 SelectedBelongsToUserId = belongsToUserId,
-                Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c)),
+                Companies = companies,
                 CompanyIds = companyIds
             };
             return View(result);
@@ -137,11 +140,11 @@ namespace WebUI.Controllers
 
         public async Task<IActionResult> PickUpLocationInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, string companyIds)
         {
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
             var warehouses = (await _warehouseService.ListAsync()).ToList();
             var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
             var users = await _userService.ListByBatchesAsync(BatchGroupType.PickUpLocation, routeId, warehouseId);
-            var companies = await _context.Companies.ToListAsync();
+            var companies = (await _systemService.GetSelectableCompaniesAsync()).ToList();
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.PickUpLocation,
@@ -152,7 +155,7 @@ namespace WebUI.Controllers
                 Users = users,
                 SelectedRecipientUserId = recipientUserId,
                 SelectedBelongsToUserId = belongsToUserId,
-                Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c)),
+                Companies = companies,
                 CompanyIds = companyIds
             };
             return View(result);
@@ -164,7 +167,7 @@ namespace WebUI.Controllers
             var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
             var isDisplayByWarehouse = groupType == BatchGroupType.DailyScan || groupType == BatchGroupType.DailyReturn;
             var users = await _userService.ListByBatchesAsync(groupType, routeId, warehouseId);
-            var companies = await _context.Companies.ToListAsync();
+            var companies = (await _systemService.GetSelectableCompaniesAsync()).ToList();
             var result = new BatchInventoryResponse()
             {
                 GroupType = groupType,
@@ -175,7 +178,7 @@ namespace WebUI.Controllers
                 Users = users,
                 SelectedRecipientUserId = recipientUserId,
                 SelectedBelongsToUserId = belongsToUserId,
-                Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c)),
+                Companies = companies,
                 CompanyIds = companyIds
             };
             if (groupType == BatchGroupType.DailyScan)
@@ -193,7 +196,7 @@ namespace WebUI.Controllers
         }
         public async Task<IActionResult> PendingDispatchInventory(string companyIds, int? recipientUserId, int? belongsToUserId)
         {
-            var companies = await _context.Companies.ToListAsync();
+            var companies = (await _systemService.GetSelectableCompaniesAsync()).ToList();
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.PendingDispatch,
@@ -204,29 +207,32 @@ namespace WebUI.Controllers
                 Users = new UserEntity[0],
                 SelectedRecipientUserId = recipientUserId,
                 SelectedBelongsToUserId = belongsToUserId,
-                Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c)),
+                Companies = companies,
                 CompanyIds = companyIds
             };
             return View(result);
         }
         public async Task<IActionResult> WarehouseReceiveInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, string companyIds)
         {
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
-            var companies = await _context.Companies.ToListAsync();
-            var warehouses = (await _warehouseService.ListAsync()).ToList();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
+            var companies = (await _systemService.GetSelectableCompaniesAsync()).ToList();
+            var warehouses = (await _warehouseService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).ToList();
             var routes = (await _routeService.ListAsync()).Where(r => !r.IsDeleted).ToList();
             var users = await _userService.ListByBatchesAsync(BatchGroupType.WarehouseReceive, routeId, warehouseId);
+            // 默认按海运仓过滤，选择空运仓时再切换
+            var defaultWarehouseId = warehouses.FirstOrDefault(w => w.Name != null && w.Name.Contains("海运"))?.Id
+                ?? warehouses.FirstOrDefault()?.Id;
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.WarehouseReceive,
                 SelectedRouteId = (routeId ?? routes.First().Id),
                 Routes = routes.OrderBy(r => r.DisplaySequence),
-                SelectedWarehouseId = warehouseId,
+                SelectedWarehouseId = warehouseId ?? defaultWarehouseId,
                 Warehouses = warehouses.OrderBy(w => w.DisplaySequence),
                 Users = users,
                 SelectedRecipientUserId = recipientUserId,
                 SelectedBelongsToUserId = belongsToUserId,
-                Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c)),
+                Companies = companies,
                 CompanyIds = companyIds
             };
             return View(result);
@@ -234,33 +240,36 @@ namespace WebUI.Controllers
 
         public async Task<IActionResult> LoadDeliveryInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, string companyIds)
         {
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
             var warehouses = (await _warehouseService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).ToList();
             var routes = (await _routeService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).Where(r => !r.IsDeleted).ToList();
             var users = await _userService.ListByBatchesAsync(BatchGroupType.LoadDelivery, routeId, warehouseId, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
-            var companies = await _context.Companies.ToListAsync();
+            var companies = (await _systemService.GetSelectableCompaniesAsync()).ToList();
+            // 默认按海运仓过滤，选择空运仓时再切换
+            var defaultWarehouseId = warehouses.FirstOrDefault(w => w.Name != null && w.Name.Contains("海运"))?.Id
+                ?? warehouses.FirstOrDefault()?.Id;
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.LoadDelivery,
                 SelectedRouteId = (routeId ?? routes.First().Id),
                 Routes = routes.OrderBy(r => r.DisplaySequence),
-                SelectedWarehouseId = warehouseId,
+                SelectedWarehouseId = warehouseId ?? defaultWarehouseId,
                 Warehouses = warehouses.OrderBy(w => w.DisplaySequence),
                 Users = users,
                 SelectedRecipientUserId = recipientUserId,
                 SelectedBelongsToUserId = belongsToUserId,
-                Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c)),
+                Companies = companies,
                 CompanyIds = companyIds
             };
             return View(result);
         }
         public async Task<IActionResult> PalletInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, string companyIds)
         {
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
             var warehouses = (await _warehouseService.ListAsync()).ToList();
             var routes = (await _routeService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).Where(r => !r.IsDeleted).ToList();
             var users = await _userService.ListByBatchesAsync(BatchGroupType.Pallet, routeId, warehouseId, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
-            var companies = await _context.Companies.ToListAsync();
+            var companies = (await _systemService.GetSelectableCompaniesAsync()).ToList();
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.Pallet,
@@ -270,7 +279,7 @@ namespace WebUI.Controllers
                 Users = users,
                 SelectedRecipientUserId = recipientUserId,
                 SelectedBelongsToUserId = belongsToUserId,
-                Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c)),
+                Companies = companies,
                 CompanyIds = companyIds
             };
             return View(result);
@@ -278,11 +287,11 @@ namespace WebUI.Controllers
         
         public async Task<IActionResult> PackageInventory(int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, string companyIds)
         {
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
             var warehouses = (await _warehouseService.ListAsync()).ToList();
             var routes = (await _routeService.ListAsync(parsedCompanyIds.Length == 0 ? null : parsedCompanyIds)).Where(r => !r.IsDeleted).ToList();
             var users = await _userService.ListByBatchesAsync(BatchGroupType.Package, routeId, warehouseId, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
-            var companies = await _context.Companies.ToListAsync();
+            var companies = (await _systemService.GetSelectableCompaniesAsync()).ToList();
             var result = new BatchInventoryResponse()
             {
                 GroupType = BatchGroupType.Package,
@@ -293,7 +302,7 @@ namespace WebUI.Controllers
                 Users = users,
                 SelectedRecipientUserId = recipientUserId,
                 SelectedBelongsToUserId = belongsToUserId,
-                Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c)),
+                Companies = companies,
                 CompanyIds = companyIds
             };
             return View(result);
@@ -328,8 +337,8 @@ namespace WebUI.Controllers
         public async Task<IActionResult> OtherOrder(string companyIds)
         {
             OrderInventoryResponse model = new OrderInventoryResponse();
-            var companies = await _context.Companies.ToListAsync();
-            model.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
+            var companies = (await _systemService.GetSelectableCompaniesAsync()).ToList();
+            model.Companies = companies;
             model.CompanyIds = companyIds;
             return View(model);
         }
@@ -348,7 +357,7 @@ namespace WebUI.Controllers
         public async Task<IActionResult> LoadOtherOrder(DataTableRequestModel requestModel, string companyIds)
         {
             var orderToSearch = requestModel.GetColumnSearchValue("OtherOrder");
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
             var data = await _batchService.ListOtherOrderAsync(new BatchListOtherOrderFilterOptions()
             {
                 Number = orderToSearch,
@@ -386,7 +395,7 @@ namespace WebUI.Controllers
         {
             try
             {
-                var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+                var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
                 var filter = new BatchListFilterOptions()
                 {
                     GroupType = groupType,
@@ -445,7 +454,7 @@ namespace WebUI.Controllers
         {
             try
             {
-                var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+                var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
                 var filter = new BatchListFilterOptions()
                 {
                     GroupType = groupType,
@@ -492,8 +501,7 @@ namespace WebUI.Controllers
                 };
 
                 PagedResult<PendingDispatchBatchEntity> data = null;
-                int parsed;
-                var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
+                var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
                 data = await _batchService.ListPendingDispatchAsync(filter, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
                 return Json(new { requestModel.Draw, recordsFiltered = data.Total, recordsTotal = data.Total, data = data.Items });
             }
@@ -516,8 +524,7 @@ namespace WebUI.Controllers
 
         public async Task<IActionResult> DailyScanEdit(int id, string companyIds)
         {
-            int parsed;
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
             var batchEntity = await _batchService.GetForEditAsync(id, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
             await SetEditDropdownOptions(batchEntity);
             return View(batchEntity);
@@ -525,8 +532,7 @@ namespace WebUI.Controllers
 
         public async Task<IActionResult> PendingDispatchEdit(int id, string companyIds)
         {
-            int parsed;
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out parsed)).Select(id => int.Parse(id)).ToArray();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
             var batchEntity = await _batchService.GetForEditAsync(id, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
             await SetEditDropdownOptions(batchEntity);
             return View(batchEntity);
@@ -564,10 +570,10 @@ namespace WebUI.Controllers
                 GroupType = BatchGroupType.Package,
                 RouteId = routeId
             };
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
             if (parsedCompanyIds.Length == 0) parsedCompanyIds = null;
-            var companies = await _context.Companies.ToListAsync();
-            ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
+            var companies = (await _systemService.GetSelectableCompaniesAsync()).ToList();
+            ViewBag.Companies = companies;
             ViewBag.Routes = (await _routeService.ListAsync(parsedCompanyIds)).Where(r => !r.IsDeleted);
             ViewBag.MasterBatches = (await _batchService.ListMasterBatchesAsync(BatchGroupType.LoadDelivery, batch.RouteId, parsedCompanyIds, BatchStageType.Gathering));
             ViewBag.PickUpLocations = await _userService.ListPickUpLocationsAsync(2, parsedCompanyIds);
@@ -581,22 +587,26 @@ namespace WebUI.Controllers
             {
                 GroupType = BatchGroupType.LoadDelivery,
             };
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
             if (parsedCompanyIds.Length == 0) parsedCompanyIds = null;
             var warehouses = await _warehouseService.ListAsync(parsedCompanyIds);
             batch.Warehouses = warehouses;
-            var companies = await _context.Companies.ToListAsync();
-            ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
+            var companies = (await _systemService.GetSelectableCompaniesAsync()).ToList();
+            ViewBag.Companies = companies;
             return View("CreateLoadDeliveryBatch", batch);
         }
-        public async Task<IActionResult> CreateWarehouseReceiveBatch()
+        public async Task<IActionResult> CreateWarehouseReceiveBatch(string companyIds)
         {
             var batch = new WarehouseReceiveBatchEntity()
             {
                 GroupType = BatchGroupType.WarehouseReceive,
             };
-            var warehouses = await _warehouseService.ListAsync();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
+            if (parsedCompanyIds.Length == 0) parsedCompanyIds = null;
+            var warehouses = await _warehouseService.ListAsync(parsedCompanyIds);
             batch.Warehouses = warehouses;
+            var companies = (await _systemService.GetSelectableCompaniesAsync()).ToList();
+            ViewBag.Companies = companies;
             //await SetEditDropdownOptions(batch);
             return View("CreateWarehouseReceiveBatch", batch);
 
@@ -610,10 +620,10 @@ namespace WebUI.Controllers
             };
             var warehouses = await _warehouseService.ListAsync();
             batch.Warehouses = warehouses;
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
             if (parsedCompanyIds.Length == 0) parsedCompanyIds = null;
-            var companies = await _context.Companies.ToListAsync();
-            ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
+            var companies = (await _systemService.GetSelectableCompaniesAsync()).ToList();
+            ViewBag.Companies = companies;
             ViewBag.MasterBatches = (await _batchService.ListMasterBatchesAsync(BatchGroupType.LoadDelivery, batch.RouteId, parsedCompanyIds, BatchStageType.Gathering));
             return View("CreatePalletBatch", batch);
         }
@@ -699,20 +709,25 @@ namespace WebUI.Controllers
                 Skip = 0,
                 PageSize = int.MaxValue
             });
-            var companies = await _context.Companies.ToListAsync();
+            var companies = (await _systemService.GetSelectableCompaniesAsync()).ToList();
             ViewBag.Recipients = recipients.Items;
             ViewBag.Agents = await _userService.ListAgentsAsync();
             ViewBag.PickUpLocations = await _userService.ListPickUpLocationsAsync(2);
-            ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
+            ViewBag.Companies = companies;
             ViewBag.ActionTypes = batch.GetActionTypes();
             ViewBag.ActionType = ViewBag.ActionTypes[0];
-            if (batch.GroupType == BatchGroupType.LoadDelivery || !batch.RouteId.HasValue)
+            if (batch.GroupType == BatchGroupType.LoadDelivery)
             {
                 ViewBag.MasterBatches = new List<BatchEntity>();
             }
+            else if (batch.GroupType == BatchGroupType.WarehouseReceive)
+            {
+                // 仓库收货批次归属的装车发货批次，只能选同一个仓库、且状态为"清关中"/"分拣中"的批次
+                ViewBag.MasterBatches = (await _batchService.ListMasterBatchesAsync(BatchGroupType.LoadDelivery, batch.RouteId, batch.CompanyId.HasValue ? new int[] { batch.CompanyId.Value } : null, warehouseId: batch.WarehouseId, stages: new[] { BatchStageType.Clearing, BatchStageType.Sorting }));
+            }
             else
             {
-                ViewBag.MasterBatches = (await _batchService.ListMasterBatchesAsync(BatchGroupType.LoadDelivery, batch.RouteId));
+                ViewBag.MasterBatches = (await _batchService.ListMasterBatchesAsync(BatchGroupType.LoadDelivery, batch.RouteId, batch.CompanyId.HasValue ? new int[] { batch.CompanyId.Value } : null));
             }
         }
 
@@ -876,8 +891,8 @@ namespace WebUI.Controllers
             var box = batchEntity.Boxes.FirstOrDefault(b => b.Id == boxId);
             if (box != null && box.Orders != null && box.Orders.Any())
             {
-                var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
-                box.Orders = box.Orders.Where(o => parsedCompanyIds.Length == 0 ? o.CompanyId == Config.COMPANY_ID : parsedCompanyIds.Contains(o.CompanyId.Value)).OrderByDescending(o => o.Status.Max(o => o.Date)).ToList();
+                var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
+                box.Orders = box.Orders.Where(o => parsedCompanyIds.Length == 0 || parsedCompanyIds.Contains(o.CompanyId.Value)).OrderByDescending(o => o.Status.Max(o => o.Date)).ToList();
                 var scanStatusEntities = _batchService.GetOrderScanStatusEntities(box.Orders.Select(o => o.Id));
                 foreach (var order in box.Orders)
                 {
@@ -888,8 +903,8 @@ namespace WebUI.Controllers
                     }
                 }
             }
-            var companies = await _context.Companies.ToListAsync();
-            batchEntity.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
+            var companies = (await _systemService.GetSelectableCompaniesAsync()).ToList();
+            batchEntity.Companies = companies;
             ViewData["BoxId"] = boxId;
             return View(batchEntity);
         }
@@ -1003,7 +1018,7 @@ namespace WebUI.Controllers
 
         public async Task<JsonResult> GetBatchCountByRoute(BatchGroupType groupType, string companyIds)
         {
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
             var result = await _batchService.GetBatchCountByRouteAsync(groupType, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
             return Json(new MethodResult<IEnumerable<RouteBatchCount>>(result));
         }
@@ -1025,6 +1040,45 @@ namespace WebUI.Controllers
         {
             await _batchService.RemoveOrderAsync(boxId, orderId);
             return RedirectToAction(nameof(DailyScanEditBox), new {boxId});
+        }
+
+        public async Task<IActionResult> CheckDuplicateOrders(int id)
+        {
+            try
+            {
+                var batch = await _batchService.GetAsync(id);
+                var duplicates = batch.Boxes
+                    .SelectMany(box => box.Orders.Select(o => new { box, o }))
+                    .GroupBy(x => x.o.Id)
+                    .Where(g => g.Count() > 1)
+                    .Select(g => new
+                    {
+                        orderId = g.Key,
+                        orderNumber = g.First().o.OrderNumber,
+                        domesticNumber = g.First().o.DomesticNumber,
+                        locations = g.Select(x => new { boxId = x.box.Id, boxNumber = x.box.Number }).ToList()
+                    })
+                    .ToList();
+                return Json(new MethodResult<object>(duplicates));
+            }
+            catch (Exception e)
+            {
+                return Json(new MethodResult<object>(new Error() { Text = e.Message }));
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RemoveDuplicateOrder(int boxId, int orderId)
+        {
+            try
+            {
+                await _batchService.RemoveOrderAsync(boxId, orderId);
+                return Json(new MethodResult<bool>(true));
+            }
+            catch (Exception e)
+            {
+                return Json(new MethodResult<bool>(new Error() { Text = e.Message }));
+            }
         }
 
         public async Task<IActionResult> AddBox(int id, int boxNumber)

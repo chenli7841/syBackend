@@ -14,6 +14,24 @@
     var companies = ((IEnumerable<CompanyEntity>)ViewBag.Companies).ToList();
 }
 
+@functions {
+    string GetStoredFileName(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return "尚未上传";
+        }
+        try
+        {
+            return System.IO.Path.GetFileName(new Uri(url).AbsolutePath);
+        }
+        catch
+        {
+            return url;
+        }
+    }
+}
+
 <div class="row">
     <div class="col-lg-12 grid-margin stretch-card">
         <div class="card">
@@ -51,6 +69,7 @@
                             <button class="btn btn-info select">选择</button>
                             <button class="btn btn-primary upload">上传</button>
                             <a class="btn btn-primary view" style="color: white; display: @(string.IsNullOrWhiteSpace(Model.OceanRuleImageURL) ? "none" : "")" target="_blank" href="@(Model.OceanRuleImageURL)">打开</a>
+                            <span class="text-muted">当前文件:@(GetStoredFileName(Model.OceanRuleImageURL))</span>
 
                             <!-- The cropit- classes above are needed so cropit can identify these elements -->
                         </div>
@@ -74,6 +93,7 @@
                             <button class="btn btn-info select">选择</button>
                             <button class="btn btn-primary upload">上传</button>
                             <a class="btn btn-primary view" style="color: white; display: @(string.IsNullOrWhiteSpace(Model.FlightRuleImageURL) ? "none" : "")" target="_blank" href="@(Model.FlightRuleImageURL)">打开</a>
+                            <span class="text-muted">当前文件:@(GetStoredFileName(Model.FlightRuleImageURL))</span>
 
 
                             <!-- The cropit- classes above are needed so cropit can identify these elements -->
@@ -98,6 +118,7 @@
                             <button class="btn btn-info select">选择</button>
                             <button class="btn btn-primary upload">上传</button>
                             <a class="btn btn-primary view" style="color: white; display: @(string.IsNullOrWhiteSpace(Model.CommonQuestionImageURL) ? "none" : "")" target="_blank" href="@(Model.CommonQuestionImageURL)">打开</a>
+                            <span class="text-muted">当前文件:@(GetStoredFileName(Model.CommonQuestionImageURL))</span>
 
                             <!-- The cropit- classes above are needed so cropit can identify these elements -->
                         </div>
@@ -121,6 +142,7 @@
                             <button class="btn btn-info select">选择</button>
                             <button class="btn btn-primary upload">上传</button>
                             <a class="btn btn-primary view" style="color: white; display: @(string.IsNullOrWhiteSpace(Model.InsurancePolicyImageURL) ? "none" : "")" target="_blank" href="@(Model.InsurancePolicyImageURL)">打开</a>
+                            <span class="text-muted">当前文件:@(GetStoredFileName(Model.InsurancePolicyImageURL))</span>
 
                             <!-- The cropit- classes above are needed so cropit can identify these elements -->
                         </div>
@@ -145,6 +167,7 @@
                             <button class="btn btn-info select">选择</button>
                             <button class="btn btn-primary upload">上传</button>
                             <a class="btn btn-primary view" style="color: white; display: @(string.IsNullOrWhiteSpace(Model.OrderCreateGuidelineImageURL) ? "none" : "")" target="_blank" href="@(Model.OrderCreateGuidelineImageURL)">打开</a>
+                            <span class="text-muted">当前文件:@(GetStoredFileName(Model.OrderCreateGuidelineImageURL))</span>
 
                             <!-- The cropit- classes above are needed so cropit can identify these elements -->
                         </div>

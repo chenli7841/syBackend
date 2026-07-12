@@ -34,8 +34,9 @@ namespace WebUI.Controllers
         private readonly IMapper _mapper;
         private readonly IFileExportService _fileExportService;
         private readonly EplusDbContext _context;
+        private readonly ISystemService _systemService;
 
-        public UserController(ITransactionService transactionService, ISystemSession session, IUserService userService, IMapper mapper, IFileExportService fileExportService, ISmsService smsService, EplusDbContext context)
+        public UserController(ITransactionService transactionService, ISystemSession session, IUserService userService, IMapper mapper, IFileExportService fileExportService, ISmsService smsService, EplusDbContext context, ISystemService systemService)
         {
             _transactionService = transactionService;
             _session = session;
@@ -44,6 +45,7 @@ namespace WebUI.Controllers
             _fileExportService = fileExportService;
             _smsService = smsService;
             _context = context;
+            _systemService = systemService;
         }
 
         public IActionResult Transactions(int? userId)
@@ -118,10 +120,9 @@ namespace WebUI.Controllers
 
         public async Task<IActionResult> Inventory(string companyIds, string pickUpLocationIds)
         {
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
             ViewBag.PickUpLocations = await _userService.ListPickUpLocationsAsync(2, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
-            var companies = await _context.Companies.ToListAsync();
-            ViewBag.Companies = companies.Select(c => _mapper.Map<CompanyEntity>(c));
+            ViewBag.Companies = await _systemService.GetSelectableCompaniesAsync();
             return View(new { CompanyIds = companyIds, PickUpLocationIds = pickUpLocationIds });
         }
 
@@ -146,7 +147,7 @@ namespace WebUI.Controllers
         {
             var codeToSearch = requestModel.GetColumnSearchValue("Code").Trim();
             var phoneToSearch = requestModel.GetColumnSearchValue("CanadaPhoneNumber").Trim();
-            var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
             var parsedPickUpLocationIds = (pickUpLocationIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
             var users = await _userService.ListAsync(new UserListFilterOptions()
             {
@@ -363,7 +364,7 @@ namespace WebUI.Controllers
         {
             try
             {
-                var parsedCompanyIds = (companyIds ?? "").Split(",").Where(id => int.TryParse(id, out int parsed)).Select(id => int.Parse(id)).ToArray();
+                var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(companyIds);
                 var users = await _userService.SearchByUserCodeAsync(code, pageSize, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
                 return Json(new { recordsTotal = users.Total, data = users.Items });
             }

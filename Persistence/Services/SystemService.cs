@@ -183,6 +183,7 @@ namespace Persistence.Services
             result.DeliveryDistanceAdditionalCost = GetFromBaseSetting(dbSettings, "record_freight_distance_additional_cost");
             result.CostStorageTimeout = GetFromBaseSetting(dbSettings, "record_order_cost_storage_timeout");
             result.LockedCompanyId = await GetLockedCompanyIdAsync();
+            result.LogoUrl = await GetLogoUrlAsync();
 
             return result;
         }
@@ -293,6 +294,41 @@ namespace Persistence.Services
                 dbRecord.SetValue = value;
                 dbRecord.UpdateTime = DateTime.UtcNow;
             }
+        }
+
+        private const string LogoUrlKey = "record_site_logo_url";
+
+        public async Task<string> GetLogoUrlAsync()
+        {
+            var dbRecord = await _context.BaseSetings.FirstOrDefaultAsync(b => b.SetKey == LogoUrlKey);
+            return string.IsNullOrWhiteSpace(dbRecord?.SetValue) ? null : dbRecord.SetValue;
+        }
+
+        public async Task<string> UploadLogoAsync(string rawData)
+        {
+            var logoUrl = await _storageService.UploadToAzureAsync(rawData, "system/logo", $"logo_{DateTime.Now:yyyyMMddHHmmssfff}.png");
+
+            var dbRecord = await _context.BaseSetings.FirstOrDefaultAsync(b => b.SetKey == LogoUrlKey);
+            if (dbRecord == null)
+            {
+                await _context.BaseSetings.AddAsync(new BaseSeting
+                {
+                    SetKey = LogoUrlKey,
+                    SetValue = logoUrl,
+                    ValueType = false,
+                    Type = "string",
+                    Remark = "网站左上角 Logo 图片地址",
+                    CreateTime = DateTime.UtcNow,
+                });
+            }
+            else
+            {
+                dbRecord.SetValue = logoUrl;
+                dbRecord.UpdateTime = DateTime.UtcNow;
+            }
+            await _context.SaveChangesAsync();
+
+            return logoUrl;
         }
 
         public async Task<IEnumerable<CompanyEntity>> GetSelectableCompaniesAsync()

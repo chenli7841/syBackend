@@ -21,5 +21,7 @@ namespace Domain.Services
         Task<IEnumerable<CompanyEntity>> GetSelectableCompaniesAsync();
         Task<int[]> ResolveCompanyIdsAsync(string requestedCompanyIds);
         Task<int?> GetLockedCompanyIdAsync();
+        Task<string> GetLogoUrlAsync();
+        Task<string> UploadLogoAsync(string rawData);
     }
 }

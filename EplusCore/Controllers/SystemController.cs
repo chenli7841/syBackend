@@ -123,6 +123,20 @@ namespace WebUI.Controllers
 
 
         [HttpPost]
+        public async Task<JsonResult> UploadLogo(string logoData)
+        {
+            try
+            {
+                var url = await _systemService.UploadLogoAsync(logoData);
+                return Json(new MethodResult<string>(url));
+            }
+            catch (Exception e)
+            {
+                return Json(new MethodResult<string>(new Error() { Text = e.Message }));
+            }
+        }
+
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Save(SystemSettingsEntity model)
         {

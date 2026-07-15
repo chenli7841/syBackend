@@ -12,6 +12,16 @@
     catch
     {
     }
+
+    string siteLogoUrl = null;
+    try
+    {
+        siteLogoUrl = await LayoutSystemService.GetLogoUrlAsync();
+    }
+    catch
+    {
+    }
+    ViewData["SiteLogoUrl"] = siteLogoUrl;
 }
 <!DOCTYPE html>
 <html lang="en">

@@ -164,6 +164,7 @@
                         $('#box-order-listing tbody').prepend(row);
 
                         $('#add-order-input').val("");
+                        $('#orderSearchModal').modal('hide');
                         $.toast({
                             heading: 'Success',
                             text: `添加成功。运单线路:${result.data.route.name}`,
@@ -184,6 +185,9 @@
                             else companyIds = part.split("=")[1];
                         }
                         fetch(`${searchOrderToAddUrl}?companyids=${companyIds}&searchText=${orderNumber}&pageSize=10`).then(res => res.json()).then(result => {
+                            if (!result.data || result.data.length === 0) {
+                                return;
+                            }
                             let orderRowHTML = '';
                             for (const o of result.data) {
                                 orderRowHTML += `<tr><td>${o.orderNumber}</td><td>${o.domesticNumber}</td><td>${o.dateCreated.split('T')[0]}</td><td>${o.baggageCount}</td><td><button class="btn btn-action btn-secondary" onclick="addOrder('${o.orderNumber}')">入库</button></td></tr>`;

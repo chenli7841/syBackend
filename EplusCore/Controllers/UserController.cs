@@ -178,7 +178,8 @@ namespace WebUI.Controllers
         {
             var user = await _userService.GetAsync(id);
             var agents = await _userService.ListAgentsAsync();
-            var pickUpLocations = await _userService.ListPickUpLocationsAsync(2);
+            var parsedCompanyIds = await _systemService.ResolveCompanyIdsAsync(null);
+            var pickUpLocations = await _userService.ListPickUpLocationsAsync(2, parsedCompanyIds.Length == 0 ? null : parsedCompanyIds);
             var roles = await _userService.ListRolesAsync(new string[] { "Admin", "SuperAdmin" });
             var result = _mapper.Map<UserDetailViewModel>(user);
             result.RegisteredPickUpLocation ??= new PickUpLocationEntity();

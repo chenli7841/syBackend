@@ -46,6 +46,11 @@ namespace WebUI.Controllers
         public async Task<IActionResult> ImageManagement(int? companyIds)
         {
             ViewBag.Companies = await _systemService.GetSelectableCompaniesAsync();
+            var lockedCompanyId = (await _systemService.GetSettingsAsync()).LockedCompanyId;
+            if (lockedCompanyId.HasValue)
+            {
+                companyIds = lockedCompanyId;
+            }
             var photos = (await _systemService.ListPhotosAsync(companyIds)).ToList();
             var mobilePhotos = (await _systemService.ListMobilePhotosAsync(companyIds)).ToList();
 

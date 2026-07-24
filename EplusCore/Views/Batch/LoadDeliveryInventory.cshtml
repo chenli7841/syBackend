@@ -71,6 +71,10 @@
                             <select class="form-control" id="agent-select" style="width: 225px;">
                                 <option value="" selected>搜索群主</option>
                             </select>
+                            <div class="form-check" style="display: flex; align-items: center; margin-left: 10px;">
+                                <input type="checkbox" class="form-check-input" id="hide-completed-checkbox" checked style="position: static; margin-right: 6px;">
+                                <label class="form-check-label" for="hide-completed-checkbox" style="margin-bottom: 0;">隐藏已完成批次</label>
+                            </div>
                         </div>
                         <div class="table-responsive">
                             <table id="batch-listing" class="table table-striped">
@@ -147,7 +151,10 @@
                     "url":
                         '@Html.Raw(Url.Action("LoadData", new { groupType = Model.GroupType, warehouseId = Model.SelectedWarehouseId ?? Model.Warehouses.First().Id, companyIds = Model.CompanyIds }))',
                     "type": "POST",
-                    "datatype": "json"
+                    "datatype": "json",
+                    "data": function (d) {
+                        d.hideCompleted = $('#hide-completed-checkbox').is(':checked');
+                    }
                 },
                 "columnDefs": [
                     { "targets": [0], "visible": false, "searchable": false },
@@ -279,6 +286,10 @@
                 let currentBelongsToUserId = params[1].split('&')[0];
                 $('#agent-select').val(currentBelongsToUserId).trigger('change');
             }
+
+            $('#hide-completed-checkbox').change(function () {
+                batchTable.ajax.reload();
+            });
 
             $('#batch_inventory_search_btn').click(() => {
                 let location = `/Batch/Inventory?groupType=${groupType}`

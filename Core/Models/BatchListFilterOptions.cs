@@ -20,5 +20,7 @@ namespace Domain.Models
         public List<int> RecipientIds { get; set; }
         // 代理归属
         public List<int> BelongsToUserIds { get; set; }
+        // 隐藏已完成的批次
+        public bool HideCompletedBatches { get; set; }
     }
 }

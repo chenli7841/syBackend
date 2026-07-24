@@ -391,7 +391,7 @@ namespace WebUI.Controllers
             }
         }
 
-        public async Task<IActionResult> LoadData(BatchGroupType groupType, string companyIds, int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, DataTableRequestModel requestModel)
+        public async Task<IActionResult> LoadData(BatchGroupType groupType, string companyIds, int? routeId, int? warehouseId, int? recipientUserId, int? belongsToUserId, bool hideCompleted, DataTableRequestModel requestModel)
         {
             try
             {
@@ -402,7 +402,8 @@ namespace WebUI.Controllers
                     WarehouseId = warehouseId,
                     RouteId = routeId,
                     PageSize = requestModel.Length,
-                    Skip = requestModel.Start
+                    Skip = requestModel.Start,
+                    HideCompletedBatches = hideCompleted
                 };
                 if (recipientUserId.HasValue)
                 {

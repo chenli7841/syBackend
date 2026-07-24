@@ -180,14 +180,6 @@
                                 position: 'mid-center'
                             });
                         } else {
-                            $.toast({
-                                heading: '成功',
-                                showHideTransition: 'slide',
-                                icon: 'success',
-                                loaderBg: '#f2a654',
-                                position: 'mid-center'
-                            });
-
                             fetch(result.data.url, {
                                 method: 'PUT',
                                 headers: {
@@ -195,10 +187,28 @@
                                     'x-ms-blob-type': 'BlockBlob',
                                 },
                                 body: myFile
-                            }).then(() => {
+                            }).then((response) => {
+                                if (!response.ok) {
+                                    throw new Error(`上传失败 (HTTP ${response.status})`);
+                                }
+                                $.toast({
+                                    heading: '成功',
+                                    showHideTransition: 'slide',
+                                    icon: 'success',
+                                    loaderBg: '#f2a654',
+                                    position: 'mid-center'
+                                });
                                 document.location.reload();
+                            }).catch((err) => {
+                                $.toast({
+                                    heading: '上传失败',
+                                    text: err.message || '图片未能成功上传到存储,请重试',
+                                    showHideTransition: 'slide',
+                                    icon: 'error',
+                                    loaderBg: '#f2a654',
+                                    position: 'mid-center'
+                                });
                             });
-
 
                             //uploader.data('photoid', data.id);
                             //uploader.data('photourl', data.url);
@@ -259,14 +269,6 @@
                                 position: 'mid-center'
                             });
                         } else {
-                            $.toast({
-                                heading: '成功',
-                                showHideTransition: 'slide',
-                                icon: 'success',
-                                loaderBg: '#f2a654',
-                                position: 'mid-center'
-                            });
-
                             fetch(result.data.url, {
                                 method: 'PUT',
                                 headers: {
@@ -274,10 +276,28 @@
                                     'x-ms-blob-type': 'BlockBlob',
                                 },
                                 body: myFile
-                            }).then(() => {
+                            }).then((response) => {
+                                if (!response.ok) {
+                                    throw new Error(`上传失败 (HTTP ${response.status})`);
+                                }
+                                $.toast({
+                                    heading: '成功',
+                                    showHideTransition: 'slide',
+                                    icon: 'success',
+                                    loaderBg: '#f2a654',
+                                    position: 'mid-center'
+                                });
                                 document.location.reload();
+                            }).catch((err) => {
+                                $.toast({
+                                    heading: '上传失败',
+                                    text: err.message || '图片未能成功上传到存储,请重试',
+                                    showHideTransition: 'slide',
+                                    icon: 'error',
+                                    loaderBg: '#f2a654',
+                                    position: 'mid-center'
+                                });
                             });
-
 
                             //uploader.data('photoid', data.id);
                             //uploader.data('photourl', data.url);

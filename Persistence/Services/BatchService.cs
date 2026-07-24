@@ -68,7 +68,8 @@ namespace Persistence.Services
                 .Include(b => b.LoadDeliveryBatches)
                 .Where(b => b.LoadDeliveryBatches.Count > 0 && b.LoadDeliveryBatches.First().WarehouseId == filterOptions.WarehouseId
                     && (filterOptions.GroupType == BatchGroupType.LoadDelivery)
-                    && (!filterOptions.Ids.Any() || filterOptions.Ids.Contains(b.Id)) && (companyIds == null ? (b.CompanyId == Config.COMPANY_ID) : companyIds.Contains(b.CompanyId.Value)))
+                    && (!filterOptions.Ids.Any() || filterOptions.Ids.Contains(b.Id)) && (companyIds == null ? (b.CompanyId == Config.COMPANY_ID) : companyIds.Contains(b.CompanyId.Value))
+                    && (!filterOptions.HideCompletedBatches || b.Stage != (int)BatchStageType.Done))
                 .Include(b => b.BatchBoxes)
                     .ThenInclude(bx => bx.BatchBoxOrderMaps)
                         .ThenInclude(m => m.Order)

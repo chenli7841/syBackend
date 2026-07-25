@@ -20,6 +20,7 @@ namespace Domain.Services
         Task<IEnumerable<RouteBatchCount>> GetBatchCountByRouteAsync(BatchGroupType groupType, int[] companyIds);
         Task<IEnumerable<BatchEntity>> GetByOrderAsync(int orderId);
         Task<BatchEntity> GetAsync(int id);
+        Task<BatchEntity> GetSummaryAsync(int id);
         Task<BatchEntity> GetForPrintAsync(int id);
         Task<BatchEntity> GetForEditAsync(int id, int[] companyIds = null);
         Task<PackageBatchEntity> GetForEditPackageAsync(int id);

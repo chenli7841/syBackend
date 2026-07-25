@@ -245,7 +245,18 @@
             $.ajax({
                 url: '@Url.Action("QuickView", "Batch")',
                 data: { id },
-                success: data => $('#order-details').html(data)
+                success: data => $('#order-details').html(data),
+                error: (jqXHR) => {
+                    $.toast({
+                        heading: '加载批次详情失败',
+                        text: `请求失败 (HTTP ${jqXHR.status})，请重试`,
+                        showHideTransition: 'slide',
+                        icon: 'error',
+                        loaderBg: '#f2a654',
+                        position: 'mid-center',
+                        hideAfter: 20000,
+                    });
+                }
             });
         }
 

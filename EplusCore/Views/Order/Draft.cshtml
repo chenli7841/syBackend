@@ -17,7 +17,11 @@
         <div class="card">
             <div class="card-body">
                 <h4 class="card-title">创建@(Model.OrderState.GetDescription())运单</h4>
-                @using (Html.BeginForm("SaveDraft", "Order", FormMethod.Post, new { @class = "" }))
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger">@TempData["Error"]</div>
+                }
+                @using (Html.BeginForm("SaveDraft", "Order", FormMethod.Post, new { @class = "", id = "draft-form" }))
                 {
                     @Html.AntiForgeryToken()
 
@@ -170,10 +174,35 @@
                     companyIds = part.split("=")[1];
                 }
             }
+            // When the operator is locked to a single company, company-lock.js disables #company-select
+            // and forces its value via a plain property assignment (no 'change' event), so it never syncs
+            // to #CompanyId below. Without this, the hidden field stays empty and the submit-time company
+            // check blocks saving even though the company is already fixed.
+            if (window.__lockedCompanyId !== undefined && window.__lockedCompanyId !== null) {
+                companyIds = String(window.__lockedCompanyId);
+            }
             $('#CompanyId').val(companyIds);
             $('#company-select').val(companyIds);
             $('#company-select').change(function () {
                 document.location = `${document.location.origin}${document.location.pathname}?OrderState=Created&companyIds=${$('#company-select').val()}`;
+            });
+
+            $('#draft-form').on('submit', function (event) {
+                if (!$('#RecipientId').val() || $('#RecipientId').val() === '0') {
+                    event.preventDefault();
+                    alert('请选择客户');
+                    return;
+                }
+                if (!$('#CompanyId').val() || $('#CompanyId').val() === '0') {
+                    event.preventDefault();
+                    alert('请选择公司');
+                    return;
+                }
+                if (!$('#RouteId').val() || $('#RouteId').val() === '0') {
+                    event.preventDefault();
+                    alert('请选择线路');
+                    return;
+                }
             });
         });
     </script>

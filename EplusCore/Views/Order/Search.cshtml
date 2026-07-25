@@ -103,11 +103,12 @@
                 {
                     $(this).css('padding-left', '0');
                     let allStateOption = "@Html.Raw(string.Join("", Model.AllOrderStates.Select(s => $"<option value='{s.Id}'>{s.Name}</option>")))";
-                    $(this).html(`<select class="form-control" id="state-select">${allStateOption}</select>`);
-                    $('#state-select').on('change',
+                    $(this).html(`<div style="display: flex; gap: 4px;"><select class="form-control" id="state-select"><option value="" selected>无状态</option>${allStateOption}</select><button type="button" class="btn btn-primary btn-sm" id="state-filter-btn">筛选</button></div>`);
+                    $('#state-filter-btn').on('click',
                         function(event) {
-                            if (orderTable.column(i).search() !== this.value) {
-                                orderTable.column(i).search(this.value).draw();
+                            const value = $('#state-select').val();
+                            if (orderTable.column(i).search() !== value) {
+                                orderTable.column(i).search(value).draw();
                             }
                         });
                 }

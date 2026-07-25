@@ -518,7 +518,7 @@ namespace WebUI.Controllers
 
         public async Task<IActionResult> QuickView(int id)
         {
-            var batchEntity = await _batchService.GetAsync(id);
+            var batchEntity = await _batchService.GetSummaryAsync(id);
             var batch = _mapper.Map<BatchViewModel>(batchEntity);
             return ViewComponent("BatchInfo", new {batch});
         }

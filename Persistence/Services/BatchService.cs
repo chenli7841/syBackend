@@ -919,6 +919,64 @@ WHERE bb.BatchId=@batchId
             return result;
         }
 
+        // Lightweight variant of GetAsync for the batch details "quick view" panel, which only ever
+        // needs Orders.Count() and a weight-based count (see BatchInfo/Default.cshtml) - not the full
+        // per-order graph (creator, pick-up location, china items, statuses, baggages) that GetAsync
+        // loads for edit/export/print flows. That deep include chain made this take 1.5s+ for batches
+        // with thousands of orders even though none of the fetched data was ever displayed.
+        public async Task<BatchEntity> GetSummaryAsync(int id)
+        {
+            if (!_memoryCache.TryGetValue($"batch-summary-{id}", out BatchEntity result))
+            {
+                // No BatchBoxes/BatchBoxMaps include here on purpose - GetAllBatchBoxes() null-checks
+                // BatchBoxMaps and BatchBoxes defaults to an empty collection, so mapping is safe without
+                // them. Order data is fetched separately below as a (Id, WeightKg) projection instead.
+                var batch = await _context.Batches
+                    .Include(b => b.MasterBatch).ThenInclude(m => m.Progress).ThenInclude(p => p.Route)
+                    .Include(b => b.Route)
+                    .Include(b => b.User).ThenInclude(u => u.Customer)
+                    .FirstAsync(b => b.Id == id);
+
+                result = _mapper.Map<BatchEntity>(batch);
+
+                // Orders.Count() and Orders.Count(o => o.WeightKg < 0.01) in BatchInfo/Default.cshtml are
+                // the only things that ever read order data on this panel - project just (Id, WeightKg)
+                // instead of materializing full order graphs (creator, pick-up location, china items,
+                // statuses, baggages) the way GetAsync does for edit/export/print flows. That's what made
+                // this take 1.5s+ for batches with thousands of orders despite none of it being displayed.
+                var boxWeights = _context.BatchBoxOrderMaps
+                    .Where(m => m.BatchBox.BatchId == id)
+                    .Select(m => new { m.OrderId, m.Order.WeightKg });
+                var boxMapWeights = _context.BatchBoxMaps
+                    .Where(m => m.BatchId == id)
+                    .SelectMany(m => m.BatchBox.BatchBoxOrderMaps)
+                    .Select(m => new { m.OrderId, m.Order.WeightKg });
+                var orderWeights = await boxWeights.Union(boxMapWeights).ToListAsync();
+
+                result.Boxes = new List<BatchBoxEntity>
+                {
+                    new BatchBoxEntity
+                    {
+                        Orders = orderWeights.Select(o => new OrderEntity { Id = o.OrderId, WeightKg = o.WeightKg ?? 0 }).ToList()
+                    }
+                };
+
+                if (batch.RecipientUserId.HasValue)
+                {
+                    result.Recipient = await _userService.GetAsync(batch.RecipientUserId.Value);
+                }
+
+                if (batch.BelongsToUserId.HasValue)
+                {
+                    result.Agent = await _userService.GetAsync(batch.BelongsToUserId.Value);
+                }
+
+                _memoryCache.Set($"batch-summary-{id}", result, TimeSpan.FromMinutes(10));
+            }
+
+            return result;
+        }
+
         public async Task<BatchEntity> GetForPayAsync(int id)
         {
             var batch = await _context.Batches
@@ -1030,6 +1088,10 @@ WHERE bb.BatchId=@batchId
 
         public async Task<PackageBatchEntity> GetForEditPackageAsync(int id)
         {
+            // BatchBoxes and BatchBoxMaps are two sibling deep collection includes (each fanning out
+            // through Order -> OrderBaggages) - EF Core's default single-query join multiplies rows
+            // across them (cartesian blowup), which is what made this take over a minute for batches
+            // with hundreds of orders. Same fix as GetAsync/GetSummaryAsync: split into separate queries.
             var batch = await _context.Batches
                 .Include(b => b.BatchBoxes).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order).ThenInclude(o => o.OrderBaggages)
                 .Include(b => b.BatchBoxMaps).ThenInclude(bx => bx.BatchBox).ThenInclude(bx => bx.BatchBoxOrderMaps).ThenInclude(m => m.Order).ThenInclude(o => o.OrderBaggages)
@@ -1040,6 +1102,7 @@ WHERE bb.BatchId=@batchId
                 .Include(b => b.Route)
                 .Include(b => b.PickUpLocation).ThenInclude(u => u.BelongsTo)
                 .Include(b => b.Company)
+                .AsSplitQuery()
                 .FirstAsync(b => b.Id == id);
             var locations = await _userService.ListPickUpLocationsAsync(2, new int[] { batch.CompanyId.Value });
             var orders = DbModelToEntityMappingProfile.GetOrders(batch);
@@ -1047,8 +1110,9 @@ WHERE bb.BatchId=@batchId
             foreach (var o in orders)
             {
                 // ItemCost + (---Duty-- -) + OversizeCost + FumigationCost + WarehouseCost + PortMisCost + StorageCost + rate * weight + (---InsuranceCost-- -) - Discount
-                totalBaseShippingCost += o.ItemCost + o.OversizeCost + o.FumigationCost + o.WarehouseCost + o.PortMisCost + o.StorageCost - o.Discount +
-                    (locations.FirstOrDefault(l => l.Id == o.PickUpLocationId).DistrictAdditionalCost * o.WeightKg) ?? 0;
+                var location = locations.FirstOrDefault(l => l.Id == o.PickUpLocationId);
+                decimal districtAdditionalCost = location != null ? (location.DistrictAdditionalCost * o.WeightKg ?? 0) : 0;
+                totalBaseShippingCost += o.ItemCost + o.OversizeCost + o.FumigationCost + o.WarehouseCost + o.PortMisCost + o.StorageCost - (o.Discount ?? 0) + districtAdditionalCost;
             }
             var result = _mapper.Map<PackageBatchEntity>(batch);
             result.BaseShippingCost = totalBaseShippingCost;

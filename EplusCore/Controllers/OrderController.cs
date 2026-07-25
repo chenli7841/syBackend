@@ -314,6 +314,24 @@ namespace WebUI.Controllers
         [HttpPost]
         public async Task<IActionResult> SaveDraft(OrderDraftViewModel model)
         {
+            if (model.RecipientId <= 0)
+            {
+                TempData["Error"] = "请选择客户后再保存";
+                return RedirectToAction(nameof(Create), new { orderState = model.OrderState, companyIds = model.CompanyId > 0 ? model.CompanyId.ToString() : null });
+            }
+
+            if (model.CompanyId <= 0)
+            {
+                TempData["Error"] = "请选择公司后再保存";
+                return RedirectToAction(nameof(Create), new { orderState = model.OrderState });
+            }
+
+            if (model.RouteId <= 0)
+            {
+                TempData["Error"] = "请选择线路后再保存";
+                return RedirectToAction(nameof(Create), new { orderState = model.OrderState, companyIds = model.CompanyId.ToString() });
+            }
+
             var entity = new OrderEntity()
             {
                 DomesticNumber = model.DomesticNumber, DomesticCarrier = model.DomesticCarrier,

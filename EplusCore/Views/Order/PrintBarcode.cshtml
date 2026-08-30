@@ -7,10 +7,10 @@
 
     // 客户号字号在服务端按字符数直接算好，不依赖 JS 量尺寸/收缩。
     var customerCode = Model.Creator?.Code ?? "";
-    var cellWidthPx = 540.0;
+    var cellWidthPx = 360.0;
     var estCharWidthRatio = 0.62;
-    var fontSizeByWidth = customerCode.Length > 0 ? cellWidthPx / (customerCode.Length * estCharWidthRatio) : 60.0;
-    var customerCodeFontSize = Math.Max(20.0, Math.Min(fontSizeByWidth, 60.0));
+    var fontSizeByWidth = customerCode.Length > 0 ? cellWidthPx / (customerCode.Length * estCharWidthRatio) : 44.0;
+    var customerCodeFontSize = Math.Max(18.0, Math.Min(fontSizeByWidth, 44.0));
 }
 
 <!DOCTYPE html>
@@ -24,29 +24,29 @@
     <meta http-equiv="description" content="">
     <style type="text/css">
         @@page {
-            size: 150mm 100mm;
+            size: 100mm 80mm;
             margin: 0;
         }
 
         html, body {
             margin: 0;
             padding: 0;
-            width: 150mm;
-            height: 100mm;
+            width: 100mm;
+            height: 80mm;
             font-family: "微软雅黑";
         }
 
         body {
             box-sizing: border-box;
-            padding-top: 2mm;
-            padding-bottom: 2mm;
+            padding-top: 1.5mm;
+            padding-bottom: 1.5mm;
         }
 
         .row {
             box-sizing: border-box;
-            width: 150mm;
+            width: 100mm;
             border: 1px solid #000;
-            padding: 1mm 2mm;
+            padding: 0 2mm;
             overflow: hidden;
             display: flex;
             align-items: center;
@@ -54,12 +54,16 @@
             text-align: center;
         }
 
-        #row-barcode1, #row-barcode2 {
-            height: 19mm;
+        #row-barcode1 {
+            height: 22mm;
+        }
+
+        #row-barcode2 {
+            height: 21mm;
         }
 
         #row-customer {
-            height: 19mm;
+            height: 15mm;
         }
 
         #customer-code-text {
@@ -68,42 +72,64 @@
         }
 
         #row-route {
-            height: 14mm;
+            height: 6mm;
+            align-items: flex-end;
+            padding-bottom: 0.4mm;
         }
 
         #row-route > div {
             flex: 1;
             min-width: 0;
             overflow: hidden;
-            font-size: 20px;
+            font-size: 15px;
         }
 
         #row-address {
-            height: 14mm;
+            height: 9mm;
             flex-direction: column;
-            font-size: 14px;
-            line-height: 1.4;
+            justify-content: flex-start;
+            padding-top: 0.4mm;
+            font-size: 9px;
+            line-height: 1.2;
         }
 
         #row-time {
-            height: 6mm;
-            font-size: 11px;
+            height: 4mm;
+            font-size: 9px;
         }
 
         .barcode-wrap {
             width: 100%;
             height: 100%;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+        }
+
+        /* 条形码下的数字：独立成行，放在被 scaleX 拉伸的 .barcode 之外，
+           所以不会跟着横向拉伸变形；与条形码拉开间距并加大字号。 */
+        .barcode-num {
+            margin-top: 1.6mm;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            line-height: 1;
+        }
+
+        #row-barcode2 .barcode-num {
+            font-size: 18px;
+            margin-top: 1.3mm;
         }
     </style>
 </head>
 <body>
-    <!-- 第一行：运单号条形码，左右拉伸铺满 -->
+    <!-- 第一行：运单号条形码，左右拉伸铺满，数字独立显示在下方 -->
     <div class="row" id="row-barcode1">
         <div class="barcode-wrap">
             <div class="barcode" data-barcode="@Model.OrderNumber"></div>
+            <div class="barcode-num">@Model.OrderNumber</div>
         </div>
     </div>
 
@@ -112,28 +138,28 @@
         <div id="customer-code-text" style="font-size: @(customerCodeFontSize.ToString("0"))px;">@customerCode</div>
     </div>
 
-    <!-- 第三行：线路 / 取货点名称，字体缩小 -->
+    <!-- 第三行：线路 / 取货点名称 -->
     <div class="row" id="row-route">
         <div>@Model.Route?.Code</div>
         <div>@Model.PickUpLocation?.Name</div>
     </div>
 
-    <!-- 第四行：地址，字体缩小 -->
+    <!-- 第四行：地址，两行 -->
     <div class="row" id="row-address">
-        <div>@Model.Creator.ShippingAddress?.DetailArea</div>
-        <div>@Model.Creator.ShippingAddress?.City @Model.Creator.ShippingAddress?.Province @Model.Creator.ShippingAddress?.PostalCode</div>
+        <div>@Model.Creator.ShippingAddress?.DetailArea @Model.Creator.ShippingAddress?.City @Model.Creator.ShippingAddress?.Province @Model.Creator.ShippingAddress?.PostalCode</div>
         <div>@Model.Creator.Name @Model.Creator.ShippingAddress?.Mobile</div>
     </div>
 
-    <!-- 第五行：创建时间，字体再缩小 -->
+    <!-- 第五行：创建时间 -->
     <div class="row" id="row-time">
         创建时间: @Model.DateCreated.ToString("yyyy-MM-dd HH:mm")
     </div>
 
-    <!-- 第六行：国内单号条形码，左右拉伸铺满 -->
+    <!-- 第六行：国内单号条形码，左右拉伸铺满，数字独立显示在下方 -->
     <div class="row" id="row-barcode2">
         <div class="barcode-wrap">
             <div class="barcode" data-barcode="@Model.DomesticNumber"></div>
+            <div class="barcode-num">@Model.DomesticNumber</div>
         </div>
     </div>
 
@@ -142,11 +168,16 @@
     <script>
         $(document).ready(function () {
             var barcodes = $('.barcode');
-            var targetWidthMm = 145;
+            var targetWidthMm = 94;
             var targetWidthPx = targetWidthMm * 96 / 25.4;
             for (i = 0, il = barcodes.length; i < il; i++) {
                 var barcode = $(barcodes[i]);
-                barcode.barcode(barcode.data('barcode') + '', 'code128', { barWidth: 1, barHeight: 60 });
+                var isSecond = barcode.closest('#row-barcode2').length > 0;
+                barcode.barcode(barcode.data('barcode') + '', 'code128', {
+                    barWidth: 1,
+                    barHeight: isSecond ? 42 : 48,
+                    showHRI: false
+                });
 
                 // 拉伸条形码，左右铺满
                 var naturalWidth = barcode.width();

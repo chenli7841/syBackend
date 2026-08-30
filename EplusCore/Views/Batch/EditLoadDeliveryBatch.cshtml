@@ -176,6 +176,9 @@
                             <button id="batch_update_order_btn" type="button" class="btn btn-primary" data-toggle="modal" data-target="#updateOrderModal">更新运单</button>
                         </div>
                         <div>
+                            <button id="batch_edit_update_order_load_delivery_properties_btn" type="button" class="btn btn-primary">更新批次名</button>
+                        </div>
+                        <div>
                             @Html.ActionLink("取消", "Inventory", "Batch", new { groupType = Model.GroupType, routeId = Model.RouteId, warehouseId = Model.WarehouseId }, new { @class = "btn btn-secondary" })
                         </div>
                     </div>

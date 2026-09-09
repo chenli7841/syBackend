@@ -533,7 +533,7 @@
         $('#batch-action').click(function () {
             document.getElementById("site-overlay").style.display = "block";
         });
-        $('#companyId').val(global_companyIds);
+        $('#CompanyId').val(global_companyIds);
         $('#company-select').val(global_companyIds);
         $('#company-select').change(function () {
             document.location = `${document.location.origin}${document.location.pathname}?groupType=Package&companyIds=${$('#company-select').val()}`;
@@ -541,7 +541,7 @@
         function onSelectRoute(routeId) {
             let r = global_routes.find(r => r.id === routeId);
             if (!r) return;
-            $("RouteId").val(r.id);
+            $('#RouteId').val(r.id);
             if (r.type === @((int)RouteType.Mixed)) {
                 $('#recipient-input').hide();
                 $('#pick-up-location-input').show();
@@ -590,7 +590,21 @@
             $('#PickUpLocationId').val($('#pick-up-location-select').val());
             updateFormattedName();
         });
-        onSelectRoute(global_routes[0].id);
+        if (routeIds) {
+            $('#route-select').val(routeIds);
+        }
+        $('#route-select').trigger('change');
+        $('#PickUpLocationId').val($('#pick-up-location-select').val());
+        $('#MasterBatchId').val($('#master-batch-select').val());
+        updateFormattedName();
+
+        $('form').on('submit', function () {
+            $('#CompanyId').val($('#company-select').val());
+            $('#RouteId').val($('#route-select').val());
+            $('#PickUpLocationId').val($('#pick-up-location-select').val());
+            $('#MasterBatchId').val($('#master-batch-select').val());
+            updateFormattedName();
+        });
 
         $('#merge').click(function () {
             const sourceBatchAndBox = $('#targetBatch').val();

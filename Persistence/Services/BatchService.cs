@@ -2994,6 +2994,10 @@ WHERE bb.BatchId=@batchId
         private async Task<Batch> CreatePackageBatchAsync(PackageBatchEntity model)
         {
             var route = await _context.Routes.FirstOrDefaultAsync(r => r.Id == model.RouteId);
+            if (route == null)
+            {
+                throw new ArgumentException("请选择有效的线路。", nameof(model.RouteId));
+            }
             var batch = new Batch
             {
                 Name = model.Name,
@@ -3017,6 +3021,10 @@ WHERE bb.BatchId=@batchId
             if (route.Type == (int)RouteType.Mixed)
             {
                 var location = await _context.PickUpLocations.FirstOrDefaultAsync(l => l.Id == model.PickUpLocationId);
+                if (location == null)
+                {
+                    throw new ArgumentException("请选择有效的取货点。", nameof(model.PickUpLocationId));
+                }
                 batch.RecipientUserId = location.BelongsToId;
             } else if (route.Type == (int)RouteType.Direct)
             {

@@ -1,5 +1,6 @@
 ﻿using Domain.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Common.WeCom;
 using Persistence.Services;
 
 namespace Persistence
@@ -17,6 +18,8 @@ namespace Persistence
             services.AddTransient<ISystemService, SystemService>();
 
             services.AddTransient<IAdminDataService, AdminDataService>();
+            services.AddScoped<IWeComCustomerMessagingService, WeComCustomerMessagingService>();
+            services.AddScoped<IWeComCustomerEventService, WeComCustomerEventService>();
 
             return services;
         }

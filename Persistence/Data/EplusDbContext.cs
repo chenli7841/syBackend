@@ -159,6 +159,7 @@ namespace Persistence.Data
         public virtual DbSet<TransportOrderAudit> TransportOrderAudits { get; set; }
         public virtual DbSet<User> Users { get; set; }
         public virtual DbSet<Warehouse> Warehouses { get; set; }
+        public virtual DbSet<WeComCustomerGroupBinding> WeComCustomerGroupBindings { get; set; }
         public virtual DbSet<YoudumallUser> YoudumallUsers { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -2360,6 +2361,27 @@ namespace Persistence.Data
                     .HasForeignKey(d => d.OrderId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_dbo.ChinaItem_dbo.Order_OrderId");
+            });
+
+            modelBuilder.Entity<WeComCustomerGroupBinding>(entity =>
+            {
+                entity.ToTable("wecom_customer_group_binding");
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => new { e.CompanyId, e.UserId }, "ux_wecom_group_company_user").IsUnique();
+                entity.HasIndex(e => new { e.CompanyId, e.ChatId }, "ux_wecom_group_company_chat").IsUnique();
+                entity.HasIndex(e => e.GroupOwnerUserId, "ix_wecom_group_owner");
+                entity.Property(e => e.Id).HasColumnName("id").HasColumnType("bigint(20)");
+                entity.Property(e => e.CompanyId).HasColumnName("company_id").HasColumnType("int(11)");
+                entity.Property(e => e.UserId).HasColumnName("user_id").HasColumnType("int(11)");
+                entity.Property(e => e.ChatId).IsRequired().HasColumnName("chat_id").HasMaxLength(128);
+                entity.Property(e => e.GroupOwnerUserId).IsRequired().HasColumnName("group_owner_userid").HasMaxLength(128);
+                entity.Property(e => e.GroupName).HasColumnName("group_name").HasMaxLength(255);
+                entity.Property(e => e.BindingSource).IsRequired().HasColumnName("binding_source").HasMaxLength(32);
+                entity.Property(e => e.IsActive).HasColumnName("is_active").HasColumnType("tinyint(1)");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasColumnType("datetime");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasColumnType("datetime");
+                entity.HasOne(e => e.Company).WithMany().HasForeignKey(e => e.CompanyId).HasConstraintName("fk_wecom_group_company");
+                entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId).HasConstraintName("fk_wecom_group_user");
             });
 
             modelBuilder.Entity<Customer>(entity =>

@@ -4,6 +4,7 @@ using Domain.Services;
 using EplusCore.Middlewares;
 using Infrastructure;
 using Infrastructure.ChinaStatusService;
+using Infrastructure.WeCom;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
@@ -52,7 +53,16 @@ namespace WebUI
             services.AddHttpClient();
             services.AddAutoMapper(typeof(Startup));
 
-            services.AddInfrastructure();
+            services.AddInfrastructure(new WeComOptions
+            {
+                Enabled = Configuration.GetValue<bool>($"{WeComOptions.SectionName}:Enabled"),
+                CompanyId = Configuration.GetValue<int>($"{WeComOptions.SectionName}:CompanyId"),
+                CorpId = Configuration[$"{WeComOptions.SectionName}:CorpId"],
+                CustomerContactSecret = Configuration[$"{WeComOptions.SectionName}:CustomerContactSecret"],
+                CallbackToken = Configuration[$"{WeComOptions.SectionName}:CallbackToken"],
+                CallbackEncodingAesKey = Configuration[$"{WeComOptions.SectionName}:CallbackEncodingAesKey"],
+                ApiBaseUrl = Configuration[$"{WeComOptions.SectionName}:ApiBaseUrl"] ?? "https://qyapi.weixin.qq.com"
+            });
             services.AddPersistence();
             
             services.AddTransient<IUserService, UserService>();
